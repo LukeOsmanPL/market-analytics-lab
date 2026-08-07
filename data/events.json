@@ -1,0 +1,173 @@
+{
+  "description": "Wydarzenia historyczne wpływające na ceny commodities. Ręcznie kurowane. Dodawaj/edytuj śmiało.",
+  "events": [
+    {
+      "date": "2014-06-10",
+      "title": "ISIS zajmuje Mosul",
+      "desc": "Skokowy wzrost cen ropy z powodu ryzyka geopolitycznego w Iraku.",
+      "tags": ["energy", "geopolitics"],
+      "icon": "⚔️"
+    },
+    {
+      "date": "2014-11-27",
+      "title": "OPEC odmawia cięcia produkcji",
+      "desc": "Arabia Saudyjska wybiera walkę o udział w rynku zamiast wsparcia cen. Początek załamania ropy z ~$85 do ~$26.",
+      "tags": ["energy"],
+      "icon": "📉"
+    },
+    {
+      "date": "2015-08-11",
+      "title": "Chiny dewaluują juana",
+      "desc": "Nagła dewaluacja o ~2%. Silny spadek cen surowców, szczególnie metali przemysłowych.",
+      "tags": ["metals", "macro"],
+      "icon": "🇨🇳"
+    },
+    {
+      "date": "2016-02-11",
+      "title": "Ropa dołek $26",
+      "desc": "WTI schodzi do najniższego poziomu od 2003. Punkt zwrotny cyklu.",
+      "tags": ["energy"],
+      "icon": "🔻"
+    },
+    {
+      "date": "2016-11-08",
+      "title": "Trump wygrywa wybory (I kadencja)",
+      "desc": "Zwycięstwo wyborcze Trumpa. Reakcja rynków: umocnienie dolara, spadek złota.",
+      "tags": ["metals", "macro"],
+      "icon": "🗳️"
+    },
+    {
+      "date": "2016-11-30",
+      "title": "OPEC+ porozumienie o cięciu produkcji",
+      "desc": "Pierwsze porozumienie z Rosją. Cena ropy zaczyna odbijać.",
+      "tags": ["energy"],
+      "icon": "🤝"
+    },
+    {
+      "date": "2018-05-08",
+      "title": "USA wychodzi z porozumienia nuklearnego z Iranem",
+      "desc": "Trump wycofuje USA z umowy JCPOA i przywraca sankcje. Ropa idzie w górę.",
+      "tags": ["energy", "geopolitics"],
+      "icon": "☢️"
+    },
+    {
+      "date": "2019-09-14",
+      "title": "Atak dronów na Abqaiq (Aramco)",
+      "desc": "Największy jednodniowy skok cen ropy w historii (+15%). Chwilowo zaburzone ~5% globalnej podaży.",
+      "tags": ["energy", "geopolitics"],
+      "icon": "🚁"
+    },
+    {
+      "date": "2020-03-08",
+      "title": "Wojna cenowa Arabia-Rosja",
+      "desc": "Załamanie rozmów OPEC+. Arabia Saudyjska zapowiada wzrost produkcji. Ropa spada 25% w jednym dniu.",
+      "tags": ["energy"],
+      "icon": "⚔️"
+    },
+    {
+      "date": "2020-03-11",
+      "title": "WHO ogłasza pandemię COVID-19",
+      "desc": "Załamanie popytu na paliwa i surowce przemysłowe. Wzrost cen złota.",
+      "tags": ["energy", "metals", "grains", "macro"],
+      "icon": "🦠"
+    },
+    {
+      "date": "2020-04-20",
+      "title": "WTI schodzi na ujemną cenę",
+      "desc": "Kontrakt majowy WTI zamyka na −$37/bbl. Historyczny moment - koszty magazynowania przewyższają cenę ropy.",
+      "tags": ["energy"],
+      "icon": "🔴"
+    },
+    {
+      "date": "2021-02-15",
+      "title": "Wielki mróz w Teksasie",
+      "desc": "Rekordowe mrozy zamrażają szyby wydobywcze, elektrownie gazowe. Ceny Henry Hub skoczyły chwilowo powyżej $20.",
+      "tags": ["energy"],
+      "icon": "❄️"
+    },
+    {
+      "date": "2021-09-01",
+      "title": "Kryzys gazowy w Europie",
+      "desc": "TTF zaczyna gwałtowny wzrost. Niski stan magazynów po zimie, ograniczone dostawy z Rosji.",
+      "tags": ["energy"],
+      "icon": "🇪🇺"
+    },
+    {
+      "date": "2022-02-24",
+      "title": "Rosja atakuje Ukrainę",
+      "desc": "Rozpoczęcie inwazji. Historyczny skok cen: pszenica ATH, gaz TTF, olej słonecznikowy, nikiel. Największy szok surowcowy od lat 70-tych.",
+      "tags": ["energy", "grains", "metals", "geopolitics"],
+      "icon": "🇺🇦"
+    },
+    {
+      "date": "2022-03-08",
+      "title": "USA banuje import ropy z Rosji",
+      "desc": "Zakaz importu ropy, gazu LNG i węgla z Rosji. Brent chwilowo powyżej $130.",
+      "tags": ["energy"],
+      "icon": "🚫"
+    },
+    {
+      "date": "2022-06-15",
+      "title": "Fed podnosi stopy o 75bp",
+      "desc": "Największa podwyżka od 1994. Umocnienie dolara, presja na ceny commodities.",
+      "tags": ["metals", "macro"],
+      "icon": "💰"
+    },
+    {
+      "date": "2022-08-26",
+      "title": "TTF ATH ~€350/MWh",
+      "desc": "Europejski gaz osiąga historyczne maksimum. 15x powyżej ceny sprzed kryzysu.",
+      "tags": ["energy"],
+      "icon": "🚀"
+    },
+    {
+      "date": "2022-09-26",
+      "title": "Sabotaż Nord Stream",
+      "desc": "Eksplozje niszczą gazociągi NS1 i NS2 na Bałtyku. Trwałe odcięcie głównej trasy rosyjskiego gazu do Europy.",
+      "tags": ["energy", "geopolitics"],
+      "icon": "💥"
+    },
+    {
+      "date": "2023-03-10",
+      "title": "Upadek Silicon Valley Bank",
+      "desc": "Kryzys bankowy w USA. Ucieczka do złota, spadek rentowności obligacji.",
+      "tags": ["metals", "macro"],
+      "icon": "🏦"
+    },
+    {
+      "date": "2023-10-07",
+      "title": "Atak Hamasu, wojna Izrael-Hamas",
+      "desc": "Ryzyko geopolityczne na Bliskim Wschodzie. Chwilowy wzrost cen ropy.",
+      "tags": ["energy", "geopolitics"],
+      "icon": "🕊️"
+    },
+    {
+      "date": "2024-01-15",
+      "title": "Ataki Huti na Morzu Czerwonym",
+      "desc": "Zakłócenia żeglugi przez Kanał Sueski. Kontenerowce nawigują wokół Afryki, wzrost kosztów logistyki i cen ropy.",
+      "tags": ["energy", "geopolitics"],
+      "icon": "🚢"
+    },
+    {
+      "date": "2024-04-13",
+      "title": "Iran uderza w Izrael pociskami",
+      "desc": "Pierwszy bezpośredni atak Iranu na Izrael. Brent chwilowo w górę.",
+      "tags": ["energy", "geopolitics"],
+      "icon": "🎯"
+    },
+    {
+      "date": "2024-11-05",
+      "title": "Trump wygrywa wybory (II kadencja)",
+      "desc": "Zapowiedzi ceł i deregulacji. Reakcja na złocie i metalach przemysłowych.",
+      "tags": ["metals", "macro"],
+      "icon": "🗳️"
+    },
+    {
+      "date": "2025-04-02",
+      "title": "Trump ogłasza cła 'Liberation Day'",
+      "desc": "Kompleksowa taryfa na import - zamieszanie w globalnych łańcuchach dostaw. Spadek ropy, wzrost złota.",
+      "tags": ["energy", "metals", "macro"],
+      "icon": "📜"
+    }
+  ]
+}
