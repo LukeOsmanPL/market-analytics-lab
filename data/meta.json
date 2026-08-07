@@ -1,0 +1,93 @@
+{
+  "generated_at": "2026-08-07T17:27:19.236396+00:00",
+  "products": [
+    {
+      "id": "NG",
+      "name": "Henry Hub (gaz US)",
+      "unit": "$/MMBtu",
+      "contract_size": 10000,
+      "contract_unit": "MMBtu",
+      "category": "Energia",
+      "color": "#4fc3f7",
+      "source": "fred",
+      "series": "DHHNGSP",
+      "first_date": "2014-01-02",
+      "last_date": "2026-08-03",
+      "n_observations": 3172
+    },
+    {
+      "id": "WTI",
+      "name": "WTI Crude (ropa US)",
+      "unit": "$/bbl",
+      "contract_size": 1000,
+      "contract_unit": "bbl",
+      "category": "Energia",
+      "color": "#ff8a65",
+      "source": "fred",
+      "series": "DCOILWTICO",
+      "first_date": "2014-01-02",
+      "last_date": "2026-08-03",
+      "n_observations": 3151
+    },
+    {
+      "id": "BRENT",
+      "name": "Brent Crude (ropa)",
+      "unit": "$/bbl",
+      "contract_size": 1000,
+      "contract_unit": "bbl",
+      "category": "Energia",
+      "color": "#ba68c8",
+      "source": "fred",
+      "series": "DCOILBRENTEU",
+      "first_date": "2014-01-02",
+      "last_date": "2026-08-03",
+      "n_observations": 3195
+    },
+    {
+      "id": "HEAT",
+      "name": "Heating Oil / ULSD (NY)",
+      "unit": "$/gal",
+      "contract_size": 42000,
+      "contract_unit": "gal",
+      "category": "Energia",
+      "color": "#ff5722",
+      "source": "fred",
+      "series": "DHOILNYH",
+      "first_date": "2014-01-02",
+      "last_date": "2026-08-03",
+      "n_observations": 3149
+    },
+    {
+      "id": "RBOB",
+      "name": "Benzyna (US Gulf spot)",
+      "unit": "$/gal",
+      "contract_size": 42000,
+      "contract_unit": "gal",
+      "category": "Energia",
+      "color": "#ffb74d",
+      "source": "fred",
+      "series": "DGASUSGULF",
+      "first_date": "2014-01-02",
+      "last_date": "2026-08-03",
+      "n_observations": 3149
+    },
+    {
+      "id": "GAS_RETAIL_US",
+      "name": "Benzyna detal USA (avg)",
+      "unit": "$/gal",
+      "contract_size": 1,
+      "contract_unit": "gal",
+      "category": "Energia",
+      "color": "#ffa000",
+      "source": "fred",
+      "series": "GASREGW",
+      "first_date": "2014-01-06",
+      "last_date": "2026-08-03",
+      "n_observations": 657
+    }
+  ],
+  "failed": [
+    "GOLD",
+    "SILVER"
+  ]
+}
