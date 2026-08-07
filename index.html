@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Energy Analytics</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<style>
+  :root {
+    --bg: #0f1419; --panel: #1a2029; --panel-2: #232b36; --border: #2d3746;
+    --text: #e6edf3; --muted: #8b96a5; --accent: #4fc3f7; --accent-2: #ffb74d;
+    --ok: #66bb6a; --bad: #ef5350;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 14px; }
+  header { background: var(--panel); padding: 14px 20px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+  header h1 { margin: 0; font-size: 18px; font-weight: 600; }
+  header .badge { color: var(--muted); font-size: 12px; }
+  main { display: grid; grid-template-columns: 340px 1fr; min-height: calc(100vh - 55px); }
+  aside { background: var(--panel); border-right: 1px solid var(--border); padding: 16px; overflow-y: auto; max-height: calc(100vh - 55px); }
+  .content { padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 12px; }
+  h3 { margin: 0 0 10px 0; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+  .chart-title { font-size: 15px; font-weight: 600; margin: 0 0 10px 0; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  .chart-title .sub { font-weight: 400; color: var(--muted); font-size: 12px; margin-left: 8px; }
+  .cat-header { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--muted); padding: 8px 4px 4px; font-weight: 700; border-top: 1px dotted var(--border); margin-top: 4px; }
+  .cat-header:first-of-type { border-top: none; margin-top: 0; }
+  .products label { display: flex; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+  .products label:hover { background: var(--panel-2); }
+  .products input { accent-color: var(--accent); }
+  .swatch { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+  .range-buttons, .mode-buttons { display: flex; flex-wrap: wrap; gap: 4px; }
+  .range-buttons button, .mode-buttons button { background: var(--panel-2); color: var(--text);
+    border: 1px solid var(--border); padding: 6px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; font-family: inherit; }
+  .range-buttons button:hover, .mode-buttons button:hover { border-color: var(--accent); }
+  .range-buttons button.active, .mode-buttons button.active { background: var(--accent); color: #0f1419; border-color: var(--accent); font-weight: 600; }
+  .toggle { display: flex; align-items: center; gap: 8px; margin: 8px 0; font-size: 13px; }
+  select, input[type=number], input[type=date] { background: var(--panel-2); color: var(--text);
+    border: 1px solid var(--border); border-radius: 6px; padding: 5px 8px; font-family: inherit; font-size: 13px; }
+  input[type=date]::-webkit-calendar-picker-indicator { filter: invert(1); opacity: 0.6; }
+  .row { display: flex; gap: 8px; align-items: center; margin: 6px 0; }
+  .row label { flex: 1; font-size: 13px; color: var(--muted); }
+  .date-range { display: flex; gap: 6px; align-items: center; margin-top: 8px; }
+  .date-range input[type=date] { flex: 1; padding: 4px 6px; font-size: 12px; }
+  .leg-row { display: grid; grid-template-columns: 1fr 66px 60px; gap: 6px; align-items: center;
+    padding: 8px; margin: 6px 0; background: var(--panel-2); border-radius: 6px; border-left: 3px solid var(--accent); font-size: 12px; }
+  .leg-name { display: flex; align-items: center; gap: 6px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .side-toggle { display: flex; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; }
+  .side-toggle button { flex: 1; background: var(--bg); color: var(--muted);
+    border: none; padding: 3px 0; cursor: pointer; font-family: inherit; font-size: 11px; font-weight: 700; }
+  .side-toggle button.on-long { background: var(--ok); color: #fff; }
+  .side-toggle button.on-short { background: var(--bad); color: #fff; }
+  .leg-row input[type=number] { width: 100%; padding: 3px 5px; font-size: 12px; text-align: center; }
+  .leg-info { grid-column: 1 / -1; padding-top: 6px; margin-top: 4px;
+    border-top: 1px solid var(--border); font-size: 11px; color: var(--muted); line-height: 1.5; }
+  .leg-info .price-line { color: var(--text); }
+  .money-long { color: var(--bad); font-weight: 700; }
+  .money-short { color: var(--ok); font-weight: 700; }
+  .position-summary { margin-top: 10px; padding: 10px; background: var(--bg);
+    border: 1px solid var(--border); border-radius: 6px; font-size: 12px; }
+  .position-summary .line { display: flex; justify-content: space-between; padding: 3px 0; }
+  .position-summary .line.total { border-top: 1px solid var(--border); margin-top: 4px; padding-top: 6px; font-weight: 700; }
+  .plot { width: 100%; height: 440px; }
+  .plot-small { width: 100%; height: 240px; }
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+  .stat { background: var(--panel-2); padding: 10px; border-radius: 6px; border: 1px solid var(--border); }
+  .stat .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  .stat .value { font-size: 18px; font-weight: 600; margin-top: 3px; }
+  .stat .sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .up { color: var(--ok); } .down { color: var(--bad); }
+  .mode-panel { display: none; }
+  .mode-panel.active { display: block; }
+  .hint { color: var(--muted); font-size: 11px; margin-top: 8px; line-height: 1.4; }
+  .empty { padding: 40px; text-align: center; color: var(--muted); font-size: 13px; }
+  section.divider { padding: 10px 0; border-top: 1px solid var(--border); margin-top: 10px; }
+  .sub-mode { display: flex; gap: 4px; margin: 8px 0; }
+  .sub-mode button { flex: 1; background: var(--panel-2); color: var(--text);
+    border: 1px solid var(--border); padding: 6px 8px; border-radius: 6px; cursor: pointer; font-size: 12px; font-family: inherit; }
+  .sub-mode button.active { background: var(--accent-2); color: #0f1419; border-color: var(--accent-2); font-weight: 600; }
+  #loading, #loadError { text-align: center; padding: 60px 20px; color: var(--muted); }
+  #loadError { color: var(--bad); }
+  #loadError pre { background: var(--panel-2); padding: 12px; border-radius: 6px; color: var(--text); text-align: left; font-size: 12px; overflow-x: auto; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } aside { max-height: none; border-right: none; border-bottom: 1px solid var(--border); } }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Energy Analytics</h1>
+    <div class="badge" id="dataFreshness">ładuję dane…</div>
+  </div>
+  <div class="badge">v1.0</div>
+</header>
+
+<div id="loading">
+  <p>Wczytuję dane z <code>data/prices.json</code>…</p>
+</div>
+
+<div id="loadError" style="display:none">
+  <h3 style="color:var(--bad)">Nie mogłem wczytać danych</h3>
+  <p>Prawdopodobnie plik <code>data/prices.json</code> nie istnieje jeszcze. Uruchom workflow "Codzienna aktualizacja danych" w zakładce Actions swojego repo.</p>
+  <pre id="errorDetail"></pre>
+</div>
+
+<main id="app" style="display:none">
+  <aside>
+    <h3>Produkty</h3>
+    <div class="products" id="products"></div>
+    <div class="hint" id="selectHint"></div>
+
+    <section class="divider">
+      <h3>Zakres czasu</h3>
+      <div class="range-buttons" id="ranges">
+        <button data-r="1W">1T</button>
+        <button data-r="1M">1M</button>
+        <button data-r="6M">6M</button>
+        <button data-r="1Y" class="active">1R</button>
+        <button data-r="2Y">2L</button>
+        <button data-r="3Y">3L</button>
+        <button data-r="5Y">5L</button>
+        <button data-r="10Y">10L</button>
+        <button data-r="MAX">MAX</button>
+        <button data-r="CUSTOM">Custom</button>
+      </div>
+      <div class="date-range" id="dateRange" style="display:none">
+        <input type="date" id="dateFrom">
+        <span style="color:var(--muted)">→</span>
+        <input type="date" id="dateTo">
+      </div>
+      <div class="hint">Tip: na wykresie zaznacz obszar myszką żeby przybliżyć. Dwuklik cofa.</div>
+    </section>
+
+    <section class="divider">
+      <h3>Tryb analizy</h3>
+      <div class="mode-buttons" id="modes">
+        <button data-m="standard" class="active">Nakładka</button>
+        <button data-m="seasonal">Sezonowa</button>
+        <button data-m="spread">Spread</button>
+        <button data-m="ratio">Ratio</button>
+      </div>
+    </section>
+
+    <section class="divider" id="stdCtrl">
+      <div class="toggle"><input type="checkbox" id="pctToggle"><label for="pctToggle">Skala procentowa</label></div>
+      <div class="toggle"><input type="checkbox" id="dualAxis" checked><label for="dualAxis">Druga oś Y</label></div>
+      <div class="hint">Włącz % kiedy porównujesz produkty o różnej skali.</div>
+    </section>
+
+    <section class="divider" id="seasonalCtrl" style="display:none">
+      <div class="row"><label>Okno średniej</label>
+        <select id="seasonWindow"><option value="3">3 lata</option><option value="5" selected>5 lat</option><option value="10">10 lat</option></select>
+      </div>
+      <div class="toggle"><input type="checkbox" id="showMinMax" checked><label for="showMinMax">Koperta min/max</label></div>
+      <div class="toggle"><input type="checkbox" id="showYears"><label for="showYears">Pokaż wszystkie lata</label></div>
+    </section>
+
+    <section class="divider" id="spreadCtrl" style="display:none">
+      <h3>Widok</h3>
+      <div class="sub-mode" id="spreadView">
+        <button data-sv="pnl" class="active">P&amp;L pozycji</button>
+        <button data-sv="seasonal">Sezonowy</button>
+      </div>
+      <div id="spreadSeasonalCtrl" style="display:none">
+        <div class="row"><label>Okno średniej</label>
+          <select id="spreadSeasonWindow"><option value="3">3 lata</option><option value="5" selected>5 lat</option><option value="10">10 lat</option></select>
+        </div>
+        <div class="toggle"><input type="checkbox" id="spreadShowMinMax" checked><label for="spreadShowMinMax">Koperta min/max</label></div>
+        <div class="toggle"><input type="checkbox" id="spreadShowYears"><label for="spreadShowYears">Wszystkie lata</label></div>
+      </div>
+      <h3 style="margin-top:14px">Nogi spreadu</h3>
+      <div id="legsList"></div>
+      <div id="positionSummary" class="position-summary"></div>
+      <div class="toggle" id="dollarModeWrap" style="margin-top:10px">
+        <input type="checkbox" id="dollarMode" checked>
+        <label for="dollarMode"><b>Pokaż w $ (P&amp;L pozycji)</b></label>
+      </div>
+    </section>
+  </aside>
+
+  <div class="content">
+    <div class="card">
+      <div class="chart-title" id="mainTitle">—</div>
+      <div id="mainPlot" class="plot"></div>
+    </div>
+    <div class="card mode-panel active" id="panel-standard">
+      <div class="chart-title" id="corrTitle">Korelacja krocząca (60 dni)</div>
+      <div id="corrPlot" class="plot-small"></div>
+    </div>
+    <div class="card mode-panel" id="panel-seasonal">
+      <div class="chart-title">Statystyki sezonowe</div>
+      <div id="seasonalStats"></div>
+    </div>
+    <div class="card mode-panel" id="panel-spread">
+      <div id="spreadDetail"></div>
+    </div>
+    <div class="card mode-panel" id="panel-ratio">
+      <div class="chart-title" id="ratioTitle">Statystyki ratio</div>
+      <div id="ratioStats"></div>
+    </div>
+    <div class="card">
+      <div class="chart-title">Statystyki dla widocznego okresu</div>
+      <div class="stats-grid" id="stats"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+/* ---------- ładowanie danych ---------- */
+let PRODUCTS = [];
+let PMAP = {};
+let CATS = [];
+let DATA = {};      // pid -> {dates: [...], prices: [...]}
+let FULL_DATES = []; // unia posortowana wszystkich dat
+let MIN_DATE, MAX_DATE;
+
+async function loadData() {
+  try {
+    const [pricesRes, metaRes] = await Promise.all([
+      fetch('data/prices.json'),
+      fetch('data/meta.json'),
+    ]);
+    if (!pricesRes.ok) throw new Error(`prices.json: ${pricesRes.status}`);
+    if (!metaRes.ok)  throw new Error(`meta.json: ${metaRes.status}`);
+    const prices = await pricesRes.json();
+    const meta   = await metaRes.json();
+
+    PRODUCTS = meta.products.map(p => ({
+      id: p.id, name: p.name, unit: p.unit, color: p.color,
+      contractSize: p.contract_size, contractUnit: p.contract_unit,
+      contractDesc: (p.contract_size === 1) ? 'spot (nie futures)' :
+                    `${p.contract_size.toLocaleString('en-US')} ${p.contract_unit}`,
+      cat: p.category,
+    }));
+    PMAP = Object.fromEntries(PRODUCTS.map(p => [p.id, p]));
+    CATS = Array.from(new Set(PRODUCTS.map(p => p.cat)));
+
+    // Zbuduj DATA i FULL_DATES
+    const allDates = new Set();
+    for (const p of PRODUCTS) {
+      const obs = prices.products[p.id] || [];
+      DATA[p.id] = {
+        dates: obs.map(o => o.date),
+        prices: obs.map(o => o.value),
+      };
+      obs.forEach(o => allDates.add(o.date));
+    }
+    FULL_DATES = Array.from(allDates).sort();
+    MIN_DATE = FULL_DATES[0];
+    MAX_DATE = FULL_DATES[FULL_DATES.length - 1];
+
+    // Data ostatniej aktualizacji
+    const gen = new Date(prices.generated_at || meta.generated_at);
+    document.getElementById('dataFreshness').textContent =
+      `dane z ${gen.toLocaleString('pl-PL', {dateStyle: 'medium', timeStyle: 'short'})} · ${PRODUCTS.length} produktów`;
+
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('app').style.display = 'grid';
+    init();
+  } catch (e) {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('loadError').style.display = 'block';
+    document.getElementById('errorDetail').textContent = e.message + '\n\n' + (e.stack || '');
+  }
+}
+
+/* ---------- state ---------- */
+const state = {
+  selected: [],       // wypełnimy po załadowaniu
+  range: '1Y',
+  customFrom: null, customTo: null,
+  mode: 'standard',
+  pct: false, dual: true,
+  seasonWindow: 5, showMinMax: true, showYears: false,
+  legs: {},
+  dollarMode: true,
+  spreadView: 'pnl',
+  spreadSeasonWindow: 5, spreadShowMinMax: true, spreadShowYears: false,
+};
+
+const SELECT_RULES = {
+  standard: { min: 1, max: 6, kind: 'multi',  label: 'Wybierz 1-6 produktów. Dowolna kombinacja.' },
+  seasonal: { min: 1, max: 1, kind: 'single', label: 'Wybierz JEDEN produkt.' },
+  spread:   { min: 2, max: 5, kind: 'multi',  label: 'Wybierz 2-5 produktów (nogi spreadu).' },
+  ratio:    { min: 2, max: 2, kind: 'pair',   label: 'Wybierz DOKŁADNIE 2 produkty.' },
+};
+
+/* ---------- formatery ---------- */
+const fmtNum = (v, dec = 2) => Number(v).toLocaleString('en-US', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+const fmtMoneyAbs = (v) => '$' + Math.abs(v).toLocaleString('en-US', { maximumFractionDigits: 0 });
+const fmtMoneySigned = (v) => (v >= 0 ? '+' : '−') + '$' + Math.abs(v).toLocaleString('en-US', { maximumFractionDigits: 0 });
+
+/* ---------- selekcja ---------- */
+function handleSelect(pid, wantChecked) {
+  const rule = SELECT_RULES[state.mode];
+  const already = state.selected.includes(pid);
+  if (rule.kind === 'single') {
+    state.selected = [pid];
+  } else if (rule.kind === 'pair') {
+    if (wantChecked && !already) { state.selected.push(pid); if (state.selected.length > 2) state.selected.shift(); }
+    else if (!wantChecked && already) state.selected = state.selected.filter(x => x !== pid);
+  } else {
+    if (wantChecked && !already) state.selected.push(pid);
+    if (!wantChecked && already) state.selected = state.selected.filter(x => x !== pid);
+    if (state.selected.length > rule.max) state.selected.shift();
+  }
+  syncLegs(); refreshCheckboxes(); renderLegs(); render();
+}
+function refreshCheckboxes() {
+  const rule = SELECT_RULES[state.mode];
+  PRODUCTS.forEach(p => {
+    const el = document.getElementById('p_' + p.id);
+    if (!el) return;
+    el.checked = state.selected.includes(p.id);
+    el.type = rule.kind === 'single' ? 'radio' : 'checkbox';
+  });
+  document.getElementById('selectHint').textContent = rule.label;
+}
+function syncLegs() {
+  state.selected.forEach((pid, i) => {
+    if (!state.legs[pid]) state.legs[pid] = { side: i % 2 === 0 ? 1 : -1, qty: 1 };
+  });
+  Object.keys(state.legs).forEach(pid => {
+    if (!state.selected.includes(pid)) delete state.legs[pid];
+  });
+}
+function renderLegs() {
+  const box = document.getElementById('legsList');
+  const summaryBox = document.getElementById('positionSummary');
+  if (!box) return;
+  box.innerHTML = '';
+  let totalOut = 0, totalIn = 0, grossExposure = 0;
+  state.selected.forEach(pid => {
+    const p = PMAP[pid]; const leg = state.legs[pid];
+    const prices = DATA[pid].prices;
+    if (!prices.length) return;
+    const price = prices[prices.length-1];
+    const notional = p.contractSize * leg.qty * price;
+    if (leg.side === 1) totalOut += notional; else totalIn += notional;
+    grossExposure += notional;
+    const isLong = leg.side === 1;
+    const moneyCls = isLong ? 'money-long' : 'money-short';
+    const moneyLabel = isLong ? 'LONG · płacisz' : 'SHORT · dostajesz';
+    const row = document.createElement('div');
+    row.className = 'leg-row';
+    row.innerHTML = `
+      <div class="leg-name"><span class="swatch" style="background:${p.color}"></span>${p.id}</div>
+      <div class="side-toggle">
+        <button data-pid="${pid}" data-side="1" class="${leg.side === 1 ? 'on-long' : ''}">L</button>
+        <button data-pid="${pid}" data-side="-1" class="${leg.side === -1 ? 'on-short' : ''}">S</button>
+      </div>
+      <input type="number" min="1" max="50" step="1" value="${leg.qty}" data-pid="${pid}" class="qty-input">
+      <div class="leg-info">
+        <div class="price-line">${fmtNum(price)} ${p.unit} · kontrakt = ${p.contractDesc}</div>
+        <div>${leg.qty} × ${p.contractSize.toLocaleString('en-US')} × ${fmtNum(price)} = <span class="${moneyCls}">${fmtMoneyAbs(notional)}</span></div>
+        <div>${moneyLabel}</div>
+      </div>`;
+    box.appendChild(row);
+  });
+  const net = totalIn - totalOut;
+  summaryBox.innerHTML = `
+    <div class="line"><span>Suma LONG (płacisz):</span><span class="money-long">${fmtMoneyAbs(totalOut)}</span></div>
+    <div class="line"><span>Suma SHORT (dostajesz):</span><span class="money-short">${fmtMoneyAbs(totalIn)}</span></div>
+    <div class="line total"><span>Netto na start:</span><span class="${net >= 0 ? 'money-short' : 'money-long'}">${net >= 0 ? '+' : '−'}${fmtMoneyAbs(net)}</span></div>
+    <div class="line" style="color:var(--muted); font-size:11px"><span>Zaangażowanie brutto:</span><span>${fmtMoneyAbs(grossExposure)}</span></div>`;
+  box.querySelectorAll('.side-toggle button').forEach(b => {
+    b.addEventListener('click', () => {
+      const pid = b.dataset.pid;
+      state.legs[pid].side = +b.dataset.side;
+      renderLegs(); render();
+    });
+  });
+  box.querySelectorAll('.qty-input').forEach(inp => {
+    inp.addEventListener('change', () => {
+      state.legs[inp.dataset.pid].qty = Math.max(1, +inp.value || 1);
+      renderLegs(); render();
+    });
+  });
+}
+
+/* ---------- init ---------- */
+function init() {
+  // wybierz pierwsze 2 produkty domyślnie
+  state.selected = PRODUCTS.slice(0, 2).map(p => p.id);
+
+  const productsEl = document.getElementById('products');
+  CATS.forEach(cat => {
+    const items = PRODUCTS.filter(p => p.cat === cat);
+    if (!items.length) return;
+    const hdr = document.createElement('div');
+    hdr.className = 'cat-header';
+    hdr.textContent = cat;
+    productsEl.appendChild(hdr);
+    items.forEach(p => {
+      const id = 'p_' + p.id;
+      const wrap = document.createElement('label');
+      wrap.innerHTML = `
+        <input type="checkbox" id="${id}" ${state.selected.includes(p.id) ? 'checked' : ''}>
+        <span class="swatch" style="background:${p.color}"></span>
+        <span>${p.name}</span>`;
+      productsEl.appendChild(wrap);
+      wrap.querySelector('input').addEventListener('change', e => handleSelect(p.id, e.target.checked));
+    });
+  });
+
+  document.querySelectorAll('#ranges button').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('#ranges button').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      state.range = b.dataset.r;
+      const dr = document.getElementById('dateRange');
+      if (state.range === 'CUSTOM') {
+        dr.style.display = 'flex';
+        const from = document.getElementById('dateFrom');
+        const to = document.getElementById('dateTo');
+        from.min = MIN_DATE; from.max = MAX_DATE;
+        to.min = MIN_DATE; to.max = MAX_DATE;
+        if (!state.customFrom) state.customFrom = FULL_DATES[Math.max(0, FULL_DATES.length - 365)];
+        if (!state.customTo)   state.customTo   = MAX_DATE;
+        from.value = state.customFrom;
+        to.value = state.customTo;
+      } else {
+        dr.style.display = 'none';
+      }
+      render();
+    });
+  });
+  document.getElementById('dateFrom').addEventListener('change', e => { state.customFrom = e.target.value; render(); });
+  document.getElementById('dateTo').addEventListener('change',   e => { state.customTo   = e.target.value; render(); });
+
+  document.querySelectorAll('#modes button').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('#modes button').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      state.mode = b.dataset.m;
+      const rule = SELECT_RULES[state.mode];
+      if (rule.kind === 'single' && state.selected.length > 1) state.selected = state.selected.slice(0, 1);
+      if (rule.kind === 'pair' && state.selected.length > 2)   state.selected = state.selected.slice(0, 2);
+      if (state.selected.length < rule.min) {
+        const missing = PRODUCTS.map(p => p.id).filter(id => !state.selected.includes(id));
+        while (state.selected.length < rule.min && missing.length) state.selected.push(missing.shift());
+      }
+      syncLegs(); refreshCheckboxes(); renderLegs();
+      document.querySelectorAll('.mode-panel').forEach(x => x.classList.remove('active'));
+      document.getElementById('panel-' + state.mode).classList.add('active');
+      ['stdCtrl','seasonalCtrl','spreadCtrl'].forEach(id => document.getElementById(id).style.display = 'none');
+      if (state.mode === 'standard') document.getElementById('stdCtrl').style.display = 'block';
+      if (state.mode === 'seasonal') document.getElementById('seasonalCtrl').style.display = 'block';
+      if (state.mode === 'spread')   document.getElementById('spreadCtrl').style.display = 'block';
+      render();
+    });
+  });
+
+  document.querySelectorAll('#spreadView button').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('#spreadView button').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      state.spreadView = b.dataset.sv;
+      document.getElementById('spreadSeasonalCtrl').style.display = state.spreadView === 'seasonal' ? 'block' : 'none';
+      document.getElementById('dollarModeWrap').style.display = state.spreadView === 'pnl' ? 'flex' : 'none';
+      render();
+    });
+  });
+
+  document.getElementById('pctToggle').addEventListener('change', e => { state.pct = e.target.checked; render(); });
+  document.getElementById('dualAxis').addEventListener('change', e => { state.dual = e.target.checked; render(); });
+  document.getElementById('seasonWindow').addEventListener('change', e => { state.seasonWindow = +e.target.value; render(); });
+  document.getElementById('showMinMax').addEventListener('change', e => { state.showMinMax = e.target.checked; render(); });
+  document.getElementById('showYears').addEventListener('change', e => { state.showYears = e.target.checked; render(); });
+  document.getElementById('dollarMode').addEventListener('change', e => { state.dollarMode = e.target.checked; render(); });
+  document.getElementById('spreadSeasonWindow').addEventListener('change', e => { state.spreadSeasonWindow = +e.target.value; render(); });
+  document.getElementById('spreadShowMinMax').addEventListener('change', e => { state.spreadShowMinMax = e.target.checked; render(); });
+  document.getElementById('spreadShowYears').addEventListener('change', e => { state.spreadShowYears = e.target.checked; render(); });
+
+  syncLegs(); refreshCheckboxes(); renderLegs(); render();
+  window.addEventListener('resize', () => {
+    ['mainPlot','corrPlot','zscorePlot'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el && el.data) Plotly.Plots.resize(el);
+    });
+  });
+}
+
+/* ---------- helpers ---------- */
+function findNearestIndex(dateStr) {
+  let lo = 0, hi = FULL_DATES.length - 1;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (FULL_DATES[mid] < dateStr) lo = mid + 1; else hi = mid;
+  }
+  return lo;
+}
+function windowIndexes() {
+  const N = FULL_DATES.length;
+  if (state.range === 'CUSTOM') {
+    const fromIdx = state.customFrom ? findNearestIndex(state.customFrom) : 0;
+    const toIdx = state.customTo ? Math.min(N, findNearestIndex(state.customTo) + 1) : N;
+    return [Math.max(0, fromIdx), Math.max(fromIdx + 1, toIdx)];
+  }
+  const map = { '1W': 7, '1M': 30, '6M': 180, '1Y': 365, '2Y': 730, '3Y': 1095, '5Y': 1825, '10Y': 3650, 'MAX': 999999 };
+  const days = map[state.range] || 365;
+  return [Math.max(0, N - days), N];
+}
+function sliceByDates(pid, fromDate, toDate) {
+  // zwraca [{date, price}] w zakresie [fromDate, toDate]
+  const d = DATA[pid];
+  if (!d) return { dates: [], prices: [] };
+  const out = { dates: [], prices: [] };
+  for (let i = 0; i < d.dates.length; i++) {
+    if (d.dates[i] >= fromDate && d.dates[i] <= toDate) {
+      out.dates.push(d.dates[i]);
+      out.prices.push(d.prices[i]);
+    }
+  }
+  return out;
+}
+function slice(pid) {
+  const [from, to] = windowIndexes();
+  const fromDate = FULL_DATES[Math.max(0, from)] || MIN_DATE;
+  const toDate = FULL_DATES[Math.min(FULL_DATES.length - 1, to - 1)] || MAX_DATE;
+  return sliceByDates(pid, fromDate, toDate);
+}
+function pctNormalize(prices) { const base = prices[0]; return prices.map(p => ((p / base) - 1) * 100); }
+function rollingCorr(a, b, win) {
+  const out = new Array(a.length).fill(null);
+  for (let i = win - 1; i < a.length; i++) {
+    const A = a.slice(i - win + 1, i + 1); const B = b.slice(i - win + 1, i + 1);
+    const mA = A.reduce((s,x)=>s+x,0)/win; const mB = B.reduce((s,x)=>s+x,0)/win;
+    let num = 0, dA = 0, dB = 0;
+    for (let j = 0; j < win; j++) { const xa = A[j] - mA, xb = B[j] - mB; num += xa*xb; dA += xa*xa; dB += xb*xb; }
+    out[i] = num / Math.sqrt(dA * dB);
+  }
+  return out;
+}
+function statSummary(prices) {
+  const n = prices.length;
+  if (n < 2) return { mean: prices[0]||0, min: prices[0]||0, max: prices[0]||0, last: prices[0]||0, chg: 0, annVol: 0 };
+  const mean = prices.reduce((s,x)=>s+x,0)/n;
+  const min = Math.min(...prices), max = Math.max(...prices);
+  const first = prices[0], last = prices[n-1];
+  const chg = ((last - first) / first) * 100;
+  const rets = []; for (let i = 1; i < n; i++) rets.push(Math.log(prices[i]/prices[i-1]));
+  const meanR = rets.reduce((s,x)=>s+x,0)/rets.length;
+  const varR = rets.reduce((s,x)=>s+(x-meanR)**2,0)/rets.length;
+  const annVol = Math.sqrt(varR * 252) * 100;
+  return { mean, min, max, last, chg, annVol };
+}
+function legFormula() {
+  return state.selected.map(pid => {
+    const l = state.legs[pid]; const sign = l.side === 1 ? '+' : '−';
+    return `${sign}${l.qty}×${pid}`;
+  }).join('  ');
+}
+function computeSpreadSeries(fromDate, toDate, dollarMode) {
+  // Buduj wspólną oś dat (unia) i wypełnij ostatnią znaną ceną per produkt (forward-fill)
+  const relevantPids = state.selected;
+  const allDates = new Set();
+  const perProduct = {};
+  relevantPids.forEach(pid => {
+    const s = sliceByDates(pid, fromDate, toDate);
+    perProduct[pid] = { dates: s.dates, prices: s.prices, byDate: {} };
+    for (let i = 0; i < s.dates.length; i++) {
+      perProduct[pid].byDate[s.dates[i]] = s.prices[i];
+      allDates.add(s.dates[i]);
+    }
+  });
+  const commonDates = Array.from(allDates).sort();
+  // Forward-fill: dla każdego produktu, jeśli brak ceny w danym dniu, użyj ostatniej znanej
+  const filled = {};
+  relevantPids.forEach(pid => {
+    filled[pid] = new Array(commonDates.length);
+    let last = null;
+    for (let i = 0; i < commonDates.length; i++) {
+      const v = perProduct[pid].byDate[commonDates[i]];
+      if (v != null) last = v;
+      filled[pid][i] = last;
+    }
+    // wstecz-fill dla początkowego okna zanim pojawiła się pierwsza obserwacja
+    let firstVal = null;
+    for (let i = 0; i < filled[pid].length; i++) { if (filled[pid][i] != null) { firstVal = filled[pid][i]; break; } }
+    for (let i = 0; i < filled[pid].length; i++) if (filled[pid][i] == null) filled[pid][i] = firstVal;
+  });
+  const series = new Array(commonDates.length).fill(0);
+  relevantPids.forEach(pid => {
+    const p = PMAP[pid]; const l = state.legs[pid];
+    const mult = dollarMode ? p.contractSize : 1;
+    for (let i = 0; i < commonDates.length; i++) {
+      series[i] += l.side * l.qty * mult * filled[pid][i];
+    }
+  });
+  return { dates: commonDates, series };
+}
+
+const layoutBase = {
+  paper_bgcolor: '#1a2029', plot_bgcolor: '#1a2029',
+  font: { color: '#e6edf3', family: 'inherit' },
+  margin: { l: 65, r: 55, t: 20, b: 40 },
+  xaxis: { gridcolor: '#2d3746', zerolinecolor: '#2d3746' },
+  yaxis: { gridcolor: '#2d3746', zerolinecolor: '#2d3746' },
+  legend: { orientation: 'h', y: -0.18 },
+  hovermode: 'x unified',
+};
+function setEmpty(elId, msg) { Plotly.purge(elId); document.getElementById(elId).innerHTML = `<div class="empty">${msg}</div>`; }
+
+function renderStandard() {
+  const active = PRODUCTS.filter(p => state.selected.includes(p.id));
+  document.getElementById('mainTitle').innerHTML = active.length
+    ? `Nakładka: ${active.map(p => p.name).join('  ·  ')}${state.pct ? ' <span class="sub">(% zmiana od początku okna)</span>' : ''}`
+    : 'Nakładka — brak wyboru';
+  if (!active.length) { setEmpty('mainPlot', 'Zaznacz przynajmniej jeden produkt po lewej.'); Plotly.purge('corrPlot'); return; }
+  const traces = [];
+  active.forEach((p, i) => {
+    const s = slice(p.id);
+    let y = s.prices; if (state.pct && y.length) y = pctNormalize(y);
+    traces.push({
+      x: s.dates, y, name: p.name, type: 'scatter', mode: 'lines',
+      line: { color: p.color, width: 2 },
+      yaxis: (state.dual && i === 1 && !state.pct) ? 'y2' : 'y',
+    });
+  });
+  const layout = { ...layoutBase };
+  layout.yaxis = { ...layoutBase.yaxis, title: state.pct ? '% zmiana' : (active[0]?.unit || '') };
+  if (state.dual && active.length > 1 && !state.pct) {
+    layout.yaxis2 = { ...layoutBase.yaxis, title: active[1].unit, overlaying: 'y', side: 'right' };
+  }
+  Plotly.react('mainPlot', traces, layout, { responsive: true, displaylogo: false });
+  if (active.length >= 2) {
+    document.getElementById('corrTitle').innerHTML = `Korelacja krocząca (60 dni): <span class="sub">${active[0].id} ↔ ${active[1].id}</span>`;
+    const sa = slice(active[0].id), sb = slice(active[1].id);
+    // wyrównanie po datach
+    const dm = {}; sa.dates.forEach((d,i)=>dm[d]=[sa.prices[i]]);
+    sb.dates.forEach((d,i)=>{ if (dm[d]) dm[d].push(sb.prices[i]); });
+    const commonDates = Object.keys(dm).filter(d=>dm[d].length===2).sort();
+    const a = commonDates.map(d=>dm[d][0]);
+    const b = commonDates.map(d=>dm[d][1]);
+    const win = Math.min(60, Math.max(5, Math.floor(a.length / 3)));
+    const corr = rollingCorr(a, b, win);
+    Plotly.react('corrPlot', [
+      { x: commonDates, y: corr, type: 'scatter', mode: 'lines', line: { color: '#4fc3f7', width: 2 }, name: `corr ${win}d` },
+      { x: [commonDates[0], commonDates[commonDates.length-1]], y: [0, 0], type: 'scatter', mode: 'lines', line: {color: '#8b96a5', width: 1, dash: 'dot'}, showlegend: false },
+    ], { ...layoutBase, yaxis: { ...layoutBase.yaxis, range: [-1, 1], title: 'korelacja' } }, { responsive: true, displaylogo: false });
+  } else {
+    document.getElementById('corrTitle').textContent = 'Korelacja krocząca (60 dni) — wybierz 2+ produkty';
+    Plotly.purge('corrPlot');
+  }
+  renderStats(active);
+}
+
+function renderSeasonalGeneric(seriesDates, seriesValues, opts) {
+  const { window, showMinMax, showYears, colorLine, unitLabel, targetElId } = opts;
+  const byYear = {};
+  seriesDates.forEach((ds, i) => {
+    const dt = new Date(ds); const y = dt.getFullYear();
+    const start = new Date(y, 0, 1); const doy = Math.floor((dt - start) / 86400000);
+    (byYear[y] = byYear[y] || {})[doy] = seriesValues[i];
+  });
+  const currentYear = new Date(seriesDates[seriesDates.length-1]).getFullYear();
+  const years = Object.keys(byYear).map(Number).sort();
+  const historicalYears = years.filter(y => y < currentYear).slice(-window);
+  const traces = [];
+  if (showMinMax) {
+    const doys = Array.from({length: 366}, (_, i) => i);
+    const mins = [], maxs = [];
+    doys.forEach(doy => {
+      let mn = Infinity, mx = -Infinity;
+      historicalYears.forEach(y => { const v = byYear[y][doy]; if (v != null) { if (v < mn) mn = v; if (v > mx) mx = v; } });
+      mins.push(mn === Infinity ? null : mn); maxs.push(mx === -Infinity ? null : mx);
+    });
+    const doyDates = doys.map(doy => { const dt = new Date(currentYear, 0, 1); dt.setDate(dt.getDate() + doy); return dt.toISOString().slice(0, 10); });
+    traces.push({ x: doyDates, y: maxs, type: 'scatter', mode: 'lines', line: { width: 0 }, showlegend: false, hovertemplate: 'max: %{y:.2f}<extra></extra>' });
+    traces.push({ x: doyDates, y: mins, type: 'scatter', mode: 'lines', fill: 'tonexty', fillcolor: 'rgba(79,195,247,0.12)', line: { width: 0 }, name: `min-max ${window}L`, hovertemplate: 'min: %{y:.2f}<extra></extra>' });
+  }
+  if (showYears) {
+    historicalYears.forEach(y => {
+      const doys = Object.keys(byYear[y]).map(Number).sort((a,b)=>a-b);
+      const dates = doys.map(doy => { const dt = new Date(currentYear, 0, 1); dt.setDate(dt.getDate() + doy); return dt.toISOString().slice(0, 10); });
+      traces.push({ x: dates, y: doys.map(doy => byYear[y][doy]), name: String(y), type: 'scatter', mode: 'lines', line: { width: 1, color: 'rgba(139,150,165,0.5)' }, hovertemplate: `${y}: %{y:.2f}<extra></extra>` });
+    });
+  }
+  const avgY = [], avgDates = [];
+  for (let doy = 0; doy < 366; doy++) {
+    const vals = historicalYears.map(y => byYear[y][doy]).filter(v => v != null);
+    if (vals.length) {
+      avgY.push(vals.reduce((s,x)=>s+x,0) / vals.length);
+      const dt = new Date(currentYear, 0, 1); dt.setDate(dt.getDate() + doy);
+      avgDates.push(dt.toISOString().slice(0, 10));
+    }
+  }
+  traces.push({ x: avgDates, y: avgY, name: `średnia ${window}L`, type: 'scatter', mode: 'lines', line: { color: colorLine, width: 3 } });
+  const cur = byYear[currentYear];
+  let curLastVal = null;
+  if (cur) {
+    const doys = Object.keys(cur).map(Number).sort((a,b)=>a-b);
+    const dates = doys.map(doy => { const dt = new Date(currentYear, 0, 1); dt.setDate(dt.getDate() + doy); return dt.toISOString().slice(0, 10); });
+    const vals = doys.map(doy => cur[doy]);
+    curLastVal = vals[vals.length - 1];
+    traces.push({ x: dates, y: vals, name: `${currentYear} (bieżący)`, type: 'scatter', mode: 'lines', line: { color: '#ffb74d', width: 2.5, dash: 'dash' } });
+  }
+  Plotly.react(targetElId, traces, {
+    ...layoutBase,
+    xaxis: { ...layoutBase.xaxis, tickformat: '%b', dtick: 'M1' },
+    yaxis: { ...layoutBase.yaxis, title: unitLabel },
+  }, { responsive: true, displaylogo: false });
+
+  const rowMax = { doy: -1, val: -Infinity, year: null };
+  const rowMin = { doy: -1, val: Infinity, year: null };
+  historicalYears.forEach(y => {
+    Object.entries(byYear[y]).forEach(([doy, v]) => {
+      if (v > rowMax.val) { rowMax.val = v; rowMax.year = y; rowMax.doy = +doy; }
+      if (v < rowMin.val) { rowMin.val = v; rowMin.year = y; rowMin.doy = +doy; }
+    });
+  });
+  const fmtDoy = doy => { const dt = new Date(currentYear, 0, 1); dt.setDate(dt.getDate() + doy); return dt.toLocaleDateString('pl-PL', { day: 'numeric', month: 'short' }); };
+  const avgVal = avgY.length ? avgY.reduce((s,x)=>s+x,0)/avgY.length : 0;
+  return {
+    html: `<div class="stats-grid">
+      <div class="stat"><div class="label">Maks. (${window}L)</div><div class="value up">${isFinite(rowMax.val) ? fmtNum(rowMax.val) : '—'} ${unitLabel}</div><div class="sub">${rowMax.year || '—'} · ${rowMax.doy >= 0 ? fmtDoy(rowMax.doy) : '—'}</div></div>
+      <div class="stat"><div class="label">Min. (${window}L)</div><div class="value down">${isFinite(rowMin.val) ? fmtNum(rowMin.val) : '—'} ${unitLabel}</div><div class="sub">${rowMin.year || '—'} · ${rowMin.doy >= 0 ? fmtDoy(rowMin.doy) : '—'}</div></div>
+      <div class="stat"><div class="label">Średnia ${window}L</div><div class="value">${fmtNum(avgVal)} ${unitLabel}</div></div>
+      <div class="stat"><div class="label">Bieżący vs średnia</div><div class="value">${curLastVal != null && avgVal ? ((curLastVal / avgVal - 1) * 100).toFixed(1) + '%' : '—'}</div><div class="sub">ostatnia wartość</div></div>
+    </div>`
+  };
+}
+
+function renderSeasonal() {
+  const active = PRODUCTS.filter(p => state.selected.includes(p.id));
+  if (!active.length) { document.getElementById('mainTitle').textContent = 'Sezonowa — wybierz produkt'; setEmpty('mainPlot', 'Wybierz jeden produkt.'); return; }
+  const p = active[0];
+  document.getElementById('mainTitle').innerHTML = `Sezonowa: ${p.name} <span class="sub">średnia ${state.seasonWindow}L + bieżący rok</span>`;
+  const d = DATA[p.id];
+  const res = renderSeasonalGeneric(d.dates, d.prices, {
+    window: state.seasonWindow, showMinMax: state.showMinMax, showYears: state.showYears,
+    colorLine: p.color, unitLabel: p.unit, targetElId: 'mainPlot'
+  });
+  document.getElementById('seasonalStats').innerHTML = res.html;
+  renderStats([p]);
+}
+
+function renderSpread() {
+  const active = PRODUCTS.filter(p => state.selected.includes(p.id));
+  const detail = document.getElementById('spreadDetail');
+  if (active.length < 2) {
+    document.getElementById('mainTitle').textContent = 'Spread — wybierz min. 2 produkty';
+    setEmpty('mainPlot', 'Spread wymaga co najmniej 2 nóg.');
+    detail.innerHTML = '';
+    return;
+  }
+  const formula = legFormula();
+
+  if (state.spreadView === 'seasonal') {
+    document.getElementById('mainTitle').innerHTML =
+      `Spread sezonowy: <span style="color:var(--accent-2)">${formula}</span> <span class="sub">średnia ${state.spreadSeasonWindow}L + bieżący rok · w $</span>`;
+    const spread = computeSpreadSeries(MIN_DATE, MAX_DATE, true);
+    const res = renderSeasonalGeneric(spread.dates, spread.series, {
+      window: state.spreadSeasonWindow,
+      showMinMax: state.spreadShowMinMax,
+      showYears: state.spreadShowYears,
+      colorLine: '#ffb74d', unitLabel: '$', targetElId: 'mainPlot'
+    });
+    detail.innerHTML = `<div class="chart-title">Statystyki sezonowe spreadu <span class="sub">${formula}</span></div>` + res.html;
+    renderStats(active);
+    return;
+  }
+
+  const $mode = state.dollarMode;
+  document.getElementById('mainTitle').innerHTML =
+    `Spread: <span style="color:var(--accent-2)">${formula}</span>` +
+    ` <span class="sub">${$mode ? 'wartość w $ (uwzględnia rozmiary kontraktów)' : 'suma jednostkowa'}</span>`;
+
+  const [from, to] = windowIndexes();
+  const fromDate = FULL_DATES[Math.max(0, from)] || MIN_DATE;
+  const toDate = FULL_DATES[Math.min(FULL_DATES.length - 1, to - 1)] || MAX_DATE;
+  const spread = computeSpreadSeries(fromDate, toDate, $mode);
+  const dates = spread.dates; const series = spread.series;
+  if (!series.length) { setEmpty('mainPlot', 'Brak wspólnych dat w wybranym oknie.'); detail.innerHTML = ''; return; }
+  const entryValue = series[0];
+  const pnl = series.map(v => v - entryValue);
+
+  Plotly.react('mainPlot', [
+    { x: dates, y: series, type: 'scatter', mode: 'lines',
+      line: { color: '#ffb74d', width: 2 }, name: formula,
+      hovertemplate: '%{x}<br>wartość: %{y:,.0f}<extra></extra>' },
+    { x: [dates[0], dates[dates.length-1]], y: [entryValue, entryValue], type: 'scatter', mode: 'lines',
+      line: { color: '#8b96a5', width: 1, dash: 'dot' }, name: 'wartość wejścia' },
+  ], { ...layoutBase, yaxis: { ...layoutBase.yaxis, title: $mode ? 'wartość pozycji ($)' : 'wartość jednostkowa' } },
+     { responsive: true, displaylogo: false });
+
+  const pnlNow = pnl[pnl.length-1];
+  const pnlMax = Math.max(...pnl);
+  const pnlMin = Math.min(...pnl);
+  let peak = pnl[0], maxDd = 0;
+  pnl.forEach(v => { if (v > peak) peak = v; if (peak - v > maxDd) maxDd = peak - v; });
+  const range = pnlMax - pnlMin;
+  const fmt = (v) => $mode ? fmtMoneySigned(v) : (v >= 0 ? '+' : '') + fmtNum(v);
+  const fmtAbs = (v) => $mode ? fmtMoneyAbs(v) : fmtNum(v);
+  const cls = pnlNow >= 0 ? 'up' : 'down';
+
+  detail.innerHTML = `
+    <div class="chart-title">P&amp;L pozycji w widocznym okresie <span class="sub">(gdybyś wszedł na początku okna i trzymał do dziś)</span></div>
+    <div class="stats-grid" style="margin-bottom:14px">
+      <div class="stat"><div class="label">Aktualny P&amp;L</div><div class="value ${cls}">${fmt(pnlNow)}</div><div class="sub">od wejścia (${dates[0]})</div></div>
+      <div class="stat"><div class="label">Max zysk w okresie</div><div class="value up">${fmt(pnlMax)}</div><div class="sub">najlepszy moment</div></div>
+      <div class="stat"><div class="label">Max strata w okresie</div><div class="value down">${fmt(pnlMin)}</div><div class="sub">najgorszy moment</div></div>
+      <div class="stat"><div class="label">Max drawdown</div><div class="value down">−${fmtAbs(maxDd)}</div><div class="sub">szczyt → dołek</div></div>
+      <div class="stat"><div class="label">Zakres wahań</div><div class="value">${fmtAbs(range)}</div><div class="sub">amplituda</div></div>
+    </div>
+    <div class="chart-title">Z-score spreadu <span class="sub">(odchylenie od 5L średniej, ±2σ = ekstremum)</span></div>
+    <div id="zscorePlot" class="plot-small"></div>`;
+
+  const win = Math.min(1260, Math.max(20, Math.floor(series.length / 2)));
+  const zs = new Array(series.length).fill(null);
+  for (let i = win; i < series.length; i++) {
+    const w = series.slice(i - win, i);
+    const m = w.reduce((s,x)=>s+x,0)/win;
+    const v = w.reduce((s,x)=>s+(x-m)**2,0)/win;
+    zs[i] = (series[i] - m) / Math.sqrt(v);
+  }
+  Plotly.react('zscorePlot', [
+    { x: dates, y: zs, type: 'scatter', mode: 'lines', line: { color: '#4fc3f7', width: 2 }, name: 'z-score' },
+    { x: [dates[0], dates[dates.length-1]], y: [2, 2], type: 'scatter', mode: 'lines', line: { color: '#ef5350', width: 1, dash: 'dot' }, name: '+2σ' },
+    { x: [dates[0], dates[dates.length-1]], y: [-2, -2], type: 'scatter', mode: 'lines', line: { color: '#66bb6a', width: 1, dash: 'dot' }, name: '−2σ' },
+  ], { ...layoutBase, yaxis: { ...layoutBase.yaxis, title: 'σ od średniej' } }, { responsive: true, displaylogo: false });
+
+  renderStats(active);
+}
+
+function renderRatio() {
+  const active = PRODUCTS.filter(p => state.selected.includes(p.id));
+  if (active.length < 2) {
+    document.getElementById('mainTitle').textContent = 'Ratio — wybierz 2 produkty';
+    setEmpty('mainPlot', 'Wybierz dokładnie 2 produkty.');
+    document.getElementById('ratioStats').innerHTML = '';
+    return;
+  }
+  const [A, B] = active;
+  document.getElementById('mainTitle').innerHTML = `Ratio: <span style="color:#ba68c8">${A.id} / ${B.id}</span>`;
+  document.getElementById('ratioTitle').innerHTML = `Statystyki ratio <span class="sub">${A.id} / ${B.id}</span>`;
+  const sa = slice(A.id), sb = slice(B.id);
+  // wyrównanie po datach
+  const dm = {}; sa.dates.forEach((d,i)=>dm[d]=[sa.prices[i]]);
+  sb.dates.forEach((d,i)=>{ if (dm[d]) dm[d].push(sb.prices[i]); });
+  const commonDates = Object.keys(dm).filter(d=>dm[d].length===2).sort();
+  if (!commonDates.length) { setEmpty('mainPlot','Brak wspólnych dat.'); return; }
+  const ratio = commonDates.map(d => dm[d][0] / dm[d][1]);
+  const mean = ratio.reduce((s,x)=>s+x,0)/ratio.length;
+  Plotly.react('mainPlot', [
+    { x: commonDates, y: ratio, type: 'scatter', mode: 'lines', line: { color: '#ba68c8', width: 2 }, name: `${A.id}/${B.id}` },
+    { x: [commonDates[0], commonDates[commonDates.length-1]], y: [mean, mean], type: 'scatter', mode: 'lines', line: { color: '#8b96a5', width: 1, dash: 'dot' }, name: `średnia ${mean.toFixed(3)}` },
+  ], { ...layoutBase, yaxis: { ...layoutBase.yaxis, title: `ratio ${A.id}/${B.id}` } }, { responsive: true, displaylogo: false });
+  document.getElementById('ratioStats').innerHTML = `
+    <div class="stats-grid">
+      <div class="stat"><div class="label">Aktualne ratio</div><div class="value">${ratio[ratio.length-1].toFixed(3)}</div></div>
+      <div class="stat"><div class="label">Średnia w oknie</div><div class="value">${mean.toFixed(3)}</div></div>
+      <div class="stat"><div class="label">Min / Max</div><div class="value">${Math.min(...ratio).toFixed(2)} / ${Math.max(...ratio).toFixed(2)}</div></div>
+      <div class="stat"><div class="label">Odchylenie</div><div class="value">${(((ratio[ratio.length-1]/mean)-1)*100).toFixed(1)}%</div><div class="sub">od średniej</div></div>
+    </div>`;
+  renderStats(active);
+}
+
+function renderStats(active) {
+  const el = document.getElementById('stats');
+  el.innerHTML = '';
+  active.forEach(p => {
+    const s = slice(p.id);
+    if (!s.prices.length) return;
+    const st = statSummary(s.prices);
+    const cls = st.chg >= 0 ? 'up' : 'down';
+    const arrow = st.chg >= 0 ? '▲' : '▼';
+    el.innerHTML += `
+      <div class="stat">
+        <div class="label">${p.name}</div>
+        <div class="value">${st.last.toFixed(2)} <span style="font-size:11px;color:var(--muted)">${p.unit}</span></div>
+        <div class="sub ${cls}">${arrow} ${st.chg.toFixed(2)}% w okresie</div>
+        <div class="sub">min ${st.min.toFixed(2)} · max ${st.max.toFixed(2)} · zmienność ${st.annVol.toFixed(1)}%</div>
+      </div>`;
+  });
+}
+
+function render() {
+  if (state.mode === 'standard')  renderStandard();
+  if (state.mode === 'seasonal')  renderSeasonal();
+  if (state.mode === 'spread')    renderSpread();
+  if (state.mode === 'ratio')     renderRatio();
+}
+
+loadData();
+</script>
+</body>
+</html>
