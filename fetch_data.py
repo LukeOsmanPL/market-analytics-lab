@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 """
-Pobiera dzienne ceny commodities z FRED (Federal Reserve St. Louis)
-i EIA (U.S. Energy Information Administration).
+Pobiera dzienne ceny commodities z:
+  - FRED (Federal Reserve St. Louis) - energia
+  - Yahoo Finance (przez pakiet yfinance) - metale, zboza, tropikalne
 
 Wymaga zmiennych srodowiskowych:
   FRED_KEY - klucz API FRED
-  EIA_KEY  - klucz API EIA
+  EIA_KEY  - klucz API EIA (obecnie nieuzywany, w rezerwie)
 
 Wynik:
   data/prices.json - wszystkie serie w jednym pliku
-  data/meta.json   - metadane produktow
+  data/meta.json   - metadane
 """
 
 import os
@@ -28,13 +29,24 @@ DATA_DIR.mkdir(exist_ok=True)
 FRED_KEY = os.environ.get("FRED_KEY", "").strip()
 EIA_KEY = os.environ.get("EIA_KEY", "").strip()
 
-if not FRED_KEY or not EIA_KEY:
-    print("BLAD: Ustaw zmienne srodowiskowe FRED_KEY i EIA_KEY", file=sys.stderr)
+if not FRED_KEY:
+    print("BLAD: Ustaw zmienna srodowiskowa FRED_KEY", file=sys.stderr)
     sys.exit(1)
 
 START_DATE = "2014-01-01"
 
+# ---------------------------------------------------------------------------
+# Produkty
+#
+# source:
+#   fred    - pobiera z api.stlouisfed.org
+#   yahoo   - pobiera przez yfinance
+# unit_scale:
+#   opcjonalny mnoznik do zastosowania na cenach (np. 0.01 dla ¢ -> $)
+#   uzywane zeby wszystkie zboza/kawa mialy jednolite jednostki $
+# ---------------------------------------------------------------------------
 PRODUCTS = [
+    # Energia (FRED) - potwierdzone dzialaja
     dict(id="NG",    source="fred", series="DHHNGSP",
          name="Henry Hub (gaz US)",       unit="$/MMBtu",
          contract_size=10000, contract_unit="MMBtu",
@@ -59,18 +71,61 @@ PRODUCTS = [
          name="Benzyna detal USA (avg)",  unit="$/gal",
          contract_size=1, contract_unit="gal",
          category="Energia", color="#ffa000"),
-    dict(id="GOLD",   source="fred", series="GOLDAMGBD228NLBM",
-         name="Zloto (LBMA AM fix)",      unit="$/oz",
+
+    # Metale (Yahoo Finance)
+    dict(id="GOLD",     source="yahoo", series="GC=F",
+         name="Zloto (COMEX)",            unit="$/oz",
          contract_size=100,   contract_unit="oz",
          category="Metale", color="#ffd54f"),
-    dict(id="SILVER", source="fred", series="SLVPRUSD",
-         name="Srebro (LBMA)",            unit="$/oz",
+    dict(id="SILVER",   source="yahoo", series="SI=F",
+         name="Srebro (COMEX)",           unit="$/oz",
          contract_size=5000,  contract_unit="oz",
          category="Metale", color="#b0bec5"),
+    dict(id="COPPER",   source="yahoo", series="HG=F",
+         name="Miedz (COMEX)",            unit="$/lb",
+         contract_size=25000, contract_unit="lb",
+         category="Metale", color="#d84315"),
+    dict(id="PLATINUM", source="yahoo", series="PL=F",
+         name="Platyna (NYMEX)",          unit="$/oz",
+         contract_size=50,    contract_unit="oz",
+         category="Metale", color="#78909c"),
+
+    # Zboza (Yahoo Finance) - Yahoo daje ceny w centach; przeliczamy na dolary
+    dict(id="CORN",    source="yahoo", series="ZC=F", unit_scale=0.01,
+         name="Kukurydza (CBOT Chicago)", unit="$/bu",
+         contract_size=5000, contract_unit="bu",
+         category="Rolne", color="#fbc02d"),
+    dict(id="WHEAT",   source="yahoo", series="ZW=F", unit_scale=0.01,
+         name="Pszenica SRW (CBOT)",      unit="$/bu",
+         contract_size=5000, contract_unit="bu",
+         category="Rolne", color="#8d6e63"),
+    dict(id="WHEAT_KC", source="yahoo", series="KE=F", unit_scale=0.01,
+         name="Pszenica HRW (Kansas)",    unit="$/bu",
+         contract_size=5000, contract_unit="bu",
+         category="Rolne", color="#a1887f"),
+    dict(id="SOYBEAN", source="yahoo", series="ZS=F", unit_scale=0.01,
+         name="Soja (CBOT)",              unit="$/bu",
+         contract_size=5000, contract_unit="bu",
+         category="Rolne", color="#7cb342"),
+
+    # Tropikalne (Yahoo Finance)
+    dict(id="COFFEE",  source="yahoo", series="KC=F", unit_scale=0.01,
+         name="Kawa Arabica (ICE)",       unit="$/lb",
+         contract_size=37500, contract_unit="lb",
+         category="Rolne", color="#6d4c41"),
+    dict(id="COCOA",   source="yahoo", series="CC=F",
+         name="Kakao (ICE)",              unit="$/mt",
+         contract_size=10,   contract_unit="mt",
+         category="Rolne", color="#5d4037"),
+    dict(id="SUGAR",   source="yahoo", series="SB=F", unit_scale=0.01,
+         name="Cukier (ICE 11)",          unit="$/lb",
+         contract_size=112000, contract_unit="lb",
+         category="Rolne", color="#f8bbd0"),
 ]
 
 
-def fetch_fred(series_id):
+def fetch_fred(series_id: str) -> list:
+    """Zwraca liste {date, value} dla serii FRED."""
     url = (
         "https://api.stlouisfed.org/fred/series/observations"
         f"?series_id={series_id}&api_key={FRED_KEY}&file_type=json"
@@ -90,6 +145,32 @@ def fetch_fred(series_id):
     return obs
 
 
+def fetch_yahoo(ticker: str, unit_scale: float = 1.0) -> list:
+    """Zwraca liste {date, value} z Yahoo Finance przez yfinance."""
+    try:
+        import yfinance as yf
+    except ImportError:
+        raise RuntimeError("Brakuje pakietu yfinance - dodaj do requirements.txt")
+
+    t = yf.Ticker(ticker)
+    df = t.history(start=START_DATE, auto_adjust=False, actions=False)
+    if df is None or df.empty:
+        return []
+    obs = []
+    for ts, row in df.iterrows():
+        close = row.get("Close")
+        if close is None:
+            continue
+        try:
+            v = float(close) * unit_scale
+        except (TypeError, ValueError):
+            continue
+        # ts moze byc pd.Timestamp; wez ISO date
+        date_str = ts.strftime("%Y-%m-%d") if hasattr(ts, "strftime") else str(ts)[:10]
+        obs.append({"date": date_str, "value": round(v, 4)})
+    return obs
+
+
 def main():
     print(f"Start: {datetime.now(timezone.utc).isoformat()}")
     print(f"Zakres historii: od {START_DATE}")
@@ -100,20 +181,26 @@ def main():
 
     for p in PRODUCTS:
         pid = p["id"]
-        print(f"\n[{pid}] pobieram {p['source']}:{p['series']} ...", flush=True)
+        scale = p.get("unit_scale", 1.0)
+        scale_note = f" (skala x{scale})" if scale != 1.0 else ""
+        print(f"\n[{pid}] {p['source']}:{p['series']}{scale_note} ...", flush=True)
         try:
             if p["source"] == "fred":
                 obs = fetch_fred(p["series"])
+            elif p["source"] == "yahoo":
+                obs = fetch_yahoo(p["series"], scale)
             else:
-                print(f"  [SKIP] zrodlo {p['source']} nieobslugiwane")
+                print(f"  [SKIP] nieznane zrodlo {p['source']}")
                 continue
+
             if not obs:
                 print(f"  [WARN] brak obserwacji")
                 failed.append(pid)
                 continue
+
             products_out[pid] = obs
             first, last = obs[0], obs[-1]
-            print(f"  [OK] {len(obs)} obs, od {first['date']} do {last['date']}, "
+            print(f"  [OK] {len(obs)} obs, {first['date']} -> {last['date']}, "
                   f"ostatnia = {last['value']} {p['unit']}")
             meta_out.append({
                 "id": pid, "name": p["name"], "unit": p["unit"],
