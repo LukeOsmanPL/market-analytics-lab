@@ -1,0 +1,39 @@
+name: Codzienna aktualizacja danych
+
+on:
+  schedule:
+    - cron: '0 7 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Pobierz dane
+        env:
+          FRED_KEY: ${{ secrets.FRED_KEY }}
+          EIA_KEY:  ${{ secrets.EIA_KEY }}
+        run: python3 fetch_data.py
+
+      - name: Commit i push jesli sa zmiany
+        run: |
+          git config user.name  "energy-analytics-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/
+          if git diff --cached --quiet; then
+            echo "Brak nowych danych - nie tworze commita."
+          else
+            git commit -m "auto: aktualizacja danych $(date -u '+%Y-%m-%d')"
+            git push
+          fi
