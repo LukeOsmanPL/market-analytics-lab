@@ -94,7 +94,7 @@
     <h1>Energy Analytics</h1>
     <div class="badge" id="dataFreshness">ładuję dane…</div>
   </div>
-  <div class="badge">v1.3 · projekt i realizacja: Łukasz Osman</div>
+  <div class="badge">v1.3.1 · projekt i realizacja: Łukasz Osman</div>
 </header>
 
 <div id="loading">
@@ -351,6 +351,20 @@ const fmtMoneySigned = (v) => (v >= 0 ? '+' : '−') + '$' + Math.abs(v).toLocal
 const fmtPct = (v) => (v >= 0 ? '+' : '') + fmtNum(v, 2) + '%';
 
 /* ============ statystyki: średnia / mediana / trimmed mean ============ */
+function smoothSeries(arr, halfWindow) {
+  // ruchoma srednia z pominieciem null. Wygladza szumy DOY-per-DOY spowodowane
+  // roznymi dniami tygodnia i swietami w roznych latach.
+  const out = new Array(arr.length);
+  for (let i = 0; i < arr.length; i++) {
+    const start = Math.max(0, i - halfWindow);
+    const end = Math.min(arr.length, i + halfWindow + 1);
+    const vals = [];
+    for (let j = start; j < end; j++) if (arr[j] != null) vals.push(arr[j]);
+    out[i] = vals.length ? vals.reduce((s,x)=>s+x,0) / vals.length : null;
+  }
+  return out;
+}
+
 function computeAvg(values, method) {
   const n = values.length;
   if (!n) return null;
@@ -819,8 +833,9 @@ function renderSeasonalGeneric(seriesDates, seriesValues, opts) {
       mins.push(mn === Infinity ? null : mn); maxs.push(mx === -Infinity ? null : mx);
     });
     const doyDates = doys.map(doy => { const dt = new Date(currentYear, 0, 1); dt.setDate(dt.getDate() + doy); return dt.toISOString().slice(0, 10); });
-    traces.push({ x: doyDates, y: maxs, type: 'scatter', mode: 'lines', line: { width: 0 }, showlegend: false, hovertemplate: 'max: %{y:.2f}<extra></extra>' });
-    traces.push({ x: doyDates, y: mins, type: 'scatter', mode: 'lines', fill: 'tonexty', fillcolor: 'rgba(79,195,247,0.12)', line: { width: 0 }, name: `min-max ${window}L`, hovertemplate: 'min: %{y:.2f}<extra></extra>' });
+    const minsSm = smoothSeries(mins, 3), maxsSm = smoothSeries(maxs, 3);
+    traces.push({ x: doyDates, y: maxsSm, type: 'scatter', mode: 'lines', line: { width: 0 }, showlegend: false, hovertemplate: 'max: %{y:.2f}<extra></extra>' });
+    traces.push({ x: doyDates, y: minsSm, type: 'scatter', mode: 'lines', fill: 'tonexty', fillcolor: 'rgba(79,195,247,0.12)', line: { width: 0 }, name: `min-max ${window}L`, hovertemplate: 'min: %{y:.2f}<extra></extra>' });
   }
   if (showYears) {
     historicalYears.forEach(y => {
@@ -842,7 +857,8 @@ function renderSeasonalGeneric(seriesDates, seriesValues, opts) {
     }
   }
   const methodLabel = method === 'median' ? 'mediana' : method === 'trimmed' ? 'średnia obc. 20%' : 'średnia';
-  traces.push({ x: avgDates, y: avgY, name: `${methodLabel} ${window}L`, type: 'scatter', mode: 'lines', line: { color: colorLine, width: 3 } });
+  const avgYSm = smoothSeries(avgY, 3);
+  traces.push({ x: avgDates, y: avgYSm, name: `${methodLabel} ${window}L`, type: 'scatter', mode: 'lines', line: { color: colorLine, width: 3 } });
   // Bieżący rok
   const cur = byYear[currentYear];
   let curLastVal = null;
@@ -919,10 +935,11 @@ function renderSeasonalENSOSpread(seriesDates, seriesValues, opts) {
     setEmpty(targetElId, `Brak danych - potrzeba lat La Niña (${laNinaYears.length}) i El Niño (${elNinoYears.length}) w oknie ${window}L.`);
     return { html: '<div class="hint">Zwiększ okno lat lub sprawdź plik data/enso.json.</div>' };
   }
+  const lnYs = smoothSeries(lnY, 3), enYs = smoothSeries(enY, 3), diffYs = smoothSeries(diffY, 3);
   Plotly.react(targetElId, [
-    { x: dates, y: lnY, name: `La Niña ❄️ (${laNinaYears.length}L)`, type: 'scatter', mode: 'lines', line: { color: '#4fc3f7', width: 2.5 } },
-    { x: dates, y: enY, name: `El Niño ☀️ (${elNinoYears.length}L)`, type: 'scatter', mode: 'lines', line: { color: '#ef5350', width: 2.5 } },
-    { x: dates, y: diffY, name: 'La Niña − El Niño', type: 'scatter', mode: 'lines', line: { color: '#ffb74d', width: 2, dash: 'dot' }, yaxis: 'y2' },
+    { x: dates, y: lnYs, name: `La Niña ❄️ (${laNinaYears.length}L)`, type: 'scatter', mode: 'lines', line: { color: '#4fc3f7', width: 2.5 } },
+    { x: dates, y: enYs, name: `El Niño ☀️ (${elNinoYears.length}L)`, type: 'scatter', mode: 'lines', line: { color: '#ef5350', width: 2.5 } },
+    { x: dates, y: diffYs, name: 'La Niña − El Niño', type: 'scatter', mode: 'lines', line: { color: '#ffb74d', width: 2, dash: 'dot' }, yaxis: 'y2' },
   ], { ...layoutBase,
        xaxis: { ...layoutBase.xaxis, tickformat: '%b', dtick: 'M1' },
        yaxis: { ...layoutBase.yaxis, title: pct ? '% zmiana YTD' : unitLabel },
