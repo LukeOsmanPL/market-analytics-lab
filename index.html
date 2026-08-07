@@ -63,8 +63,9 @@
     border: 1px solid var(--border); border-radius: 6px; font-size: 12px; }
   .position-summary .line { display: flex; justify-content: space-between; padding: 3px 0; }
   .position-summary .line.total { border-top: 1px solid var(--border); margin-top: 4px; padding-top: 6px; font-weight: 700; }
-  .plot { width: 100%; height: 440px; }
-  .plot-small { width: 100%; height: 240px; }
+  .plot { width: 100%; height: 880px; }
+  .plot-small { width: 100%; height: 400px; }
+  @media (max-height: 900px) { .plot { height: min(85vh, 880px); min-height: 500px; } }
   .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
   .stat { background: var(--panel-2); padding: 10px; border-radius: 6px; border: 1px solid var(--border); }
   .stat .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
@@ -93,7 +94,7 @@
     <h1>Energy Analytics</h1>
     <div class="badge" id="dataFreshness">ładuję dane…</div>
   </div>
-  <div class="badge">v1.1</div>
+  <div class="badge">v1.3 · projekt i realizacja: Łukasz Osman</div>
 </header>
 
 <div id="loading">
@@ -135,6 +136,11 @@
     </section>
 
     <section class="divider">
+      <div class="toggle"><input type="checkbox" id="showEvents" checked><label for="showEvents"><b>Pokaż wydarzenia</b> na wykresach</label></div>
+      <div class="hint" id="eventsHint">Historyczne wydarzenia (inwazja Ukrainy, sabotaż Nord Stream, decyzje OPEC, itd.) - najedź na pionową linię żeby zobaczyć szczegóły.</div>
+    </section>
+
+    <section class="divider">
       <h3>Tryb analizy</h3>
       <div class="mode-buttons" id="modes">
         <button data-m="standard" class="active">Nakładka</button>
@@ -164,7 +170,16 @@
       <div class="toggle"><input type="checkbox" id="seasonPct"><label for="seasonPct">Skala % (od 1 stycznia każdego roku)</label></div>
       <div class="toggle"><input type="checkbox" id="showMinMax" checked><label for="showMinMax">Koperta min/max</label></div>
       <div class="toggle"><input type="checkbox" id="showYears"><label for="showYears">Pokaż wszystkie lata</label></div>
-      <div class="hint">Mediana i średnia obcięta wycinają skrajne lata (jak 2022 dla gazu EU). Envelope min/max pokazuje literalne ekstrema - dla porównania.</div>
+      <div class="row"><label>Filtr ENSO</label>
+        <select id="ensoFilter">
+          <option value="all" selected>Wszystkie lata</option>
+          <option value="el_nino">☀️ Tylko El Niño</option>
+          <option value="la_nina">❄️ Tylko La Niña</option>
+          <option value="neutral">⚪ Tylko neutralne</option>
+          <option value="spread">Spread La Niña − El Niño</option>
+        </select>
+      </div>
+      <div class="hint">ENSO wpływa mocno na produkty rolne (susze/powodzie w kluczowych regionach). Filtr uwzględnia tylko lata danej fazy w liczeniu średniej. Spread pokazuje typową różnicę cen La Niña vs El Niño per dzień roku.</div>
     </section>
 
     <section class="divider" id="spreadCtrl" style="display:none">
@@ -211,6 +226,7 @@
     <div class="card">
       <div class="chart-title" id="mainTitle">—</div>
       <div id="mainPlot" class="plot"></div>
+      <div id="eventsList"></div>
     </div>
     <div class="card mode-panel active" id="panel-standard">
       <div class="chart-title" id="corrTitle">Korelacja krocząca (60 dni)</div>
@@ -240,16 +256,30 @@ let PRODUCTS = [], PMAP = {}, CATS = [];
 let DATA = {};
 let FULL_DATES = [];
 let MIN_DATE, MAX_DATE;
+let EVENTS = [];
+let ENSO = {}; // { "2015": "el_nino", "2020": "la_nina", ... }
+const ENSO_ICONS  = { el_nino: '☀️', la_nina: '❄️', neutral: '⚪' };
+const ENSO_LABELS = { el_nino: 'El Niño', la_nina: 'La Niña', neutral: 'Neutralny' };
+const ENSO_COLORS = { el_nino: '#ef5350', la_nina: '#4fc3f7', neutral: '#8b96a5' };
+function ensoOf(year) { return ENSO[String(year)] || 'neutral'; }
 
 async function loadData() {
   try {
-    const [pricesRes, metaRes] = await Promise.all([
+    const [pricesRes, metaRes, eventsRes, ensoRes] = await Promise.all([
       fetch('data/prices.json'), fetch('data/meta.json'),
+      fetch('data/events.json').catch(() => ({ ok: false })),
+      fetch('data/enso.json').catch(() => ({ ok: false })),
     ]);
     if (!pricesRes.ok) throw new Error(`prices.json: ${pricesRes.status}`);
     if (!metaRes.ok)  throw new Error(`meta.json: ${metaRes.status}`);
     const prices = await pricesRes.json();
     const meta   = await metaRes.json();
+    if (eventsRes.ok) {
+      try { EVENTS = (await eventsRes.json()).events || []; } catch(_) { EVENTS = []; }
+    }
+    if (ensoRes.ok) {
+      try { ENSO = (await ensoRes.json()).years || {}; } catch(_) { ENSO = {}; }
+    }
 
     PRODUCTS = meta.products.map(p => ({
       id: p.id, name: p.name, unit: p.unit, color: p.color,
@@ -301,6 +331,10 @@ const state = {
   // spread seasonal
   spreadSeasonWindow: 5, spreadShowMinMax: true, spreadShowYears: false,
   spreadSeasonPct: false, spreadSeasonAvg: 'mean',
+  // wydarzenia
+  showEvents: true,
+  // ENSO
+  ensoFilter: 'all',
 };
 
 const SELECT_RULES = {
@@ -523,6 +557,8 @@ function init() {
   bind('spreadShowYears', 'spreadShowYears');
   bind('spreadSeasonPct', 'spreadSeasonPct');
   bind('spreadSeasonAvg', 'spreadSeasonAvg', e => e.target.value);
+  bind('showEvents', 'showEvents');
+  bind('ensoFilter', 'ensoFilter', e => e.target.value);
 
   syncLegs(); refreshCheckboxes(); renderLegs(); render();
   window.addEventListener('resize', () => {
@@ -648,6 +684,39 @@ function computeSpreadSeries(fromDate, toDate, dollarMode) {
   return { dates: commonDates, series };
 }
 
+/* ============ wydarzenia (nakładka na wykresy) ============ */
+function eventsInRange(fromDate, toDate) {
+  if (!state.showEvents) return [];
+  return EVENTS.filter(e => e.date >= fromDate && e.date <= toDate);
+}
+function buildEventOverlay(fromDate, toDate) {
+  const evs = eventsInRange(fromDate, toDate);
+  if (!evs.length) return { shapes: [], annotations: [], listHtml: '' };
+  const shapes = evs.map(e => ({
+    type: 'line', x0: e.date, x1: e.date, y0: 0, y1: 1, yref: 'paper',
+    line: { color: 'rgba(255,183,77,0.35)', width: 1, dash: 'dot' }, layer: 'below',
+  }));
+  const annotations = evs.map(e => ({
+    x: e.date, y: 0.98, yref: 'paper', yanchor: 'top',
+    text: e.icon || '●', showarrow: false,
+    font: { size: 14 },
+    bgcolor: 'rgba(26,32,41,0.7)', borderpad: 2,
+  }));
+  const items = evs.map(e => `
+    <div style="padding:6px 0; border-bottom:1px solid var(--border); font-size:12px">
+      <div><b>${e.icon || '●'} ${e.date}</b> · ${e.title}</div>
+      <div style="color:var(--muted); margin-top:2px">${e.desc}</div>
+    </div>`).join('');
+  const listHtml = `
+    <details style="margin-top:12px" open>
+      <summary style="cursor:pointer; color:var(--accent-2); font-size:12px; padding:4px 0">
+        Wydarzenia w tym oknie (${evs.length})
+      </summary>
+      <div style="max-height:280px; overflow-y:auto; margin-top:6px">${items}</div>
+    </details>`;
+  return { shapes, annotations, listHtml };
+}
+
 const layoutBase = {
   paper_bgcolor: '#1a2029', plot_bgcolor: '#1a2029',
   font: { color: '#e6edf3', family: 'inherit' },
@@ -681,6 +750,12 @@ function renderStandard() {
   if (state.dual && active.length > 1 && !state.pct) {
     layout.yaxis2 = { ...layoutBase.yaxis, title: active[1].unit, overlaying: 'y', side: 'right' };
   }
+  // wydarzenia
+  const ev = buildEventOverlay(active[0] ? slice(active[0].id).dates[0] || MIN_DATE : MIN_DATE,
+                                active[0] ? slice(active[0].id).dates.slice(-1)[0] || MAX_DATE : MAX_DATE);
+  layout.shapes = ev.shapes;
+  layout.annotations = ev.annotations;
+  document.getElementById('eventsList').innerHTML = ev.listHtml;
   Plotly.react('mainPlot', traces, layout, { responsive: true, displaylogo: false });
   if (active.length >= 2) {
     document.getElementById('corrTitle').innerHTML = `Korelacja krocząca (60 dni): <span class="sub">${active[0].id} ↔ ${active[1].id}</span>`;
@@ -705,7 +780,7 @@ function renderStandard() {
 
 /* ============ Sezonowa (uniwersalna, obsługuje pct + method) ============ */
 function renderSeasonalGeneric(seriesDates, seriesValues, opts) {
-  const { window, showMinMax, showYears, colorLine, unitLabel, targetElId, pct, method } = opts;
+  const { window, showMinMax, showYears, colorLine, unitLabel, targetElId, pct, method, yearFilter } = opts;
   // Grupuj po roku
   const byYear = {};
   seriesDates.forEach((ds, i) => {
@@ -727,7 +802,9 @@ function renderSeasonalGeneric(seriesDates, seriesValues, opts) {
     });
   }
   const currentYear = new Date(seriesDates[seriesDates.length-1]).getFullYear();
-  const historicalYears = yearsSorted.filter(y => y < currentYear).slice(-window);
+  // Filtruj lata: najpierw wg okna, potem wg opcjonalnego yearFilter (np. ENSO)
+  let historicalYears = yearsSorted.filter(y => y < currentYear).slice(-window);
+  if (yearFilter) historicalYears = historicalYears.filter(yearFilter);
 
   const traces = [];
   const yLabel = pct ? '% zmiana YTD' : unitLabel;
@@ -749,7 +826,9 @@ function renderSeasonalGeneric(seriesDates, seriesValues, opts) {
     historicalYears.forEach(y => {
       const doys = Object.keys(byYear[y]).map(Number).sort((a,b)=>a-b);
       const dates = doys.map(doy => { const dt = new Date(currentYear, 0, 1); dt.setDate(dt.getDate() + doy); return dt.toISOString().slice(0, 10); });
-      traces.push({ x: dates, y: doys.map(doy => byYear[y][doy]), name: String(y), type: 'scatter', mode: 'lines', line: { width: 1, color: 'rgba(139,150,165,0.5)' }, hovertemplate: `${y}: %{y:.2f}<extra></extra>` });
+      const phase = ensoOf(y);
+      const lineColor = ENSO_COLORS[phase] + '80'; // alpha 50%
+      traces.push({ x: dates, y: doys.map(doy => byYear[y][doy]), name: `${y} ${ENSO_ICONS[phase]}`, type: 'scatter', mode: 'lines', line: { width: 1, color: lineColor }, hovertemplate: `${y} (${ENSO_LABELS[phase]}): %{y:.2f}<extra></extra>` });
     });
   }
   // Linia centralna - wg wybranej metody
@@ -802,20 +881,116 @@ function renderSeasonalGeneric(seriesDates, seriesValues, opts) {
   };
 }
 
+function renderSeasonalENSOSpread(seriesDates, seriesValues, opts) {
+  const { window, unitLabel, targetElId, method, pct } = opts;
+  const byYear = {};
+  seriesDates.forEach((ds, i) => {
+    const dt = new Date(ds); const y = dt.getFullYear();
+    const start = new Date(y, 0, 1); const doy = Math.floor((dt - start) / 86400000);
+    (byYear[y] = byYear[y] || {})[doy] = seriesValues[i];
+  });
+  const yearsSorted = Object.keys(byYear).map(Number).sort();
+  const currentYear = new Date(seriesDates[seriesDates.length-1]).getFullYear();
+  const historicalYears = yearsSorted.filter(y => y < currentYear).slice(-window);
+  const laNinaYears = historicalYears.filter(y => ensoOf(y) === 'la_nina');
+  const elNinoYears = historicalYears.filter(y => ensoOf(y) === 'el_nino');
+  if (pct) {
+    yearsSorted.forEach(y => {
+      const doys = Object.keys(byYear[y]).map(Number).sort((a,b)=>a-b);
+      if (!doys.length) return;
+      const base = byYear[y][doys[0]];
+      if (!base) return;
+      doys.forEach(doy => { byYear[y][doy] = (byYear[y][doy] / base - 1) * 100; });
+    });
+  }
+  const lnY = [], enY = [], diffY = [], dates = [];
+  for (let doy = 0; doy < 366; doy++) {
+    const lnV = laNinaYears.map(y => byYear[y][doy]).filter(v => v != null);
+    const enV = elNinoYears.map(y => byYear[y][doy]).filter(v => v != null);
+    if (lnV.length && enV.length) {
+      const lnAvg = computeAvg(lnV, method);
+      const enAvg = computeAvg(enV, method);
+      lnY.push(lnAvg); enY.push(enAvg); diffY.push(lnAvg - enAvg);
+      const dt = new Date(currentYear, 0, 1); dt.setDate(dt.getDate() + doy);
+      dates.push(dt.toISOString().slice(0, 10));
+    }
+  }
+  if (!lnY.length) {
+    setEmpty(targetElId, `Brak danych - potrzeba lat La Niña (${laNinaYears.length}) i El Niño (${elNinoYears.length}) w oknie ${window}L.`);
+    return { html: '<div class="hint">Zwiększ okno lat lub sprawdź plik data/enso.json.</div>' };
+  }
+  Plotly.react(targetElId, [
+    { x: dates, y: lnY, name: `La Niña ❄️ (${laNinaYears.length}L)`, type: 'scatter', mode: 'lines', line: { color: '#4fc3f7', width: 2.5 } },
+    { x: dates, y: enY, name: `El Niño ☀️ (${elNinoYears.length}L)`, type: 'scatter', mode: 'lines', line: { color: '#ef5350', width: 2.5 } },
+    { x: dates, y: diffY, name: 'La Niña − El Niño', type: 'scatter', mode: 'lines', line: { color: '#ffb74d', width: 2, dash: 'dot' }, yaxis: 'y2' },
+  ], { ...layoutBase,
+       xaxis: { ...layoutBase.xaxis, tickformat: '%b', dtick: 'M1' },
+       yaxis: { ...layoutBase.yaxis, title: pct ? '% zmiana YTD' : unitLabel },
+       yaxis2: { ...layoutBase.yaxis, title: 'różnica', overlaying: 'y', side: 'right' },
+     }, { responsive: true, displaylogo: false });
+  const avgDiff = diffY.reduce((s,x)=>s+x,0)/diffY.length;
+  const maxDiff = Math.max(...diffY);
+  const minDiff = Math.min(...diffY);
+  const posDays = diffY.filter(v => v > 0).length;
+  const negDays = diffY.filter(v => v < 0).length;
+  const unit = pct ? 'p.p.' : unitLabel;
+  return {
+    html: `<div class="stats-grid">
+      <div class="stat"><div class="label">Średnia różnica (LN − EN)</div><div class="value ${avgDiff >= 0 ? 'up' : 'down'}">${avgDiff >= 0 ? '+' : ''}${fmtNum(avgDiff)} ${unit}</div><div class="sub">${avgDiff >= 0 ? 'La Niña typowo droższa' : 'El Niño typowo droższy'}</div></div>
+      <div class="stat"><div class="label">Max przewaga La Niña</div><div class="value up">+${fmtNum(maxDiff)} ${unit}</div></div>
+      <div class="stat"><div class="label">Max przewaga El Niño</div><div class="value down">${fmtNum(minDiff)} ${unit}</div></div>
+      <div class="stat"><div class="label">Dni droższe</div><div class="value" style="font-size:14px">La Niña: ${posDays}<br>El Niño: ${negDays}</div></div>
+    </div>
+    <div style="margin-top:12px; font-size:12px; color:var(--muted); line-height:1.7">
+      <div><b>❄️ La Niña (${laNinaYears.length}):</b> ${laNinaYears.join(', ') || '—'}</div>
+      <div><b>☀️ El Niño (${elNinoYears.length}):</b> ${elNinoYears.join(', ') || '—'}</div>
+    </div>`
+  };
+}
+
 function renderSeasonal() {
+  document.getElementById('eventsList').innerHTML = '';
   const active = PRODUCTS.filter(p => state.selected.includes(p.id));
   if (!active.length) { document.getElementById('mainTitle').textContent = 'Sezonowa — wybierz produkt'; setEmpty('mainPlot', 'Wybierz jeden produkt.'); return; }
   const p = active[0];
   const methodLabel = state.seasonAvg === 'median' ? 'mediana' : state.seasonAvg === 'trimmed' ? 'średnia obc.' : 'średnia';
-  document.getElementById('mainTitle').innerHTML =
-    `Sezonowa: ${p.name} <span class="sub">${methodLabel} ${state.seasonWindow}L${state.seasonPct ? ' · % zmiana YTD' : ''}</span>`;
   const d = DATA[p.id];
+
+  // Tryb spread La Niña - El Niño
+  if (state.ensoFilter === 'spread') {
+    document.getElementById('mainTitle').innerHTML =
+      `Sezonowa spread ENSO: ${p.name} <span class="sub">La Niña vs El Niño · ${methodLabel} ${state.seasonWindow}L${state.seasonPct ? ' · % zmiana YTD' : ''}</span>`;
+    const res = renderSeasonalENSOSpread(d.dates, d.prices, {
+      window: state.seasonWindow, unitLabel: p.unit, targetElId: 'mainPlot',
+      pct: state.seasonPct, method: state.seasonAvg,
+    });
+    document.getElementById('seasonalStats').innerHTML = res.html;
+    renderStats([p]);
+    return;
+  }
+
+  // Tryby: wszystkie / tylko jedna faza
+  const ensoLabel = state.ensoFilter === 'all' ? '' : ' · ' + ENSO_ICONS[state.ensoFilter] + ' tylko ' + ENSO_LABELS[state.ensoFilter];
+  document.getElementById('mainTitle').innerHTML =
+    `Sezonowa: ${p.name} <span class="sub">${methodLabel} ${state.seasonWindow}L${state.seasonPct ? ' · % zmiana YTD' : ''}${ensoLabel}</span>`;
+  const yearFilter = state.ensoFilter === 'all' ? null : (y => ensoOf(y) === state.ensoFilter);
   const res = renderSeasonalGeneric(d.dates, d.prices, {
     window: state.seasonWindow, showMinMax: state.showMinMax, showYears: state.showYears,
     colorLine: p.color, unitLabel: p.unit, targetElId: 'mainPlot',
-    pct: state.seasonPct, method: state.seasonAvg,
+    pct: state.seasonPct, method: state.seasonAvg, yearFilter,
   });
-  document.getElementById('seasonalStats').innerHTML = res.html;
+  // Grupowanie lat wg ENSO (do wyswietlenia pod statystykami)
+  const currentYear = new Date(d.dates[d.dates.length-1]).getFullYear();
+  const allYears = Array.from(new Set(d.dates.map(ds => new Date(ds).getFullYear()))).filter(y => y < currentYear).sort().slice(-state.seasonWindow);
+  const groups = { el_nino: [], la_nina: [], neutral: [] };
+  allYears.forEach(y => { groups[ensoOf(y)].push(y); });
+  const yearListHtml = `
+    <div style="margin-top:12px; font-size:12px; color:var(--muted); line-height:1.7">
+      <div><b>☀️ El Niño (${groups.el_nino.length}):</b> ${groups.el_nino.join(', ') || '—'}</div>
+      <div><b>❄️ La Niña (${groups.la_nina.length}):</b> ${groups.la_nina.join(', ') || '—'}</div>
+      <div><b>⚪ Neutralne (${groups.neutral.length}):</b> ${groups.neutral.join(', ') || '—'}</div>
+    </div>`;
+  document.getElementById('seasonalStats').innerHTML = res.html + yearListHtml;
   renderStats([p]);
 }
 
@@ -832,6 +1007,7 @@ function renderSpread() {
   const formula = legFormula();
 
   if (state.spreadView === 'seasonal') {
+    document.getElementById('eventsList').innerHTML = '';
     const methodLabel = state.spreadSeasonAvg === 'median' ? 'mediana' : state.spreadSeasonAvg === 'trimmed' ? 'średnia obc.' : 'średnia';
     document.getElementById('mainTitle').innerHTML =
       `Spread sezonowy: <span style="color:var(--accent-2)">${formula}</span> ` +
@@ -864,6 +1040,8 @@ function renderSpread() {
   const pnl = series.map(v => v - entryValue);
 
   // Wykres główny
+  const spreadEv = buildEventOverlay(dates[0], dates[dates.length-1]);
+  document.getElementById('eventsList').innerHTML = spreadEv.listHtml;
   if (pctMode) {
     const gross = computeGrossAtEntry() || 1;
     const pnlPct = pnl.map(v => (v / gross) * 100);
@@ -873,7 +1051,8 @@ function renderSpread() {
         hovertemplate: '%{x}<br>zwrot: %{y:.2f}%<extra></extra>' },
       { x: [dates[0], dates[dates.length-1]], y: [0, 0], type: 'scatter', mode: 'lines',
         line: { color: '#8b96a5', width: 1, dash: 'dot' }, name: 'zero', showlegend: false },
-    ], { ...layoutBase, yaxis: { ...layoutBase.yaxis, title: '% zwrot od wejścia' } },
+    ], { ...layoutBase, yaxis: { ...layoutBase.yaxis, title: '% zwrot od wejścia' },
+         shapes: spreadEv.shapes, annotations: spreadEv.annotations },
        { responsive: true, displaylogo: false });
   } else {
     Plotly.react('mainPlot', [
@@ -882,7 +1061,8 @@ function renderSpread() {
         hovertemplate: '%{x}<br>wartość: %{y:,.0f}<extra></extra>' },
       { x: [dates[0], dates[dates.length-1]], y: [entryValue, entryValue], type: 'scatter', mode: 'lines',
         line: { color: '#8b96a5', width: 1, dash: 'dot' }, name: 'wartość wejścia' },
-    ], { ...layoutBase, yaxis: { ...layoutBase.yaxis, title: $mode ? 'wartość pozycji ($)' : 'wartość jednostkowa' } },
+    ], { ...layoutBase, yaxis: { ...layoutBase.yaxis, title: $mode ? 'wartość pozycji ($)' : 'wartość jednostkowa' },
+         shapes: spreadEv.shapes, annotations: spreadEv.annotations },
        { responsive: true, displaylogo: false });
   }
 
@@ -947,10 +1127,13 @@ function renderRatio() {
   if (!commonDates.length) { setEmpty('mainPlot','Brak wspólnych dat.'); return; }
   const ratio = commonDates.map(d => dm[d][0] / dm[d][1]);
   const mean = ratio.reduce((s,x)=>s+x,0)/ratio.length;
+  const ratioEv = buildEventOverlay(commonDates[0], commonDates[commonDates.length-1]);
+  document.getElementById('eventsList').innerHTML = ratioEv.listHtml;
   Plotly.react('mainPlot', [
     { x: commonDates, y: ratio, type: 'scatter', mode: 'lines', line: { color: '#ba68c8', width: 2 }, name: `${A.id}/${B.id}` },
     { x: [commonDates[0], commonDates[commonDates.length-1]], y: [mean, mean], type: 'scatter', mode: 'lines', line: { color: '#8b96a5', width: 1, dash: 'dot' }, name: `średnia ${mean.toFixed(3)}` },
-  ], { ...layoutBase, yaxis: { ...layoutBase.yaxis, title: `ratio ${A.id}/${B.id}` } }, { responsive: true, displaylogo: false });
+  ], { ...layoutBase, yaxis: { ...layoutBase.yaxis, title: `ratio ${A.id}/${B.id}` },
+       shapes: ratioEv.shapes, annotations: ratioEv.annotations }, { responsive: true, displaylogo: false });
   document.getElementById('ratioStats').innerHTML = `
     <div class="stats-grid">
       <div class="stat"><div class="label">Aktualne ratio</div><div class="value">${ratio[ratio.length-1].toFixed(3)}</div></div>
