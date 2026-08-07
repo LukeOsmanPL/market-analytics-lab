@@ -1,0 +1,21 @@
+{
+  "description": "Klasyfikacja ENSO (El Niño-Southern Oscillation) per rok kalendarzowy. Źródło uproszczone na podstawie NOAA ONI - Oceanic Niño Index. Dominująca faza w danym roku. Można edytować - format YYYY: 'el_nino' | 'la_nina' | 'neutral'.",
+  "sources": [
+    "https://origin.cpc.ncep.noaa.gov/products/analysis_monitoring/ensostuff/ONI_v5.php"
+  ],
+  "years": {
+    "2014": "neutral",
+    "2015": "el_nino",
+    "2016": "la_nina",
+    "2017": "la_nina",
+    "2018": "neutral",
+    "2019": "el_nino",
+    "2020": "la_nina",
+    "2021": "la_nina",
+    "2022": "la_nina",
+    "2023": "el_nino",
+    "2024": "el_nino",
+    "2025": "la_nina",
+    "2026": "neutral"
+  }
+}
