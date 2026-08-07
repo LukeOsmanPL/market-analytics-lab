@@ -93,7 +93,7 @@
     <h1>Energy Analytics</h1>
     <div class="badge" id="dataFreshness">ładuję dane…</div>
   </div>
-  <div class="badge">v1.0</div>
+  <div class="badge">v1.1</div>
 </header>
 
 <div id="loading">
@@ -102,7 +102,7 @@
 
 <div id="loadError" style="display:none">
   <h3 style="color:var(--bad)">Nie mogłem wczytać danych</h3>
-  <p>Prawdopodobnie plik <code>data/prices.json</code> nie istnieje jeszcze. Uruchom workflow "Codzienna aktualizacja danych" w zakładce Actions swojego repo.</p>
+  <p>Prawdopodobnie plik <code>data/prices.json</code> nie istnieje jeszcze. Uruchom workflow w Actions.</p>
   <pre id="errorDetail"></pre>
 </div>
 
@@ -145,7 +145,7 @@
     </section>
 
     <section class="divider" id="stdCtrl">
-      <div class="toggle"><input type="checkbox" id="pctToggle"><label for="pctToggle">Skala procentowa</label></div>
+      <div class="toggle"><input type="checkbox" id="pctToggle"><label for="pctToggle">Skala procentowa (od początku okna)</label></div>
       <div class="toggle"><input type="checkbox" id="dualAxis" checked><label for="dualAxis">Druga oś Y</label></div>
       <div class="hint">Włącz % kiedy porównujesz produkty o różnej skali.</div>
     </section>
@@ -154,8 +154,17 @@
       <div class="row"><label>Okno średniej</label>
         <select id="seasonWindow"><option value="3">3 lata</option><option value="5" selected>5 lat</option><option value="10">10 lat</option></select>
       </div>
+      <div class="row"><label>Metoda uśredniania</label>
+        <select id="seasonAvg">
+          <option value="mean" selected>średnia arytm.</option>
+          <option value="median">mediana (odporna)</option>
+          <option value="trimmed">średnia obcięta 20%</option>
+        </select>
+      </div>
+      <div class="toggle"><input type="checkbox" id="seasonPct"><label for="seasonPct">Skala % (od 1 stycznia każdego roku)</label></div>
       <div class="toggle"><input type="checkbox" id="showMinMax" checked><label for="showMinMax">Koperta min/max</label></div>
       <div class="toggle"><input type="checkbox" id="showYears"><label for="showYears">Pokaż wszystkie lata</label></div>
+      <div class="hint">Mediana i średnia obcięta wycinają skrajne lata (jak 2022 dla gazu EU). Envelope min/max pokazuje literalne ekstrema - dla porównania.</div>
     </section>
 
     <section class="divider" id="spreadCtrl" style="display:none">
@@ -164,20 +173,37 @@
         <button data-sv="pnl" class="active">P&amp;L pozycji</button>
         <button data-sv="seasonal">Sezonowy</button>
       </div>
+
+      <div id="spreadPnlCtrl">
+        <div class="toggle" id="dollarModeWrap" style="margin-top:8px">
+          <input type="checkbox" id="dollarMode" checked>
+          <label for="dollarMode">Wartość w $ (rozmiary kontraktów)</label>
+        </div>
+        <div class="toggle">
+          <input type="checkbox" id="spreadPnlPct">
+          <label for="spreadPnlPct">Skala % (P&amp;L / zaangażowanie)</label>
+        </div>
+      </div>
+
       <div id="spreadSeasonalCtrl" style="display:none">
         <div class="row"><label>Okno średniej</label>
           <select id="spreadSeasonWindow"><option value="3">3 lata</option><option value="5" selected>5 lat</option><option value="10">10 lat</option></select>
         </div>
+        <div class="row"><label>Metoda uśredniania</label>
+          <select id="spreadSeasonAvg">
+            <option value="mean" selected>średnia arytm.</option>
+            <option value="median">mediana</option>
+            <option value="trimmed">średnia obcięta 20%</option>
+          </select>
+        </div>
+        <div class="toggle"><input type="checkbox" id="spreadSeasonPct"><label for="spreadSeasonPct">Skala % (od 1 stycznia)</label></div>
         <div class="toggle"><input type="checkbox" id="spreadShowMinMax" checked><label for="spreadShowMinMax">Koperta min/max</label></div>
         <div class="toggle"><input type="checkbox" id="spreadShowYears"><label for="spreadShowYears">Wszystkie lata</label></div>
       </div>
+
       <h3 style="margin-top:14px">Nogi spreadu</h3>
       <div id="legsList"></div>
       <div id="positionSummary" class="position-summary"></div>
-      <div class="toggle" id="dollarModeWrap" style="margin-top:10px">
-        <input type="checkbox" id="dollarMode" checked>
-        <label for="dollarMode"><b>Pokaż w $ (P&amp;L pozycji)</b></label>
-      </div>
     </section>
   </aside>
 
@@ -209,19 +235,16 @@
 </main>
 
 <script>
-/* ---------- ładowanie danych ---------- */
-let PRODUCTS = [];
-let PMAP = {};
-let CATS = [];
-let DATA = {};      // pid -> {dates: [...], prices: [...]}
-let FULL_DATES = []; // unia posortowana wszystkich dat
+/* ============ ładowanie danych ============ */
+let PRODUCTS = [], PMAP = {}, CATS = [];
+let DATA = {};
+let FULL_DATES = [];
 let MIN_DATE, MAX_DATE;
 
 async function loadData() {
   try {
     const [pricesRes, metaRes] = await Promise.all([
-      fetch('data/prices.json'),
-      fetch('data/meta.json'),
+      fetch('data/prices.json'), fetch('data/meta.json'),
     ]);
     if (!pricesRes.ok) throw new Error(`prices.json: ${pricesRes.status}`);
     if (!metaRes.ok)  throw new Error(`meta.json: ${metaRes.status}`);
@@ -238,21 +261,16 @@ async function loadData() {
     PMAP = Object.fromEntries(PRODUCTS.map(p => [p.id, p]));
     CATS = Array.from(new Set(PRODUCTS.map(p => p.cat)));
 
-    // Zbuduj DATA i FULL_DATES
     const allDates = new Set();
     for (const p of PRODUCTS) {
       const obs = prices.products[p.id] || [];
-      DATA[p.id] = {
-        dates: obs.map(o => o.date),
-        prices: obs.map(o => o.value),
-      };
+      DATA[p.id] = { dates: obs.map(o => o.date), prices: obs.map(o => o.value) };
       obs.forEach(o => allDates.add(o.date));
     }
     FULL_DATES = Array.from(allDates).sort();
     MIN_DATE = FULL_DATES[0];
     MAX_DATE = FULL_DATES[FULL_DATES.length - 1];
 
-    // Data ostatniej aktualizacji
     const gen = new Date(prices.generated_at || meta.generated_at);
     document.getElementById('dataFreshness').textContent =
       `dane z ${gen.toLocaleString('pl-PL', {dateStyle: 'medium', timeStyle: 'short'})} · ${PRODUCTS.length} produktów`;
@@ -267,39 +285,63 @@ async function loadData() {
   }
 }
 
-/* ---------- state ---------- */
+/* ============ state ============ */
 const state = {
-  selected: [],       // wypełnimy po załadowaniu
+  selected: [],
   range: '1Y',
   customFrom: null, customTo: null,
   mode: 'standard',
   pct: false, dual: true,
+  // seasonal
   seasonWindow: 5, showMinMax: true, showYears: false,
-  legs: {},
-  dollarMode: true,
+  seasonPct: false, seasonAvg: 'mean',
+  // spread P&L
+  legs: {}, dollarMode: true, spreadPnlPct: false,
   spreadView: 'pnl',
+  // spread seasonal
   spreadSeasonWindow: 5, spreadShowMinMax: true, spreadShowYears: false,
+  spreadSeasonPct: false, spreadSeasonAvg: 'mean',
 };
 
 const SELECT_RULES = {
-  standard: { min: 1, max: 6, kind: 'multi',  label: 'Wybierz 1-6 produktów. Dowolna kombinacja.' },
+  standard: { min: 1, max: 6, kind: 'multi',  label: 'Wybierz 1-6 produktów.' },
   seasonal: { min: 1, max: 1, kind: 'single', label: 'Wybierz JEDEN produkt.' },
   spread:   { min: 2, max: 5, kind: 'multi',  label: 'Wybierz 2-5 produktów (nogi spreadu).' },
   ratio:    { min: 2, max: 2, kind: 'pair',   label: 'Wybierz DOKŁADNIE 2 produkty.' },
 };
 
-/* ---------- formatery ---------- */
+/* ============ formatery ============ */
 const fmtNum = (v, dec = 2) => Number(v).toLocaleString('en-US', { minimumFractionDigits: dec, maximumFractionDigits: dec });
 const fmtMoneyAbs = (v) => '$' + Math.abs(v).toLocaleString('en-US', { maximumFractionDigits: 0 });
 const fmtMoneySigned = (v) => (v >= 0 ? '+' : '−') + '$' + Math.abs(v).toLocaleString('en-US', { maximumFractionDigits: 0 });
+const fmtPct = (v) => (v >= 0 ? '+' : '') + fmtNum(v, 2) + '%';
 
-/* ---------- selekcja ---------- */
+/* ============ statystyki: średnia / mediana / trimmed mean ============ */
+function computeAvg(values, method) {
+  const n = values.length;
+  if (!n) return null;
+  if (method === 'median') {
+    const s = [...values].sort((a,b) => a-b);
+    const m = Math.floor(s.length/2);
+    return s.length % 2 ? s[m] : (s[m-1] + s[m]) / 2;
+  }
+  if (method === 'trimmed') {
+    // usuwamy 10% z gory i 10% z dolu
+    const s = [...values].sort((a,b) => a-b);
+    const cut = Math.floor(s.length * 0.1);
+    const kept = s.slice(cut, s.length - cut);
+    if (!kept.length) return values.reduce((sum,x)=>sum+x,0) / n;
+    return kept.reduce((sum,x)=>sum+x,0) / kept.length;
+  }
+  return values.reduce((sum,x)=>sum+x,0) / n;
+}
+
+/* ============ selekcja ============ */
 function handleSelect(pid, wantChecked) {
   const rule = SELECT_RULES[state.mode];
   const already = state.selected.includes(pid);
-  if (rule.kind === 'single') {
-    state.selected = [pid];
-  } else if (rule.kind === 'pair') {
+  if (rule.kind === 'single') state.selected = [pid];
+  else if (rule.kind === 'pair') {
     if (wantChecked && !already) { state.selected.push(pid); if (state.selected.length > 2) state.selected.shift(); }
     else if (!wantChecked && already) state.selected = state.selected.filter(x => x !== pid);
   } else {
@@ -381,9 +423,8 @@ function renderLegs() {
   });
 }
 
-/* ---------- init ---------- */
+/* ============ init ============ */
 function init() {
-  // wybierz pierwsze 2 produkty domyślnie
   state.selected = PRODUCTS.slice(0, 2).map(p => p.id);
 
   const productsEl = document.getElementById('products');
@@ -422,9 +463,7 @@ function init() {
         if (!state.customTo)   state.customTo   = MAX_DATE;
         from.value = state.customFrom;
         to.value = state.customTo;
-      } else {
-        dr.style.display = 'none';
-      }
+      } else { dr.style.display = 'none'; }
       render();
     });
   });
@@ -460,20 +499,30 @@ function init() {
       b.classList.add('active');
       state.spreadView = b.dataset.sv;
       document.getElementById('spreadSeasonalCtrl').style.display = state.spreadView === 'seasonal' ? 'block' : 'none';
-      document.getElementById('dollarModeWrap').style.display = state.spreadView === 'pnl' ? 'flex' : 'none';
+      document.getElementById('spreadPnlCtrl').style.display = state.spreadView === 'pnl' ? 'block' : 'none';
       render();
     });
   });
 
-  document.getElementById('pctToggle').addEventListener('change', e => { state.pct = e.target.checked; render(); });
-  document.getElementById('dualAxis').addEventListener('change', e => { state.dual = e.target.checked; render(); });
-  document.getElementById('seasonWindow').addEventListener('change', e => { state.seasonWindow = +e.target.value; render(); });
-  document.getElementById('showMinMax').addEventListener('change', e => { state.showMinMax = e.target.checked; render(); });
-  document.getElementById('showYears').addEventListener('change', e => { state.showYears = e.target.checked; render(); });
-  document.getElementById('dollarMode').addEventListener('change', e => { state.dollarMode = e.target.checked; render(); });
-  document.getElementById('spreadSeasonWindow').addEventListener('change', e => { state.spreadSeasonWindow = +e.target.value; render(); });
-  document.getElementById('spreadShowMinMax').addEventListener('change', e => { state.spreadShowMinMax = e.target.checked; render(); });
-  document.getElementById('spreadShowYears').addEventListener('change', e => { state.spreadShowYears = e.target.checked; render(); });
+  // listenery kontrolek
+  const bind = (id, key, coerce = (e) => e.target.checked) => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('change', e => { state[key] = coerce(e); render(); });
+  };
+  bind('pctToggle', 'pct');
+  bind('dualAxis', 'dual');
+  bind('seasonWindow', 'seasonWindow', e => +e.target.value);
+  bind('showMinMax', 'showMinMax');
+  bind('showYears', 'showYears');
+  bind('seasonPct', 'seasonPct');
+  bind('seasonAvg', 'seasonAvg', e => e.target.value);
+  bind('dollarMode', 'dollarMode');
+  bind('spreadPnlPct', 'spreadPnlPct');
+  bind('spreadSeasonWindow', 'spreadSeasonWindow', e => +e.target.value);
+  bind('spreadShowMinMax', 'spreadShowMinMax');
+  bind('spreadShowYears', 'spreadShowYears');
+  bind('spreadSeasonPct', 'spreadSeasonPct');
+  bind('spreadSeasonAvg', 'spreadSeasonAvg', e => e.target.value);
 
   syncLegs(); refreshCheckboxes(); renderLegs(); render();
   window.addEventListener('resize', () => {
@@ -484,13 +533,10 @@ function init() {
   });
 }
 
-/* ---------- helpers ---------- */
+/* ============ helpers ============ */
 function findNearestIndex(dateStr) {
   let lo = 0, hi = FULL_DATES.length - 1;
-  while (lo < hi) {
-    const mid = (lo + hi) >> 1;
-    if (FULL_DATES[mid] < dateStr) lo = mid + 1; else hi = mid;
-  }
+  while (lo < hi) { const mid = (lo + hi) >> 1; if (FULL_DATES[mid] < dateStr) lo = mid + 1; else hi = mid; }
   return lo;
 }
 function windowIndexes() {
@@ -505,15 +551,11 @@ function windowIndexes() {
   return [Math.max(0, N - days), N];
 }
 function sliceByDates(pid, fromDate, toDate) {
-  // zwraca [{date, price}] w zakresie [fromDate, toDate]
   const d = DATA[pid];
   if (!d) return { dates: [], prices: [] };
   const out = { dates: [], prices: [] };
   for (let i = 0; i < d.dates.length; i++) {
-    if (d.dates[i] >= fromDate && d.dates[i] <= toDate) {
-      out.dates.push(d.dates[i]);
-      out.prices.push(d.prices[i]);
-    }
+    if (d.dates[i] >= fromDate && d.dates[i] <= toDate) { out.dates.push(d.dates[i]); out.prices.push(d.prices[i]); }
   }
   return out;
 }
@@ -554,21 +596,36 @@ function legFormula() {
     return `${sign}${l.qty}×${pid}`;
   }).join('  ');
 }
+function computeGrossAtEntry() {
+  // wartosc brutto zaangazowania w pierwszym dniu widocznego okna (wszystkie nogi po abs)
+  const [from, to] = windowIndexes();
+  const fromDate = FULL_DATES[Math.max(0, from)] || MIN_DATE;
+  let gross = 0;
+  state.selected.forEach(pid => {
+    const p = PMAP[pid]; const l = state.legs[pid];
+    const s = sliceByDates(pid, fromDate, fromDate);
+    // znajdz najblizsza dostepna cene wokol fromDate
+    let price = null;
+    if (s.prices.length) price = s.prices[0];
+    else {
+      const d = DATA[pid];
+      for (let i = 0; i < d.dates.length; i++) { if (d.dates[i] >= fromDate) { price = d.prices[i]; break; } }
+      if (price == null && d.prices.length) price = d.prices[0];
+    }
+    if (price != null) gross += p.contractSize * l.qty * price;
+  });
+  return gross;
+}
 function computeSpreadSeries(fromDate, toDate, dollarMode) {
-  // Buduj wspólną oś dat (unia) i wypełnij ostatnią znaną ceną per produkt (forward-fill)
   const relevantPids = state.selected;
   const allDates = new Set();
   const perProduct = {};
   relevantPids.forEach(pid => {
     const s = sliceByDates(pid, fromDate, toDate);
-    perProduct[pid] = { dates: s.dates, prices: s.prices, byDate: {} };
-    for (let i = 0; i < s.dates.length; i++) {
-      perProduct[pid].byDate[s.dates[i]] = s.prices[i];
-      allDates.add(s.dates[i]);
-    }
+    perProduct[pid] = { byDate: {} };
+    for (let i = 0; i < s.dates.length; i++) { perProduct[pid].byDate[s.dates[i]] = s.prices[i]; allDates.add(s.dates[i]); }
   });
   const commonDates = Array.from(allDates).sort();
-  // Forward-fill: dla każdego produktu, jeśli brak ceny w danym dniu, użyj ostatniej znanej
   const filled = {};
   relevantPids.forEach(pid => {
     filled[pid] = new Array(commonDates.length);
@@ -578,7 +635,6 @@ function computeSpreadSeries(fromDate, toDate, dollarMode) {
       if (v != null) last = v;
       filled[pid][i] = last;
     }
-    // wstecz-fill dla początkowego okna zanim pojawiła się pierwsza obserwacja
     let firstVal = null;
     for (let i = 0; i < filled[pid].length; i++) { if (filled[pid][i] != null) { firstVal = filled[pid][i]; break; } }
     for (let i = 0; i < filled[pid].length; i++) if (filled[pid][i] == null) filled[pid][i] = firstVal;
@@ -587,9 +643,7 @@ function computeSpreadSeries(fromDate, toDate, dollarMode) {
   relevantPids.forEach(pid => {
     const p = PMAP[pid]; const l = state.legs[pid];
     const mult = dollarMode ? p.contractSize : 1;
-    for (let i = 0; i < commonDates.length; i++) {
-      series[i] += l.side * l.qty * mult * filled[pid][i];
-    }
+    for (let i = 0; i < commonDates.length; i++) series[i] += l.side * l.qty * mult * filled[pid][i];
   });
   return { dates: commonDates, series };
 }
@@ -605,12 +659,13 @@ const layoutBase = {
 };
 function setEmpty(elId, msg) { Plotly.purge(elId); document.getElementById(elId).innerHTML = `<div class="empty">${msg}</div>`; }
 
+/* ============ Nakładka ============ */
 function renderStandard() {
   const active = PRODUCTS.filter(p => state.selected.includes(p.id));
   document.getElementById('mainTitle').innerHTML = active.length
     ? `Nakładka: ${active.map(p => p.name).join('  ·  ')}${state.pct ? ' <span class="sub">(% zmiana od początku okna)</span>' : ''}`
     : 'Nakładka — brak wyboru';
-  if (!active.length) { setEmpty('mainPlot', 'Zaznacz przynajmniej jeden produkt po lewej.'); Plotly.purge('corrPlot'); return; }
+  if (!active.length) { setEmpty('mainPlot', 'Zaznacz produkt po lewej.'); Plotly.purge('corrPlot'); return; }
   const traces = [];
   active.forEach((p, i) => {
     const s = slice(p.id);
@@ -630,7 +685,6 @@ function renderStandard() {
   if (active.length >= 2) {
     document.getElementById('corrTitle').innerHTML = `Korelacja krocząca (60 dni): <span class="sub">${active[0].id} ↔ ${active[1].id}</span>`;
     const sa = slice(active[0].id), sb = slice(active[1].id);
-    // wyrównanie po datach
     const dm = {}; sa.dates.forEach((d,i)=>dm[d]=[sa.prices[i]]);
     sb.dates.forEach((d,i)=>{ if (dm[d]) dm[d].push(sb.prices[i]); });
     const commonDates = Object.keys(dm).filter(d=>dm[d].length===2).sort();
@@ -643,24 +697,42 @@ function renderStandard() {
       { x: [commonDates[0], commonDates[commonDates.length-1]], y: [0, 0], type: 'scatter', mode: 'lines', line: {color: '#8b96a5', width: 1, dash: 'dot'}, showlegend: false },
     ], { ...layoutBase, yaxis: { ...layoutBase.yaxis, range: [-1, 1], title: 'korelacja' } }, { responsive: true, displaylogo: false });
   } else {
-    document.getElementById('corrTitle').textContent = 'Korelacja krocząca (60 dni) — wybierz 2+ produkty';
+    document.getElementById('corrTitle').textContent = 'Korelacja krocząca — wybierz 2+ produkty';
     Plotly.purge('corrPlot');
   }
   renderStats(active);
 }
 
+/* ============ Sezonowa (uniwersalna, obsługuje pct + method) ============ */
 function renderSeasonalGeneric(seriesDates, seriesValues, opts) {
-  const { window, showMinMax, showYears, colorLine, unitLabel, targetElId } = opts;
+  const { window, showMinMax, showYears, colorLine, unitLabel, targetElId, pct, method } = opts;
+  // Grupuj po roku
   const byYear = {};
   seriesDates.forEach((ds, i) => {
     const dt = new Date(ds); const y = dt.getFullYear();
     const start = new Date(y, 0, 1); const doy = Math.floor((dt - start) / 86400000);
     (byYear[y] = byYear[y] || {})[doy] = seriesValues[i];
   });
+  // Jeśli pct: przelicz każdy rok na % zmianę od pierwszej dostępnej wartości w tym roku
+  const yearsSorted = Object.keys(byYear).map(Number).sort();
+  if (pct) {
+    yearsSorted.forEach(y => {
+      const doys = Object.keys(byYear[y]).map(Number).sort((a,b)=>a-b);
+      if (!doys.length) return;
+      const base = byYear[y][doys[0]];
+      if (!base) return;
+      doys.forEach(doy => {
+        byYear[y][doy] = (byYear[y][doy] / base - 1) * 100;
+      });
+    });
+  }
   const currentYear = new Date(seriesDates[seriesDates.length-1]).getFullYear();
-  const years = Object.keys(byYear).map(Number).sort();
-  const historicalYears = years.filter(y => y < currentYear).slice(-window);
+  const historicalYears = yearsSorted.filter(y => y < currentYear).slice(-window);
+
   const traces = [];
+  const yLabel = pct ? '% zmiana YTD' : unitLabel;
+
+  // Koperta min/max (zawsze literalna, dla porównania)
   if (showMinMax) {
     const doys = Array.from({length: 366}, (_, i) => i);
     const mins = [], maxs = [];
@@ -680,16 +752,19 @@ function renderSeasonalGeneric(seriesDates, seriesValues, opts) {
       traces.push({ x: dates, y: doys.map(doy => byYear[y][doy]), name: String(y), type: 'scatter', mode: 'lines', line: { width: 1, color: 'rgba(139,150,165,0.5)' }, hovertemplate: `${y}: %{y:.2f}<extra></extra>` });
     });
   }
+  // Linia centralna - wg wybranej metody
   const avgY = [], avgDates = [];
   for (let doy = 0; doy < 366; doy++) {
     const vals = historicalYears.map(y => byYear[y][doy]).filter(v => v != null);
     if (vals.length) {
-      avgY.push(vals.reduce((s,x)=>s+x,0) / vals.length);
+      avgY.push(computeAvg(vals, method));
       const dt = new Date(currentYear, 0, 1); dt.setDate(dt.getDate() + doy);
       avgDates.push(dt.toISOString().slice(0, 10));
     }
   }
-  traces.push({ x: avgDates, y: avgY, name: `średnia ${window}L`, type: 'scatter', mode: 'lines', line: { color: colorLine, width: 3 } });
+  const methodLabel = method === 'median' ? 'mediana' : method === 'trimmed' ? 'średnia obc. 20%' : 'średnia';
+  traces.push({ x: avgDates, y: avgY, name: `${methodLabel} ${window}L`, type: 'scatter', mode: 'lines', line: { color: colorLine, width: 3 } });
+  // Bieżący rok
   const cur = byYear[currentYear];
   let curLastVal = null;
   if (cur) {
@@ -702,9 +777,10 @@ function renderSeasonalGeneric(seriesDates, seriesValues, opts) {
   Plotly.react(targetElId, traces, {
     ...layoutBase,
     xaxis: { ...layoutBase.xaxis, tickformat: '%b', dtick: 'M1' },
-    yaxis: { ...layoutBase.yaxis, title: unitLabel },
+    yaxis: { ...layoutBase.yaxis, title: yLabel },
   }, { responsive: true, displaylogo: false });
 
+  // statystyki
   const rowMax = { doy: -1, val: -Infinity, year: null };
   const rowMin = { doy: -1, val: Infinity, year: null };
   historicalYears.forEach(y => {
@@ -714,13 +790,14 @@ function renderSeasonalGeneric(seriesDates, seriesValues, opts) {
     });
   });
   const fmtDoy = doy => { const dt = new Date(currentYear, 0, 1); dt.setDate(dt.getDate() + doy); return dt.toLocaleDateString('pl-PL', { day: 'numeric', month: 'short' }); };
-  const avgVal = avgY.length ? avgY.reduce((s,x)=>s+x,0)/avgY.length : 0;
+  const avgVal = avgY.length ? avgY[avgY.length-1] : 0;
+  const unit = pct ? '%' : unitLabel;
   return {
     html: `<div class="stats-grid">
-      <div class="stat"><div class="label">Maks. (${window}L)</div><div class="value up">${isFinite(rowMax.val) ? fmtNum(rowMax.val) : '—'} ${unitLabel}</div><div class="sub">${rowMax.year || '—'} · ${rowMax.doy >= 0 ? fmtDoy(rowMax.doy) : '—'}</div></div>
-      <div class="stat"><div class="label">Min. (${window}L)</div><div class="value down">${isFinite(rowMin.val) ? fmtNum(rowMin.val) : '—'} ${unitLabel}</div><div class="sub">${rowMin.year || '—'} · ${rowMin.doy >= 0 ? fmtDoy(rowMin.doy) : '—'}</div></div>
-      <div class="stat"><div class="label">Średnia ${window}L</div><div class="value">${fmtNum(avgVal)} ${unitLabel}</div></div>
-      <div class="stat"><div class="label">Bieżący vs średnia</div><div class="value">${curLastVal != null && avgVal ? ((curLastVal / avgVal - 1) * 100).toFixed(1) + '%' : '—'}</div><div class="sub">ostatnia wartość</div></div>
+      <div class="stat"><div class="label">Maks. (${window}L)</div><div class="value up">${isFinite(rowMax.val) ? fmtNum(rowMax.val) : '—'} ${unit}</div><div class="sub">${rowMax.year || '—'} · ${rowMax.doy >= 0 ? fmtDoy(rowMax.doy) : '—'}</div></div>
+      <div class="stat"><div class="label">Min. (${window}L)</div><div class="value down">${isFinite(rowMin.val) ? fmtNum(rowMin.val) : '—'} ${unit}</div><div class="sub">${rowMin.year || '—'} · ${rowMin.doy >= 0 ? fmtDoy(rowMin.doy) : '—'}</div></div>
+      <div class="stat"><div class="label">${methodLabel} ${window}L (dziś)</div><div class="value">${fmtNum(avgVal)} ${unit}</div></div>
+      <div class="stat"><div class="label">Bieżący vs ${methodLabel}</div><div class="value">${curLastVal != null && avgVal ? ((curLastVal - avgVal)).toFixed(2) + (pct ? ' p.p.' : ' ' + unit) : '—'}</div><div class="sub">różnica</div></div>
     </div>`
   };
 }
@@ -729,16 +806,20 @@ function renderSeasonal() {
   const active = PRODUCTS.filter(p => state.selected.includes(p.id));
   if (!active.length) { document.getElementById('mainTitle').textContent = 'Sezonowa — wybierz produkt'; setEmpty('mainPlot', 'Wybierz jeden produkt.'); return; }
   const p = active[0];
-  document.getElementById('mainTitle').innerHTML = `Sezonowa: ${p.name} <span class="sub">średnia ${state.seasonWindow}L + bieżący rok</span>`;
+  const methodLabel = state.seasonAvg === 'median' ? 'mediana' : state.seasonAvg === 'trimmed' ? 'średnia obc.' : 'średnia';
+  document.getElementById('mainTitle').innerHTML =
+    `Sezonowa: ${p.name} <span class="sub">${methodLabel} ${state.seasonWindow}L${state.seasonPct ? ' · % zmiana YTD' : ''}</span>`;
   const d = DATA[p.id];
   const res = renderSeasonalGeneric(d.dates, d.prices, {
     window: state.seasonWindow, showMinMax: state.showMinMax, showYears: state.showYears,
-    colorLine: p.color, unitLabel: p.unit, targetElId: 'mainPlot'
+    colorLine: p.color, unitLabel: p.unit, targetElId: 'mainPlot',
+    pct: state.seasonPct, method: state.seasonAvg,
   });
   document.getElementById('seasonalStats').innerHTML = res.html;
   renderStats([p]);
 }
 
+/* ============ Spread ============ */
 function renderSpread() {
   const active = PRODUCTS.filter(p => state.selected.includes(p.id));
   const detail = document.getElementById('spreadDetail');
@@ -751,24 +832,27 @@ function renderSpread() {
   const formula = legFormula();
 
   if (state.spreadView === 'seasonal') {
+    const methodLabel = state.spreadSeasonAvg === 'median' ? 'mediana' : state.spreadSeasonAvg === 'trimmed' ? 'średnia obc.' : 'średnia';
     document.getElementById('mainTitle').innerHTML =
-      `Spread sezonowy: <span style="color:var(--accent-2)">${formula}</span> <span class="sub">średnia ${state.spreadSeasonWindow}L + bieżący rok · w $</span>`;
+      `Spread sezonowy: <span style="color:var(--accent-2)">${formula}</span> ` +
+      `<span class="sub">${methodLabel} ${state.spreadSeasonWindow}L${state.spreadSeasonPct ? ' · % zmiana YTD' : ' · w $'}</span>`;
     const spread = computeSpreadSeries(MIN_DATE, MAX_DATE, true);
     const res = renderSeasonalGeneric(spread.dates, spread.series, {
-      window: state.spreadSeasonWindow,
-      showMinMax: state.spreadShowMinMax,
-      showYears: state.spreadShowYears,
-      colorLine: '#ffb74d', unitLabel: '$', targetElId: 'mainPlot'
+      window: state.spreadSeasonWindow, showMinMax: state.spreadShowMinMax, showYears: state.spreadShowYears,
+      colorLine: '#ffb74d', unitLabel: '$', targetElId: 'mainPlot',
+      pct: state.spreadSeasonPct, method: state.spreadSeasonAvg,
     });
     detail.innerHTML = `<div class="chart-title">Statystyki sezonowe spreadu <span class="sub">${formula}</span></div>` + res.html;
     renderStats(active);
     return;
   }
 
+  // Widok P&L
   const $mode = state.dollarMode;
+  const pctMode = state.spreadPnlPct && $mode; // % ma sens tylko w $ mode
   document.getElementById('mainTitle').innerHTML =
     `Spread: <span style="color:var(--accent-2)">${formula}</span>` +
-    ` <span class="sub">${$mode ? 'wartość w $ (uwzględnia rozmiary kontraktów)' : 'suma jednostkowa'}</span>`;
+    ` <span class="sub">${pctMode ? '% zwrot od wejścia (P&L / zaangażowanie brutto)' : ($mode ? 'wartość w $' : 'suma jednostkowa')}</span>`;
 
   const [from, to] = windowIndexes();
   const fromDate = FULL_DATES[Math.max(0, from)] || MIN_DATE;
@@ -779,33 +863,51 @@ function renderSpread() {
   const entryValue = series[0];
   const pnl = series.map(v => v - entryValue);
 
-  Plotly.react('mainPlot', [
-    { x: dates, y: series, type: 'scatter', mode: 'lines',
-      line: { color: '#ffb74d', width: 2 }, name: formula,
-      hovertemplate: '%{x}<br>wartość: %{y:,.0f}<extra></extra>' },
-    { x: [dates[0], dates[dates.length-1]], y: [entryValue, entryValue], type: 'scatter', mode: 'lines',
-      line: { color: '#8b96a5', width: 1, dash: 'dot' }, name: 'wartość wejścia' },
-  ], { ...layoutBase, yaxis: { ...layoutBase.yaxis, title: $mode ? 'wartość pozycji ($)' : 'wartość jednostkowa' } },
-     { responsive: true, displaylogo: false });
+  // Wykres główny
+  if (pctMode) {
+    const gross = computeGrossAtEntry() || 1;
+    const pnlPct = pnl.map(v => (v / gross) * 100);
+    Plotly.react('mainPlot', [
+      { x: dates, y: pnlPct, type: 'scatter', mode: 'lines',
+        line: { color: '#ffb74d', width: 2 }, name: formula,
+        hovertemplate: '%{x}<br>zwrot: %{y:.2f}%<extra></extra>' },
+      { x: [dates[0], dates[dates.length-1]], y: [0, 0], type: 'scatter', mode: 'lines',
+        line: { color: '#8b96a5', width: 1, dash: 'dot' }, name: 'zero', showlegend: false },
+    ], { ...layoutBase, yaxis: { ...layoutBase.yaxis, title: '% zwrot od wejścia' } },
+       { responsive: true, displaylogo: false });
+  } else {
+    Plotly.react('mainPlot', [
+      { x: dates, y: series, type: 'scatter', mode: 'lines',
+        line: { color: '#ffb74d', width: 2 }, name: formula,
+        hovertemplate: '%{x}<br>wartość: %{y:,.0f}<extra></extra>' },
+      { x: [dates[0], dates[dates.length-1]], y: [entryValue, entryValue], type: 'scatter', mode: 'lines',
+        line: { color: '#8b96a5', width: 1, dash: 'dot' }, name: 'wartość wejścia' },
+    ], { ...layoutBase, yaxis: { ...layoutBase.yaxis, title: $mode ? 'wartość pozycji ($)' : 'wartość jednostkowa' } },
+       { responsive: true, displaylogo: false });
+  }
 
+  // Statystyki - w $ zawsze + w % dodatkowo jeśli pctMode
   const pnlNow = pnl[pnl.length-1];
   const pnlMax = Math.max(...pnl);
   const pnlMin = Math.min(...pnl);
   let peak = pnl[0], maxDd = 0;
   pnl.forEach(v => { if (v > peak) peak = v; if (peak - v > maxDd) maxDd = peak - v; });
   const range = pnlMax - pnlMin;
+  const gross = computeGrossAtEntry() || 1;
+  const pct = (v) => fmtPct((v / gross) * 100);
   const fmt = (v) => $mode ? fmtMoneySigned(v) : (v >= 0 ? '+' : '') + fmtNum(v);
   const fmtAbs = (v) => $mode ? fmtMoneyAbs(v) : fmtNum(v);
   const cls = pnlNow >= 0 ? 'up' : 'down';
+  const withPct = (v) => $mode ? `<div class="sub">${pct(v)}</div>` : '';
 
   detail.innerHTML = `
     <div class="chart-title">P&amp;L pozycji w widocznym okresie <span class="sub">(gdybyś wszedł na początku okna i trzymał do dziś)</span></div>
     <div class="stats-grid" style="margin-bottom:14px">
-      <div class="stat"><div class="label">Aktualny P&amp;L</div><div class="value ${cls}">${fmt(pnlNow)}</div><div class="sub">od wejścia (${dates[0]})</div></div>
-      <div class="stat"><div class="label">Max zysk w okresie</div><div class="value up">${fmt(pnlMax)}</div><div class="sub">najlepszy moment</div></div>
-      <div class="stat"><div class="label">Max strata w okresie</div><div class="value down">${fmt(pnlMin)}</div><div class="sub">najgorszy moment</div></div>
-      <div class="stat"><div class="label">Max drawdown</div><div class="value down">−${fmtAbs(maxDd)}</div><div class="sub">szczyt → dołek</div></div>
-      <div class="stat"><div class="label">Zakres wahań</div><div class="value">${fmtAbs(range)}</div><div class="sub">amplituda</div></div>
+      <div class="stat"><div class="label">Aktualny P&amp;L</div><div class="value ${cls}">${fmt(pnlNow)}</div>${withPct(pnlNow)}<div class="sub">od wejścia (${dates[0]})</div></div>
+      <div class="stat"><div class="label">Max zysk</div><div class="value up">${fmt(pnlMax)}</div>${withPct(pnlMax)}</div>
+      <div class="stat"><div class="label">Max strata</div><div class="value down">${fmt(pnlMin)}</div>${withPct(pnlMin)}</div>
+      <div class="stat"><div class="label">Max drawdown</div><div class="value down">−${fmtAbs(maxDd)}</div>${$mode ? `<div class="sub">−${fmtNum((maxDd/gross)*100)}%</div>` : ''}<div class="sub">szczyt → dołek</div></div>
+      <div class="stat"><div class="label">Zakres wahań</div><div class="value">${fmtAbs(range)}</div>${$mode ? `<div class="sub">${fmtNum((range/gross)*100)}%</div>` : ''}</div>
     </div>
     <div class="chart-title">Z-score spreadu <span class="sub">(odchylenie od 5L średniej, ±2σ = ekstremum)</span></div>
     <div id="zscorePlot" class="plot-small"></div>`;
@@ -839,7 +941,6 @@ function renderRatio() {
   document.getElementById('mainTitle').innerHTML = `Ratio: <span style="color:#ba68c8">${A.id} / ${B.id}</span>`;
   document.getElementById('ratioTitle').innerHTML = `Statystyki ratio <span class="sub">${A.id} / ${B.id}</span>`;
   const sa = slice(A.id), sb = slice(B.id);
-  // wyrównanie po datach
   const dm = {}; sa.dates.forEach((d,i)=>dm[d]=[sa.prices[i]]);
   sb.dates.forEach((d,i)=>{ if (dm[d]) dm[d].push(sb.prices[i]); });
   const commonDates = Object.keys(dm).filter(d=>dm[d].length===2).sort();
