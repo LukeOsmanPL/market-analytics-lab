@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-07T17:27:19.236396+00:00",
+  "generated_at": "2026-08-07T20:16:29.009601+00:00",
   "products": [
     {
       "id": "NG",
@@ -84,10 +84,161 @@
       "first_date": "2014-01-06",
       "last_date": "2026-08-03",
       "n_observations": 657
+    },
+    {
+      "id": "GOLD",
+      "name": "Zloto (COMEX)",
+      "unit": "$/oz",
+      "contract_size": 100,
+      "contract_unit": "oz",
+      "category": "Metale",
+      "color": "#ffd54f",
+      "source": "yahoo",
+      "series": "GC=F",
+      "first_date": "2014-01-02",
+      "last_date": "2026-08-07",
+      "n_observations": 3167
+    },
+    {
+      "id": "SILVER",
+      "name": "Srebro (COMEX)",
+      "unit": "$/oz",
+      "contract_size": 5000,
+      "contract_unit": "oz",
+      "category": "Metale",
+      "color": "#b0bec5",
+      "source": "yahoo",
+      "series": "SI=F",
+      "first_date": "2014-01-02",
+      "last_date": "2026-08-07",
+      "n_observations": 3167
+    },
+    {
+      "id": "COPPER",
+      "name": "Miedz (COMEX)",
+      "unit": "$/lb",
+      "contract_size": 25000,
+      "contract_unit": "lb",
+      "category": "Metale",
+      "color": "#d84315",
+      "source": "yahoo",
+      "series": "HG=F",
+      "first_date": "2014-01-02",
+      "last_date": "2026-08-07",
+      "n_observations": 3168
+    },
+    {
+      "id": "PLATINUM",
+      "name": "Platyna (NYMEX)",
+      "unit": "$/oz",
+      "contract_size": 50,
+      "contract_unit": "oz",
+      "category": "Metale",
+      "color": "#78909c",
+      "source": "yahoo",
+      "series": "PL=F",
+      "first_date": "2014-01-02",
+      "last_date": "2026-08-07",
+      "n_observations": 3166
+    },
+    {
+      "id": "CORN",
+      "name": "Kukurydza (CBOT Chicago)",
+      "unit": "$/bu",
+      "contract_size": 5000,
+      "contract_unit": "bu",
+      "category": "Rolne",
+      "color": "#fbc02d",
+      "source": "yahoo",
+      "series": "ZC=F",
+      "first_date": "2014-01-02",
+      "last_date": "2026-08-07",
+      "n_observations": 3165
+    },
+    {
+      "id": "WHEAT",
+      "name": "Pszenica SRW (CBOT)",
+      "unit": "$/bu",
+      "contract_size": 5000,
+      "contract_unit": "bu",
+      "category": "Rolne",
+      "color": "#8d6e63",
+      "source": "yahoo",
+      "series": "ZW=F",
+      "first_date": "2014-01-02",
+      "last_date": "2026-08-07",
+      "n_observations": 3167
+    },
+    {
+      "id": "WHEAT_KC",
+      "name": "Pszenica HRW (Kansas)",
+      "unit": "$/bu",
+      "contract_size": 5000,
+      "contract_unit": "bu",
+      "category": "Rolne",
+      "color": "#a1887f",
+      "source": "yahoo",
+      "series": "KE=F",
+      "first_date": "2014-01-02",
+      "last_date": "2026-08-07",
+      "n_observations": 3167
+    },
+    {
+      "id": "SOYBEAN",
+      "name": "Soja (CBOT)",
+      "unit": "$/bu",
+      "contract_size": 5000,
+      "contract_unit": "bu",
+      "category": "Rolne",
+      "color": "#7cb342",
+      "source": "yahoo",
+      "series": "ZS=F",
+      "first_date": "2014-01-02",
+      "last_date": "2026-08-07",
+      "n_observations": 3167
+    },
+    {
+      "id": "COFFEE",
+      "name": "Kawa Arabica (ICE)",
+      "unit": "$/lb",
+      "contract_size": 37500,
+      "contract_unit": "lb",
+      "category": "Rolne",
+      "color": "#6d4c41",
+      "source": "yahoo",
+      "series": "KC=F",
+      "first_date": "2014-01-02",
+      "last_date": "2026-08-07",
+      "n_observations": 3168
+    },
+    {
+      "id": "COCOA",
+      "name": "Kakao (ICE)",
+      "unit": "$/mt",
+      "contract_size": 10,
+      "contract_unit": "mt",
+      "category": "Rolne",
+      "color": "#5d4037",
+      "source": "yahoo",
+      "series": "CC=F",
+      "first_date": "2014-01-02",
+      "last_date": "2026-08-07",
+      "n_observations": 3168
+    },
+    {
+      "id": "SUGAR",
+      "name": "Cukier (ICE 11)",
+      "unit": "$/lb",
+      "contract_size": 112000,
+      "contract_unit": "lb",
+      "category": "Rolne",
+      "color": "#f8bbd0",
+      "source": "yahoo",
+      "series": "SB=F",
+      "first_date": "2014-01-02",
+      "last_date": "2026-08-07",
+      "n_observations": 3169
     }
   ],
-  "failed": [
-    "GOLD",
-    "SILVER"
-  ]
+  "failed": []
 }
