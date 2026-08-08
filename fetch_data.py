@@ -288,6 +288,20 @@ PRODUCTS = [
          name="COT Soybean - Money Mgr netto", unit="kontrakty", contract_size=1, contract_unit="kontrakty",
          category="COT", color="#7cb342"),
 
+    # Polska: ceny skupu zbóż - EU Agri-Food Data Portal (tygodniowe/miesieczne)
+    dict(id="PL_WHEAT_SKUP",  source="agrifood_cereal", series="Common wheat",
+         name="Pszenica skup PL (EU)", unit="€/t",
+         contract_size=1, contract_unit="t", category="Lokalne PL", color="#8d6e63"),
+    dict(id="PL_CORN_SKUP",   source="agrifood_cereal", series="Feed maize",
+         name="Kukurydza skup PL (EU)", unit="€/t",
+         contract_size=1, contract_unit="t", category="Lokalne PL", color="#fbc02d"),
+    dict(id="PL_RYE_SKUP",    source="agrifood_cereal", series="Rye",
+         name="Żyto skup PL (EU)", unit="€/t",
+         contract_size=1, contract_unit="t", category="Lokalne PL", color="#a1887f"),
+    dict(id="PL_BARLEY_SKUP", source="agrifood_cereal", series="Feed barley",
+         name="Jęczmień skup PL (EU)", unit="€/t",
+         contract_size=1, contract_unit="t", category="Lokalne PL", color="#c0ca33"),
+
     # MATIF Paryz (Euronext) - best-effort, Yahoo bywa kaprysny dla EU futures
     dict(id="MATIF_WHEAT", source="yahoo", series="EBM.PA",
          name="Pszenica młynarska (MATIF Paris)", unit="€/t",
@@ -542,6 +556,103 @@ def fetch_wob(series_key: str) -> list:
         seen[d] = v
     obs = [{"date": d, "value": v} for d, v in sorted(seen.items())]
     return obs
+
+
+_AGRIFOOD_CACHE = None
+
+def _fetch_agrifood_cereal_pl():
+    """Pobiera tygodniowe ceny cereal z EU Agri-Food Data Portal dla Polski.
+    Zwraca slownik {product_name: [{date, value}, ...]}.
+    """
+    global _AGRIFOOD_CACHE
+    if _AGRIFOOD_CACHE is not None:
+        return _AGRIFOOD_CACHE
+
+    url = "https://api.tech.ec.europa.eu/agrifood/api/cereal/prices?memberStateCodes=PL&limit=10000"
+    print(f"  [AGRIFOOD] pobieram ceny zbóż PL z EU Agri Portal ...", flush=True)
+    try:
+        req = urllib.request.Request(url, headers={
+            "User-Agent": "energy-analytics/1.0",
+            "Accept": "application/json"
+        })
+        with urllib.request.urlopen(req, timeout=60) as r:
+            data = json.load(r)
+        print(f"  [AGRIFOOD] odpowiedz typu: {type(data).__name__}", flush=True)
+    except Exception as e:
+        print(f"  [AGRIFOOD] BLAD pobierania: {e}", flush=True)
+        _AGRIFOOD_CACHE = {}
+        return _AGRIFOOD_CACHE
+
+    # Sprobuj kilka mozliwych ksztaltow odpowiedzi
+    items = None
+    if isinstance(data, list):
+        items = data
+    elif isinstance(data, dict):
+        for key in ('items', 'data', 'results', 'value', 'content'):
+            if key in data and isinstance(data[key], list):
+                items = data[key]
+                print(f"  [AGRIFOOD] uzywam pola '{key}' ({len(items)} wpisow)", flush=True)
+                break
+
+    if not items:
+        print(f"  [AGRIFOOD] BLAD: nie znaleziono listy items w odpowiedzi. Klucze: {list(data.keys()) if isinstance(data, dict) else 'lista'}", flush=True)
+        _AGRIFOOD_CACHE = {}
+        return _AGRIFOOD_CACHE
+
+    print(f"  [AGRIFOOD] przykladowy wpis: {items[0] if items else 'brak'}", flush=True)
+
+    # Zgadnij pola: product, date/beginDate/endDate/period, price/value
+    result = {}
+    n_ok = 0
+    for row in items:
+        if not isinstance(row, dict): continue
+        # produkt
+        product = row.get('product') or row.get('productName') or row.get('name')
+        if not product: continue
+        # data - preferuj beginDate/date/period
+        date_str = None
+        for k in ('beginDate', 'date', 'period', 'week_ending', 'endDate'):
+            v = row.get(k)
+            if v:
+                date_str = str(v)[:10]
+                break
+        if not date_str: continue
+        # cena
+        price = None
+        for k in ('price', 'value', 'avgPrice', 'weeklyPrice'):
+            v = row.get(k)
+            if v is not None:
+                try: price = float(str(v).replace(',', '.').replace(' ', ''))
+                except (ValueError, TypeError): pass
+                if price is not None: break
+        if price is None or price <= 0: continue
+        result.setdefault(product, []).append({'date': date_str, 'value': price})
+        n_ok += 1
+
+    # Dedup + sort
+    for prod in list(result.keys()):
+        seen = {}
+        for o in result[prod]:
+            seen[o['date']] = o['value']
+        result[prod] = [{'date': d, 'value': v} for d, v in sorted(seen.items())]
+
+    print(f"  [AGRIFOOD] wczytano {n_ok} valid wierszy, {len(result)} produktow: {sorted(result.keys())[:20]}", flush=True)
+    _AGRIFOOD_CACHE = result
+    return _AGRIFOOD_CACHE
+
+
+def fetch_agrifood_cereal(product_name: str) -> list:
+    """Zwraca liste {date, value} dla podanego produktu."""
+    parsed = _fetch_agrifood_cereal_pl()
+    # Direct match
+    if product_name in parsed:
+        return parsed[product_name]
+    # Case-insensitive fallback
+    pl = product_name.lower()
+    for k, v in parsed.items():
+        if k.lower() == pl or pl in k.lower():
+            return v
+    return []
 
 
 _CFTC_CACHE = None
@@ -859,6 +970,8 @@ def main():
                 obs = fetch_ember(p["series"])
             elif p["source"] == "cftc":
                 obs = fetch_cftc(p["series"])
+            elif p["source"] == "agrifood_cereal":
+                obs = fetch_agrifood_cereal(p["series"])
             else:
                 print(f"  [SKIP] nieznane zrodlo {p['source']}")
                 continue
