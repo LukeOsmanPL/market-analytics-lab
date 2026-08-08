@@ -109,7 +109,7 @@
     <h1>Market Analytics Lab</h1>
     <div class="badge" id="dataFreshness">ładuję dane…</div>
   </div>
-  <div class="badge">v2.0 · projekt i realizacja: Łukasz Osman</div>
+  <div class="badge">v2.1 · projekt i realizacja: Łukasz Osman</div>
 </header>
 
 <div id="loading">
@@ -493,7 +493,7 @@ function convertSeries(prices, fromUnit, productId) {
 
 const SELECT_RULES = {
   standard: { min: 1, max: 6, kind: 'multi',  label: 'Wybierz 1-6 produktów.' },
-  seasonal: { min: 1, max: 1, kind: 'single', label: 'Wybierz JEDEN produkt.' },
+  seasonal: { min: 1, max: 5, kind: 'multi',  label: 'Wybierz 1-5 produktów. Jeden: pełne detale. Wiele: nakładka średnich sezonowych (włącz % przy różnych jednostkach).' },
   spread:   { min: 2, max: 5, kind: 'multi',  label: 'Wybierz 2-5 produktów (nogi spreadu).' },
   ratio:    { min: 2, max: 2, kind: 'pair',   label: 'Wybierz DOKŁADNIE 2 produkty.' },
 };
@@ -1174,10 +1174,90 @@ function renderSeasonalENSOSpread(seriesDates, seriesValues, opts) {
   };
 }
 
+// Overlay wielu produktow w Sezonowej: kazdy produkt jego N-letnia srednia + biezacy rok
+function renderSeasonalMulti(products) {
+  const currentYear = new Date().getFullYear();
+  const dateFor = doy => { const dt = new Date(currentYear, 0, 1); dt.setDate(dt.getDate() + doy); return dt.toISOString().slice(0, 10); };
+  const dates = Array.from({length: 366}, (_, i) => dateFor(i));
+  const traces = [];
+  let commonUnit = null;
+  products.forEach(p => {
+    const conv = convertSeries(DATA[p.id].prices, p.unit, p.id);
+    if (commonUnit === null) commonUnit = conv.unit;
+    else if (commonUnit !== conv.unit) commonUnit = 'różne';
+    const byYear = {};
+    DATA[p.id].dates.forEach((ds, i) => {
+      const dt = new Date(ds); const y = dt.getFullYear();
+      const doy = Math.floor((dt - new Date(y, 0, 1)) / 86400000);
+      (byYear[y] = byYear[y] || {})[doy] = conv.prices[i];
+    });
+    if (state.seasonPct) {
+      Object.keys(byYear).forEach(y => {
+        const doys = Object.keys(byYear[y]).map(Number).sort((a,b)=>a-b);
+        if (!doys.length) return;
+        const base = byYear[y][doys[0]]; if (!base) return;
+        doys.forEach(doy => byYear[y][doy] = (byYear[y][doy] / base - 1) * 100);
+      });
+    }
+    const years = Object.keys(byYear).map(Number).sort();
+    let historicalYears = years.filter(y => y < currentYear).slice(-state.seasonWindow);
+    if (state.ensoFilter && state.ensoFilter !== 'all' && state.ensoFilter !== 'spread') {
+      historicalYears = historicalYears.filter(y => ensoOf(y) === state.ensoFilter);
+    }
+    const avg = new Array(366).fill(null);
+    for (let doy = 0; doy < 366; doy++) {
+      const vals = historicalYears.map(y => byYear[y][doy]).filter(v => v != null);
+      if (vals.length) avg[doy] = computeAvg(vals, state.seasonAvg);
+    }
+    const avgSm = smoothSeries(avg, 3);
+    traces.push({ x: dates, y: avgSm, name: `${p.id} (${state.seasonWindow}L avg)`,
+      type: 'scatter', mode: 'lines', line: { color: p.color, width: 2.5 }, connectgaps: false });
+    // Biezacy rok jako przerywana
+    const cur = byYear[currentYear];
+    if (cur) {
+      const curY = new Array(366).fill(null);
+      Object.entries(cur).forEach(([doy, v]) => { curY[+doy] = v; });
+      traces.push({ x: dates, y: curY, name: `${p.id} ${currentYear}`,
+        type: 'scatter', mode: 'lines', line: { color: p.color, width: 1.2, dash: 'dash' }, connectgaps: false });
+    }
+  });
+  const unitLabel = state.seasonPct ? '% zmiana YTD' :
+    (commonUnit === 'różne' ? 'różne jednostki - włącz "Skala %" żeby porównać' : commonUnit);
+  Plotly.react('mainPlot', traces, {
+    ...layoutBase,
+    xaxis: { ...layoutBase.xaxis, tickformat: '%b', dtick: 'M1' },
+    yaxis: { ...layoutBase.yaxis, title: unitLabel },
+  }, { responsive: true, displaylogo: false });
+
+  // Statystyki - dla kazdego produktu ostatnia wartosc vs srednia
+  const items = products.map(p => {
+    const conv = convertSeries(DATA[p.id].prices, p.unit, p.id);
+    const last = conv.prices.length ? conv.prices[conv.prices.length - 1] : 0;
+    return `<div class="stat"><div class="label">${p.name}</div><div class="value">${fmtNum(last)} ${conv.unit}</div><div class="sub">ostatnia obserwacja</div></div>`;
+  }).join('');
+  return { html: `<div class="stats-grid">${items}</div>
+    <div style="margin-top:10px; font-size:11px; color:var(--muted)">
+      Nakładka średnich ${state.seasonWindow}-letnich${state.seasonPct ? ' (w % zmiany od 1 stycznia)' : ''}.
+      ${state.ensoFilter !== 'all' && state.ensoFilter !== 'spread' ? ' Filtr ENSO: ' + ENSO_ICONS[state.ensoFilter] + ' ' + ENSO_LABELS[state.ensoFilter] : ''}
+    </div>` };
+}
+
 function renderSeasonal() {
   document.getElementById('eventsList').innerHTML = '';
   const active = PRODUCTS.filter(p => state.selected.includes(p.id));
-  if (!active.length) { document.getElementById('mainTitle').textContent = 'Sezonowa — wybierz produkt'; setEmpty('mainPlot', 'Wybierz jeden produkt.'); return; }
+  if (!active.length) { document.getElementById('mainTitle').textContent = 'Sezonowa — wybierz produkt'; setEmpty('mainPlot', 'Wybierz produkt.'); return; }
+
+  // Wiele produktow (2+): nakładka srednich
+  if (active.length >= 2) {
+    document.getElementById('mainTitle').innerHTML =
+      `Sezonowa nakładka: ${active.map(p => p.name).join(' · ')} <span class="sub">średnia ${state.seasonWindow}L${state.seasonPct ? ' · % zmiana YTD' : ''}</span>`;
+    const res = renderSeasonalMulti(active);
+    document.getElementById('seasonalStats').innerHTML = res.html;
+    renderStats(active);
+    return;
+  }
+
+  // Jeden produkt: pelne detale (envelope + wszystkie lata + ENSO spread + itd.)
   const p = active[0];
   const methodLabel = state.seasonAvg === 'median' ? 'mediana' : state.seasonAvg === 'trimmed' ? 'średnia obc.' : 'średnia';
   const d = DATA[p.id];
