@@ -226,6 +226,38 @@ PRODUCTS = [
          name="USD/CHF (kurs)", unit="CHF/USD",
          contract_size=1, contract_unit="USD", category="Waluty", color="#ef5350"),
 
+    # Elektryka hurt (day-ahead) - dzienne, Ember Energy (CSV, bez rejestracji)
+    dict(id="PL_POWER", source="ember", series="Poland",
+         name="Elektryka hurt Polska",      unit="€/MWh",
+         contract_size=1, contract_unit="MWh", category="Elektryka", color="#ffca28"),
+    dict(id="DE_POWER", source="ember", series="Germany",
+         name="Elektryka hurt Niemcy",      unit="€/MWh",
+         contract_size=1, contract_unit="MWh", category="Elektryka", color="#ff9800"),
+    dict(id="FR_POWER", source="ember", series="France",
+         name="Elektryka hurt Francja",     unit="€/MWh",
+         contract_size=1, contract_unit="MWh", category="Elektryka", color="#5c6bc0"),
+    dict(id="ES_POWER", source="ember", series="Spain",
+         name="Elektryka hurt Hiszpania",   unit="€/MWh",
+         contract_size=1, contract_unit="MWh", category="Elektryka", color="#ec407a"),
+    dict(id="IT_POWER", source="ember", series="Italy",
+         name="Elektryka hurt Włochy",      unit="€/MWh",
+         contract_size=1, contract_unit="MWh", category="Elektryka", color="#66bb6a"),
+    dict(id="CZ_POWER", source="ember", series="Czech Republic",
+         name="Elektryka hurt Czechy",      unit="€/MWh",
+         contract_size=1, contract_unit="MWh", category="Elektryka", color="#26a69a"),
+    dict(id="SK_POWER", source="ember", series="Slovakia",
+         name="Elektryka hurt Słowacja",    unit="€/MWh",
+         contract_size=1, contract_unit="MWh", category="Elektryka", color="#42a5f5"),
+    dict(id="HU_POWER", source="ember", series="Hungary",
+         name="Elektryka hurt Węgry",       unit="€/MWh",
+         contract_size=1, contract_unit="MWh", category="Elektryka", color="#ff7043"),
+    dict(id="NL_POWER", source="ember", series="Netherlands",
+         name="Elektryka hurt Holandia",    unit="€/MWh",
+         contract_size=1, contract_unit="MWh", category="Elektryka", color="#ffb74d"),
+    dict(id="GB_POWER", source="ember", series="United Kingdom",
+         name="Elektryka hurt UK",          unit="€/MWh",
+         contract_size=1, contract_unit="MWh", category="Elektryka", color="#7e57c2"),
+
     # MATIF Paryz (Euronext) - best-effort, Yahoo bywa kaprysny dla EU futures
     dict(id="MATIF_WHEAT", source="yahoo", series="EBM.PA",
          name="Pszenica młynarska (MATIF Paris)", unit="€/t",
@@ -482,6 +514,92 @@ def fetch_wob(series_key: str) -> list:
     return obs
 
 
+_EMBER_CACHE = None
+EMBER_URL = "https://files.ember-energy.org/public-downloads/price/outputs/european_wholesale_electricity_price_data_daily.csv"
+
+def _parse_ember():
+    """Parsuje CSV z Ember Energy (day-ahead ceny hurtowe elektryki w Europie).
+    Zwraca slownik: {country_name: [{date, value}, ...]}."""
+    global _EMBER_CACHE
+    if _EMBER_CACHE is not None:
+        return _EMBER_CACHE
+    print(f"  [EMBER] pobieram CSV z Ember Energy ...", flush=True)
+    try:
+        req = urllib.request.Request(EMBER_URL, headers={"User-Agent": "Mozilla/5.0 (energy-analytics)"})
+        with urllib.request.urlopen(req, timeout=60) as r:
+            raw = r.read().decode('utf-8', errors='replace')
+        print(f"  [EMBER] pobrano {len(raw)/1024:.1f} KB", flush=True)
+    except Exception as e:
+        print(f"  [EMBER] BLAD: {e}", flush=True)
+        _EMBER_CACHE = {}
+        return _EMBER_CACHE
+
+    lines = raw.strip().split('\n')
+    if len(lines) < 2:
+        _EMBER_CACHE = {}
+        return _EMBER_CACHE
+
+    # Auto-detekcja kolumn z naglowka
+    header = [h.strip().strip('"') for h in lines[0].split(',')]
+    print(f"  [EMBER] header: {header}", flush=True)
+    col_country = col_date = col_price = None
+    for i, h in enumerate(header):
+        hl = h.lower()
+        if col_country is None and ('country' in hl and 'iso' not in hl and 'code' not in hl):
+            col_country = i
+        if col_date is None and 'date' in hl:
+            col_date = i
+        if col_price is None and ('price' in hl or 'eur' in hl):
+            col_price = i
+
+    if col_country is None or col_date is None or col_price is None:
+        print(f"  [EMBER] BLAD: nie znaleziono kolumn (country={col_country}, date={col_date}, price={col_price})", flush=True)
+        _EMBER_CACHE = {}
+        return _EMBER_CACHE
+
+    print(f"  [EMBER] kolumny: country={col_country}, date={col_date}, price={col_price}", flush=True)
+
+    results = {}
+    n_ok = 0
+    for line in lines[1:]:
+        parts = [p.strip().strip('"') for p in line.split(',')]
+        if len(parts) <= max(col_country, col_date, col_price):
+            continue
+        country = parts[col_country]
+        date_s = parts[col_date][:10]
+        try:
+            price = float(parts[col_price])
+        except ValueError:
+            continue
+        # Waliduj date
+        try:
+            datetime.strptime(date_s, '%Y-%m-%d')
+        except ValueError:
+            continue
+        results.setdefault(country, []).append({'date': date_s, 'value': price})
+        n_ok += 1
+
+    # Sortuj per country
+    for country in results:
+        results[country].sort(key=lambda o: o['date'])
+
+    print(f"  [EMBER] wczytano {n_ok} obserwacji, {len(results)} krajow", flush=True)
+    for c in ['Poland', 'Germany', 'France']:
+        v = results.get(c, [])
+        if v:
+            print(f"  [EMBER] {c}: {len(v)} obs, ostatnia {v[-1]}", flush=True)
+        else:
+            print(f"  [EMBER] {c}: BRAK", flush=True)
+
+    _EMBER_CACHE = results
+    return results
+
+
+def fetch_ember(country: str) -> list:
+    """Zwraca liste {date, value} dla podanego kraju."""
+    return _parse_ember().get(country, [])
+
+
 _ORLEN_CACHE = None
 
 def _scrape_orlen_current():
@@ -632,6 +750,8 @@ def main():
             elif p["source"] == "orlen_scrape":
                 # Append-only: rozszerz istniejaca historie o dzisiejsza cene
                 obs = fetch_orlen_append(p["series"], existing.get(pid, []))
+            elif p["source"] == "ember":
+                obs = fetch_ember(p["series"])
             else:
                 print(f"  [SKIP] nieznane zrodlo {p['source']}")
                 continue
