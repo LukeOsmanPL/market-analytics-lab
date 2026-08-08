@@ -108,6 +108,24 @@ PRODUCTS = [
          contract_size=5000, contract_unit="bu",
          category="Rolne", color="#7cb342"),
 
+    # Europa - gaz i inne benchmarki europejskie
+    dict(id="TTF",   source="yahoo", series="TTF=F",
+         name="TTF (gaz EU, Amsterdam)",  unit="€/MWh",
+         contract_size=1000, contract_unit="MWh",
+         category="Europa", color="#66bb6a"),
+    dict(id="EU_NG_MO", source="fred", series="PNGASEUUSDM",
+         name="Gaz EU (WB, miesieczny)", unit="$/MMBtu",
+         contract_size=1, contract_unit="MMBtu",
+         category="Europa", color="#81c784"),
+    dict(id="COAL_AU", source="fred", series="PCOALAUUSDM",
+         name="Wegiel Australia (WB, miesieczny)", unit="$/mt",
+         contract_size=1, contract_unit="mt",
+         category="Energia", color="#455a64"),
+    dict(id="LNG_JP",  source="fred", series="PNGASJPUSDM",
+         name="LNG Japonia (WB, miesieczny)", unit="$/MMBtu",
+         contract_size=1, contract_unit="MMBtu",
+         category="Energia", color="#e57373"),
+
     # Tropikalne (Yahoo Finance)
     dict(id="COFFEE",  source="yahoo", series="KC=F", unit_scale=0.01,
          name="Kawa Arabica (ICE)",       unit="$/lb",
