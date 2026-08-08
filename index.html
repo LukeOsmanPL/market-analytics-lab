@@ -23,8 +23,13 @@
   .content { padding: 16px; display: flex; flex-direction: column; gap: 16px; }
   .card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 12px; }
   h3 { margin: 0 0 10px 0; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
-  .chart-title { font-size: 15px; font-weight: 600; margin: 0 0 10px 0; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  .chart-title { font-size: 15px; font-weight: 600; margin: 0 0 10px 0; padding-bottom: 8px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between; gap: 8px; }
   .chart-title .sub { font-weight: 400; color: var(--muted); font-size: 12px; margin-left: 8px; }
+  .chart-title .title-text { flex: 1; overflow: hidden; text-overflow: ellipsis; }
+  .export-btn { background: var(--panel-2); color: var(--muted); border: 1px solid var(--border);
+    padding: 4px 10px; border-radius: 6px; font-size: 11px; cursor: pointer; font-family: inherit; }
+  .export-btn:hover { border-color: var(--accent); color: var(--accent); }
   .cat-header { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
     color: var(--muted); padding: 8px 4px 4px; font-weight: 700; border-top: 1px dotted var(--border); margin-top: 4px; }
   .cat-header:first-of-type { border-top: none; margin-top: 0; }
@@ -109,7 +114,7 @@
     <h1>Market Analytics Lab</h1>
     <div class="badge" id="dataFreshness">ładuję dane…</div>
   </div>
-  <div class="badge">v2.2 · projekt i realizacja: Łukasz Osman</div>
+  <div class="badge">v2.3 · projekt i realizacja: Łukasz Osman</div>
 </header>
 
 <div id="loading">
@@ -181,6 +186,7 @@
     <section class="divider">
       <h3>Tryb analizy</h3>
       <div class="mode-buttons" id="modes">
+        <button data-m="dashboard">Dashboard</button>
         <button data-m="standard" class="active">Nakładka</button>
         <button data-m="seasonal">Sezonowa</button>
         <button data-m="spread">Spread</button>
@@ -280,10 +286,17 @@
 
   <div class="content">
     <div class="card">
-      <div class="chart-title" id="mainTitle">—</div>
+      <div class="chart-title">
+        <span class="title-text" id="mainTitle">—</span>
+        <button class="export-btn" onclick="exportPlotCSV('mainPlot', 'chart')">📥 CSV</button>
+      </div>
       <div id="mainPlot" class="plot"></div>
       <div id="eventsList"></div>
     </div>
+    <div class="card mode-panel" id="panel-dashboard">
+      <div id="dashboardContent"></div>
+    </div>
+
     <div class="card mode-panel active" id="panel-standard">
       <div class="chart-title" id="corrTitle">Korelacja krocząca (60 dni)</div>
       <div id="corrPlot" class="plot-small"></div>
@@ -494,6 +507,7 @@ function convertSeries(prices, fromUnit, productId) {
 }
 
 const SELECT_RULES = {
+  dashboard:{ min: 0, max: 99, kind: 'multi',  label: 'Dashboard skanuje wszystkie produkty automatycznie.' },
   standard: { min: 1, max: 6, kind: 'multi',  label: 'Wybierz 1-6 produktów.' },
   seasonal: { min: 1, max: 5, kind: 'multi',  label: 'Wybierz 1-5 produktów. Jeden: pełne detale. Wiele: nakładka średnich sezonowych (włącz % przy różnych jednostkach).' },
   spread:   { min: 2, max: 5, kind: 'multi',  label: 'Wybierz 2-5 produktów (nogi spreadu).' },
@@ -966,6 +980,47 @@ function buildEventOverlay(fromDate, toDate) {
       <div style="max-height:280px; overflow-y:auto; margin-top:6px">${items}</div>
     </details>`;
   return { shapes, annotations, listHtml };
+}
+
+/* ============ Eksport CSV z wykresu Plotly ============ */
+function exportPlotCSV(elId, baseName) {
+  const el = document.getElementById(elId);
+  if (!el || !el.data) return;
+  const traces = el.data.filter(t => t && t.x && t.y && t.name && t.showlegend !== false);
+  if (!traces.length) { alert('Brak danych do eksportu'); return; }
+
+  // Suma unikalnych X (dat)
+  const allX = new Set();
+  traces.forEach(t => { for (let i = 0; i < t.x.length; i++) allX.add(t.x[i]); });
+  const xs = Array.from(allX).sort();
+
+  // Mapa: dla kazdego trace, indeks x
+  const xIdxMaps = traces.map(t => {
+    const m = new Map();
+    for (let i = 0; i < t.x.length; i++) m.set(t.x[i], t.y[i]);
+    return m;
+  });
+
+  // CSV
+  const escape = s => {
+    const str = String(s);
+    return /[",\n]/.test(str) ? '"' + str.replace(/"/g, '""') + '"' : str;
+  };
+  const header = ['Date', ...traces.map(t => t.name)].map(escape).join(',');
+  const rows = xs.map(x => {
+    const row = [x, ...xIdxMaps.map(m => m.has(x) ? m.get(x) : '')];
+    return row.map(escape).join(',');
+  });
+  const csv = header + '\n' + rows.join('\n');
+
+  const ts = new Date().toISOString().slice(0, 10);
+  const filename = `${baseName}-${state.mode}-${ts}.csv`;
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 100);
 }
 
 const layoutBase = {
@@ -1641,7 +1696,153 @@ function renderStats(active) {
   });
 }
 
+/* ============ Dashboard "co się dzieje dziś" ============ */
+function renderDashboard() {
+  document.getElementById('mainTitle').innerHTML = 'Dashboard — skan wszystkich produktów';
+  setEmpty('mainPlot', 'Podsumowanie ruchów cen we wszystkich kategoriach - zobacz panele poniżej.');
+  document.getElementById('eventsList').innerHTML = '';
+  document.getElementById('stats').innerHTML = '';
+
+  // Pomin FX i produkty ktore nie sa cennami (np. czysto walutowe)
+  const skipCats = new Set(['Waluty']);
+  const relevant = PRODUCTS.filter(p => !skipCats.has(p.cat) && DATA[p.id] && DATA[p.id].prices && DATA[p.id].prices.length >= 5);
+
+  // Pomocnicze: znajdz cene z konkretnego offsetu wstecz
+  const priceAtOffset = (pid, daysBack) => {
+    const d = DATA[pid];
+    if (!d || !d.prices.length) return null;
+    const idx = d.prices.length - 1 - daysBack;
+    return idx >= 0 ? d.prices[idx] : null;
+  };
+  // Cena w polnocy pierwszego dnia sprzed N dni (przybliżenie kalendarzowe)
+  const priceNDaysAgo = (pid, days) => {
+    const d = DATA[pid];
+    if (!d || !d.prices.length) return null;
+    const lastDate = new Date(d.dates[d.dates.length - 1]);
+    const target = new Date(lastDate); target.setDate(target.getDate() - days);
+    const targetStr = target.toISOString().slice(0, 10);
+    // znajdz najblizsza date <= targetStr
+    for (let i = d.dates.length - 1; i >= 0; i--) {
+      if (d.dates[i] <= targetStr) return d.prices[i];
+    }
+    return d.prices[0];
+  };
+  // 5Y srednia
+  const avg5Y = (pid) => {
+    const d = DATA[pid];
+    if (!d || !d.prices.length) return null;
+    const lastDate = new Date(d.dates[d.dates.length - 1]);
+    const cutoff = new Date(lastDate); cutoff.setFullYear(cutoff.getFullYear() - 5);
+    const cutoffStr = cutoff.toISOString().slice(0, 10);
+    let sum = 0, n = 0;
+    for (let i = 0; i < d.dates.length; i++) {
+      if (d.dates[i] >= cutoffStr) { sum += d.prices[i]; n++; }
+    }
+    return n ? sum / n : null;
+  };
+
+  const movers = relevant.map(p => {
+    const last = priceAtOffset(p.id, 0);
+    const prev1d = priceAtOffset(p.id, 1);
+    const prev7d = priceNDaysAgo(p.id, 7);
+    const prev30d = priceNDaysAgo(p.id, 30);
+    const prev365d = priceNDaysAgo(p.id, 365);
+    const avg5 = avg5Y(p.id);
+    const pct = (a, b) => (b && b !== 0) ? ((a / b - 1) * 100) : null;
+    return {
+      p, last,
+      d1: pct(last, prev1d),
+      d7: pct(last, prev7d),
+      d30: pct(last, prev30d),
+      d365: pct(last, prev365d),
+      dev5Y: pct(last, avg5),
+      lastDate: DATA[p.id].dates[DATA[p.id].dates.length - 1],
+    };
+  }).filter(m => m.last != null);
+
+  // Sortowania
+  const sortBy = (arr, key, desc = true) => arr.filter(m => m[key] != null).sort((a, b) => desc ? b[key] - a[key] : a[key] - b[key]);
+  const topN = (arr, n) => arr.slice(0, n);
+
+  const buildTable = (items, valueKey, valueLabel) => {
+    if (!items.length) return '<div class="empty">Brak danych</div>';
+    return `<table style="width:100%; border-collapse:collapse; font-size:12px">
+      <thead><tr style="border-bottom:1px solid var(--border); color:var(--muted); text-align:left">
+        <th style="padding:6px 4px">Produkt</th>
+        <th style="padding:6px 4px; text-align:right">Cena</th>
+        <th style="padding:6px 4px; text-align:right">${valueLabel}</th>
+      </tr></thead>
+      <tbody>
+      ${items.map(m => {
+        const v = m[valueKey];
+        const cls = v >= 0 ? 'up' : 'down';
+        const arrow = v >= 0 ? '▲' : '▼';
+        return `<tr style="border-bottom:1px solid rgba(45,55,70,0.5)">
+          <td style="padding:6px 4px"><span class="swatch" style="background:${m.p.color}"></span> ${m.p.name}</td>
+          <td style="padding:6px 4px; text-align:right; font-family:monospace">${fmtNum(m.last)} <span style="color:var(--muted);font-size:10px">${m.p.unit}</span></td>
+          <td style="padding:6px 4px; text-align:right; font-family:monospace" class="${cls}">${arrow} ${Math.abs(v).toFixed(2)}%</td>
+        </tr>`;
+      }).join('')}
+      </tbody>
+    </table>`;
+  };
+
+  const lastUpdate = movers.length ? movers.map(m => m.lastDate).sort().slice(-1)[0] : '';
+
+  const content = `
+    <div class="chart-title"><span class="title-text">Dashboard — co się dzieje na rynkach</span></div>
+    <div style="color:var(--muted); font-size:12px; margin-bottom:16px">
+      Skan ${relevant.length} produktów. Ostatnia aktualizacja danych: <b>${lastUpdate}</b>.
+    </div>
+
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:16px">
+      <div class="card" style="padding:12px">
+        <div style="font-weight:600; margin-bottom:8px; color:var(--ok)">▲ Top 5 wzrost 1 dzień</div>
+        ${buildTable(topN(sortBy(movers, 'd1', true), 5), 'd1', 'Δ 1d')}
+      </div>
+      <div class="card" style="padding:12px">
+        <div style="font-weight:600; margin-bottom:8px; color:var(--bad)">▼ Top 5 spadek 1 dzień</div>
+        ${buildTable(topN(sortBy(movers, 'd1', false), 5), 'd1', 'Δ 1d')}
+      </div>
+      <div class="card" style="padding:12px">
+        <div style="font-weight:600; margin-bottom:8px; color:var(--ok)">▲ Top 5 wzrost 1 tydzień</div>
+        ${buildTable(topN(sortBy(movers, 'd7', true), 5), 'd7', 'Δ 7d')}
+      </div>
+      <div class="card" style="padding:12px">
+        <div style="font-weight:600; margin-bottom:8px; color:var(--bad)">▼ Top 5 spadek 1 tydzień</div>
+        ${buildTable(topN(sortBy(movers, 'd7', false), 5), 'd7', 'Δ 7d')}
+      </div>
+      <div class="card" style="padding:12px">
+        <div style="font-weight:600; margin-bottom:8px; color:var(--ok)">▲ Top 5 wzrost 30 dni</div>
+        ${buildTable(topN(sortBy(movers, 'd30', true), 5), 'd30', 'Δ 30d')}
+      </div>
+      <div class="card" style="padding:12px">
+        <div style="font-weight:600; margin-bottom:8px; color:var(--bad)">▼ Top 5 spadek 30 dni</div>
+        ${buildTable(topN(sortBy(movers, 'd30', false), 5), 'd30', 'Δ 30d')}
+      </div>
+      <div class="card" style="padding:12px">
+        <div style="font-weight:600; margin-bottom:8px; color:var(--accent)">📈 Najbardziej powyżej 5L średniej</div>
+        ${buildTable(topN(sortBy(movers, 'dev5Y', true), 5), 'dev5Y', 'vs 5L avg')}
+      </div>
+      <div class="card" style="padding:12px">
+        <div style="font-weight:600; margin-bottom:8px; color:var(--accent)">📉 Najbardziej poniżej 5L średniej</div>
+        ${buildTable(topN(sortBy(movers, 'dev5Y', false), 5), 'dev5Y', 'vs 5L avg')}
+      </div>
+      <div class="card" style="padding:12px">
+        <div style="font-weight:600; margin-bottom:8px; color:var(--accent-2)">🔥 Największe ruchy roczne (wzrost)</div>
+        ${buildTable(topN(sortBy(movers, 'd365', true), 5), 'd365', 'Δ 12m')}
+      </div>
+      <div class="card" style="padding:12px">
+        <div style="font-weight:600; margin-bottom:8px; color:var(--accent-2)">❄️ Największe ruchy roczne (spadek)</div>
+        ${buildTable(topN(sortBy(movers, 'd365', false), 5), 'd365', 'Δ 12m')}
+      </div>
+    </div>
+  `;
+  document.getElementById('dashboardContent').innerHTML = content;
+}
+
 function render() {
+  if (state.mode === 'dashboard') renderDashboard();
   if (state.mode === 'standard')  renderStandard();
   if (state.mode === 'seasonal')  renderSeasonal();
   if (state.mode === 'spread')    renderSpread();
