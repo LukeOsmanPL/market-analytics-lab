@@ -33,7 +33,7 @@ if not FRED_KEY:
     print("BLAD: Ustaw zmienna srodowiskowa FRED_KEY", file=sys.stderr)
     sys.exit(1)
 
-START_DATE = "2014-01-01"
+START_DATE = "1995-01-01"  # 30 lat historii; nie wszystkie serie sięgają tak daleko - fetch zwraca co jest dostępne
 
 # ---------------------------------------------------------------------------
 # Produkty
@@ -120,6 +120,33 @@ PRODUCTS = [
          contract_size=60000, contract_unit="lb",
          category="Rolne", color="#f9a825"),
 
+    # Polska: retail (detal) z EU Weekly Oil Bulletin - historia tygodniowa od 2005
+    dict(id="PL_PB95_WOB", source="wob", series="Poland|Euro-Super 95",
+         name="Pb95 detal PL (EU WOB)",   unit="€/1000L",
+         contract_size=1, contract_unit="L",
+         category="Lokalne PL", color="#4db6ac"),
+    dict(id="PL_ON_WOB",   source="wob", series="Poland|Automotive Gas Oil",
+         name="ON detal PL (EU WOB)",     unit="€/1000L",
+         contract_size=1, contract_unit="L",
+         category="Lokalne PL", color="#26a69a"),
+    dict(id="PL_LPG_WOB",  source="wob", series="Poland|LPG",
+         name="LPG detal PL (EU WOB)",    unit="€/1000L",
+         contract_size=1, contract_unit="L",
+         category="Lokalne PL", color="#80cbc4"),
+    dict(id="PL_HEAT_WOB", source="wob", series="Poland|Heating Gas Oil",
+         name="Olej opałowy PL (EU WOB)", unit="€/1000L",
+         contract_size=1, contract_unit="L",
+         category="Lokalne PL", color="#00897b"),
+    # Odniesienie EU
+    dict(id="EU_PB95_WOB", source="wob", series="Euro Area|Euro-Super 95",
+         name="Pb95 detal Eurozone (WOB)",unit="€/1000L",
+         contract_size=1, contract_unit="L",
+         category="Europa", color="#9575cd"),
+    dict(id="EU_ON_WOB",   source="wob", series="Euro Area|Automotive Gas Oil",
+         name="ON detal Eurozone (WOB)",  unit="€/1000L",
+         contract_size=1, contract_unit="L",
+         category="Europa", color="#7e57c2"),
+
     # MATIF Paryz (Euronext) - best-effort, Yahoo bywa kaprysny dla EU futures
     dict(id="MATIF_WHEAT", source="yahoo", series="EBM.PA",
          name="Pszenica młynarska (MATIF Paris)", unit="€/t",
@@ -189,6 +216,175 @@ def fetch_fred(series_id: str) -> list:
     return obs
 
 
+WOB_URL = ("https://energy.ec.europa.eu/document/download/"
+           "906e60ca-8b6a-44e7-8589-652854d2fd3f_en"
+           "?filename=Weekly_Oil_Bulletin_Prices_History_maticni_4web.xlsx")
+_WOB_CACHE = None  # cache pobranego XLSX - jeden download na cala petle produktow
+
+def _download_wob_xlsx():
+    """Downloaduje WOB XLSX raz i cache'uje surowe bajty."""
+    global _WOB_CACHE
+    if _WOB_CACHE is not None:
+        return _WOB_CACHE
+    print(f"  [WOB] pobieram XLSX z ec.europa.eu ...", flush=True)
+    req = urllib.request.Request(WOB_URL, headers={"User-Agent": "Mozilla/5.0 (energy-analytics)"})
+    with urllib.request.urlopen(req, timeout=120) as r:
+        _WOB_CACHE = r.read()
+    print(f"  [WOB] pobrano {len(_WOB_CACHE)/1024/1024:.1f} MB", flush=True)
+    return _WOB_CACHE
+
+
+def _parse_wob_workbook():
+    """Parsuje XLSX WOB. Zwraca slownik: {(country, product): [(date, value_eur_per_1000L), ...]}.
+
+    Struktura pliku (na podstawie dokumentacji WOB):
+      - tall format: kazdy wiersz to (date, country, product, price)
+      - albo per-country sheets
+    Parser probuje oba warianty defensywnie.
+    """
+    import openpyxl
+    from io import BytesIO
+
+    raw = _download_wob_xlsx()
+    wb = openpyxl.load_workbook(BytesIO(raw), read_only=True, data_only=True)
+    print(f"  [WOB] arkusze: {wb.sheetnames}", flush=True)
+
+    results = {}  # (country_name, product_name) -> [(date_iso, price)]
+
+    # Znane nazwy produktow w WOB (do dopasowania)
+    PRODUCT_ALIASES = {
+        'Euro-Super 95': ['euro-super 95', 'eurosuper 95', 'euro super 95', 'gasoline'],
+        'Automotive Gas Oil': ['automotive gas oil', 'diesel', 'gas oil'],
+        'Heating Gas Oil': ['heating gas oil', 'heating oil'],
+        'LPG': ['lpg', 'liquefied'],
+        'Residual Fuel Oil': ['residual fuel oil'],
+    }
+    COUNTRY_ALIASES = {
+        'Poland': ['poland', 'polska', 'pl '],
+        'Euro Area': ['euro area', 'eu-27', 'eu 27', 'european union', 'eurozone'],
+        'Germany': ['germany', 'deutschland'],
+        'France': ['france'],
+    }
+
+    def match_alias(cell_value, aliases_dict):
+        """Zwraca kanoniczna nazwe albo None."""
+        if not cell_value: return None
+        s = str(cell_value).strip().lower()
+        for canonical, aliases in aliases_dict.items():
+            for a in aliases:
+                if a in s:
+                    return canonical
+        return None
+
+    total_rows_scanned = 0
+    for sheet_name in wb.sheetnames:
+        ws = wb[sheet_name]
+        # Zbierz naglowki z pierwszych 5 wierszy (na wypadek zlozonych naglowkow)
+        header_rows = []
+        for i, row in enumerate(ws.iter_rows(min_row=1, max_row=5, values_only=True)):
+            header_rows.append(row)
+
+        # Wykryj kolumny: szukamy kolumny 'date', kolumny z krajami, kolumny z produktami
+        # Podejscie 1: WYSZUKAJ komorki z nazwami krajow w wierszach naglowka
+        col_country_map = {}   # col_idx -> canonical country
+        col_product_map = {}   # col_idx -> canonical product
+        for hrow in header_rows:
+            for col_idx, cell in enumerate(hrow):
+                c_country = match_alias(cell, COUNTRY_ALIASES)
+                if c_country:
+                    col_country_map[col_idx] = c_country
+                c_product = match_alias(cell, PRODUCT_ALIASES)
+                if c_product:
+                    col_product_map[col_idx] = c_product
+
+        # Wariant A: sheet zawiera osobne kolumny per (country, product) - wtedy col_country_map lub col_product_map ma wpisy
+        # Wariant B: sheet ma kolumny 'date', 'country', 'product', 'value' - tall format
+
+        # Skanujemy wiersze danych
+        for row_idx, row in enumerate(ws.iter_rows(min_row=6, values_only=True)):
+            total_rows_scanned += 1
+            if total_rows_scanned > 500000:  # safety
+                break
+            if not row or all(c is None for c in row):
+                continue
+
+            # Szukamy komorki z data (datetime)
+            date_val = None
+            for cell in row:
+                if hasattr(cell, 'strftime'):
+                    date_val = cell.strftime('%Y-%m-%d')
+                    break
+                # Moze byc str "2020-01-06" lub "06/01/2020"
+                if isinstance(cell, str):
+                    s = cell.strip()
+                    # Sprobuj format YYYY-MM-DD
+                    if len(s) == 10 and s[4] == '-' and s[7] == '-':
+                        try:
+                            datetime.strptime(s, '%Y-%m-%d')
+                            date_val = s
+                            break
+                        except: pass
+
+            if not date_val:
+                continue
+
+            # Tall format? Sprobuj znalezc country i product w komorkach tego wiersza
+            row_country = None
+            row_product = None
+            row_value = None
+            for cell in row:
+                if cell is None: continue
+                c = match_alias(cell, COUNTRY_ALIASES)
+                if c and not row_country:
+                    row_country = c
+                p = match_alias(cell, PRODUCT_ALIASES)
+                if p and not row_product:
+                    row_product = p
+                if isinstance(cell, (int, float)) and cell > 100 and cell < 5000:  # sensowna cena w EUR/1000L
+                    row_value = float(cell)
+
+            if row_country and row_product and row_value:
+                key = (row_country, row_product)
+                results.setdefault(key, []).append((date_val, row_value))
+                continue
+
+            # Wariant kolumnowy: iteruj po znanych kolumnach country/product
+            for col_idx, cell in enumerate(row):
+                if col_idx in col_country_map and col_idx in col_product_map:
+                    if isinstance(cell, (int, float)) and cell > 100:
+                        country = col_country_map[col_idx]
+                        product = col_product_map[col_idx]
+                        results.setdefault((country, product), []).append((date_val, float(cell)))
+
+    # Statystyki
+    print(f"  [WOB] przeskanowano {total_rows_scanned} wierszy", flush=True)
+    for key, vals in list(results.items())[:10]:
+        print(f"  [WOB] {key[0]}|{key[1]}: {len(vals)} obs", flush=True)
+
+    return results
+
+
+def fetch_wob(series_key: str) -> list:
+    """Zwraca liste {date, value} dla klucza 'Country|Product'."""
+    parsed = _parse_wob_workbook()
+    if '|' not in series_key:
+        return []
+    country, product = series_key.split('|', 1)
+    obs_tuples = parsed.get((country, product), [])
+    if not obs_tuples:
+        # sprobuj bez case-sensitivity - moze mapping niestandardowy
+        for (c, p), vals in parsed.items():
+            if c.lower() == country.lower() and p.lower() == product.lower():
+                obs_tuples = vals
+                break
+    # Deduplikacja po dacie, sortowanie
+    seen = {}
+    for d, v in obs_tuples:
+        seen[d] = v
+    obs = [{"date": d, "value": v} for d, v in sorted(seen.items())]
+    return obs
+
+
 def fetch_yahoo(ticker: str, unit_scale: float = 1.0) -> list:
     """Zwraca liste {date, value} z Yahoo Finance przez yfinance."""
     try:
@@ -233,6 +429,8 @@ def main():
                 obs = fetch_fred(p["series"])
             elif p["source"] == "yahoo":
                 obs = fetch_yahoo(p["series"], scale)
+            elif p["source"] == "wob":
+                obs = fetch_wob(p["series"])
             else:
                 print(f"  [SKIP] nieznane zrodlo {p['source']}")
                 continue
