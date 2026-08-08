@@ -258,6 +258,36 @@ PRODUCTS = [
          name="Elektryka hurt UK",          unit="€/MWh",
          contract_size=1, contract_unit="MWh", category="Elektryka", color="#7e57c2"),
 
+    # CFTC COT - pozycja NETTO Money Managers (Long - Short) per market, tygodniowo
+    # Klasyczny wskaźnik kontrariański - ekstremum netto sygnalizuje odwrócenie
+    dict(id="COT_WTI_NET",    source="cftc", series="CRUDE OIL, LIGHT SWEET - NEW YORK MERCANTILE EXCHANGE",
+         name="COT WTI - Money Mgr netto",  unit="kontrakty", contract_size=1, contract_unit="kontrakty",
+         category="COT", color="#ff8a65"),
+    dict(id="COT_BRENT_NET",  source="cftc", series="BRENT CRUDE OIL LAST DAY - NEW YORK MERCANTILE EXCHANGE",
+         name="COT Brent - Money Mgr netto",unit="kontrakty", contract_size=1, contract_unit="kontrakty",
+         category="COT", color="#ba68c8"),
+    dict(id="COT_NG_NET",     source="cftc", series="NATURAL GAS - NEW YORK MERCANTILE EXCHANGE",
+         name="COT NG - Money Mgr netto",   unit="kontrakty", contract_size=1, contract_unit="kontrakty",
+         category="COT", color="#4fc3f7"),
+    dict(id="COT_GOLD_NET",   source="cftc", series="GOLD - COMMODITY EXCHANGE INC.",
+         name="COT Gold - Money Mgr netto", unit="kontrakty", contract_size=1, contract_unit="kontrakty",
+         category="COT", color="#ffd54f"),
+    dict(id="COT_SILVER_NET", source="cftc", series="SILVER - COMMODITY EXCHANGE INC.",
+         name="COT Silver - Money Mgr netto", unit="kontrakty", contract_size=1, contract_unit="kontrakty",
+         category="COT", color="#b0bec5"),
+    dict(id="COT_COPPER_NET", source="cftc", series="COPPER-GRADE #1 - COMMODITY EXCHANGE INC.",
+         name="COT Copper - Money Mgr netto", unit="kontrakty", contract_size=1, contract_unit="kontrakty",
+         category="COT", color="#d84315"),
+    dict(id="COT_CORN_NET",   source="cftc", series="CORN - CHICAGO BOARD OF TRADE",
+         name="COT Corn - Money Mgr netto", unit="kontrakty", contract_size=1, contract_unit="kontrakty",
+         category="COT", color="#fbc02d"),
+    dict(id="COT_WHEAT_NET",  source="cftc", series="WHEAT-SRW - CHICAGO BOARD OF TRADE",
+         name="COT Wheat - Money Mgr netto",unit="kontrakty", contract_size=1, contract_unit="kontrakty",
+         category="COT", color="#8d6e63"),
+    dict(id="COT_SOYBEAN_NET",source="cftc", series="SOYBEANS - CHICAGO BOARD OF TRADE",
+         name="COT Soybean - Money Mgr netto", unit="kontrakty", contract_size=1, contract_unit="kontrakty",
+         category="COT", color="#7cb342"),
+
     # MATIF Paryz (Euronext) - best-effort, Yahoo bywa kaprysny dla EU futures
     dict(id="MATIF_WHEAT", source="yahoo", series="EBM.PA",
          name="Pszenica młynarska (MATIF Paris)", unit="€/t",
@@ -514,6 +544,81 @@ def fetch_wob(series_key: str) -> list:
     return obs
 
 
+_CFTC_CACHE = None
+
+def _fetch_cftc_all():
+    """Pobiera dane CFTC COT dla wszystkich zdefiniowanych rynkow COT_* w jednym API call.
+    Zwraca slownik {market_name: [{date, value=long-short}]}.
+    Wskaznik: Managed Money Net = long_all - short_all (klasyczny miernik kontrariański).
+    """
+    global _CFTC_CACHE
+    if _CFTC_CACHE is not None:
+        return _CFTC_CACHE
+
+    import urllib.parse
+    markets = [p["series"] for p in PRODUCTS if p["source"] == "cftc"]
+    if not markets:
+        _CFTC_CACHE = {}
+        return _CFTC_CACHE
+
+    # Zbuduj klauzule WHERE z listy rynkow (escapuj apostrofy w SoQL)
+    market_list = ",".join("'" + m.replace("'", "''") + "'" for m in markets)
+    where = f"market_and_exchange_names in ({market_list})"
+    params = urllib.parse.urlencode({
+        "$select": "market_and_exchange_names,report_date_as_yyyy_mm_dd,m_money_positions_long_all,m_money_positions_short_all",
+        "$where": where,
+        "$order": "report_date_as_yyyy_mm_dd",
+        "$limit": "50000",
+    })
+    url = "https://publicreporting.cftc.gov/resource/72hh-3qpy.json?" + params
+
+    print(f"  [CFTC] pobieram COT dla {len(markets)} rynkow ...", flush=True)
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "energy-analytics/1.0"})
+        with urllib.request.urlopen(req, timeout=90) as r:
+            rows = json.load(r)
+        print(f"  [CFTC] pobrano {len(rows)} wierszy", flush=True)
+    except Exception as e:
+        print(f"  [CFTC] BLAD: {e}", flush=True)
+        _CFTC_CACHE = {}
+        return _CFTC_CACHE
+
+    result = {}
+    counts_per_market = {}
+    for row in rows:
+        market = row.get("market_and_exchange_names", "").strip()
+        raw_date = row.get("report_date_as_yyyy_mm_dd", "") or ""
+        date_str = raw_date[:10] if raw_date else ""
+        try:
+            long_p = float(row.get("m_money_positions_long_all") or 0)
+            short_p = float(row.get("m_money_positions_short_all") or 0)
+        except (ValueError, TypeError):
+            continue
+        if not market or not date_str:
+            continue
+        net = long_p - short_p
+        result.setdefault(market, []).append({"date": date_str, "value": net})
+        counts_per_market[market] = counts_per_market.get(market, 0) + 1
+
+    # Sortuj i deduplikuj per market
+    for market in list(result.keys()):
+        seen = {}
+        for o in result[market]:
+            seen[o["date"]] = o["value"]
+        result[market] = [{"date": d, "value": v} for d, v in sorted(seen.items())]
+
+    for m, c in counts_per_market.items():
+        print(f"  [CFTC] {m[:50]}...: {c} wierszy", flush=True)
+
+    _CFTC_CACHE = result
+    return _CFTC_CACHE
+
+
+def fetch_cftc(market_name: str) -> list:
+    """Zwraca liste {date, value} dla podanego rynku."""
+    return _fetch_cftc_all().get(market_name, [])
+
+
 _EMBER_CACHE = None
 EMBER_URL = "https://files.ember-energy.org/public-downloads/price/outputs/european_wholesale_electricity_price_data_daily.csv"
 
@@ -752,6 +857,8 @@ def main():
                 obs = fetch_orlen_append(p["series"], existing.get(pid, []))
             elif p["source"] == "ember":
                 obs = fetch_ember(p["series"])
+            elif p["source"] == "cftc":
+                obs = fetch_cftc(p["series"])
             else:
                 print(f"  [SKIP] nieznane zrodlo {p['source']}")
                 continue
