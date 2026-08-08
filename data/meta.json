@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-08T16:04:48.065050+00:00",
+  "generated_at": "2026-08-08T16:17:49.438652+00:00",
   "products": [
     {
       "id": "NG",
@@ -226,20 +226,6 @@
       "n_observations": 6561
     },
     {
-      "id": "PL_LPG_WOB",
-      "name": "LPG detal PL (EU WOB)",
-      "unit": "€/1000L",
-      "contract_size": 1,
-      "contract_unit": "L",
-      "category": "Lokalne PL",
-      "color": "#80cbc4",
-      "source": "wob",
-      "series": "Poland|LPG",
-      "first_date": "1995-01-01",
-      "last_date": "2026-07-20",
-      "n_observations": 1131
-    },
-    {
       "id": "MATIF_WHEAT",
       "name": "Pszenica młynarska (MATIF Paris)",
       "unit": "€/t",
@@ -356,6 +342,7 @@
     "WHEAT_MW",
     "PL_PB95_WOB",
     "PL_ON_WOB",
+    "PL_LPG_WOB",
     "PL_HEAT_WOB",
     "EU_PB95_WOB",
     "EU_ON_WOB",
