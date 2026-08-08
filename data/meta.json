@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-07T20:16:29.009601+00:00",
+  "generated_at": "2026-08-08T09:20:52.469341+00:00",
   "products": [
     {
       "id": "NG",
@@ -196,6 +196,62 @@
       "first_date": "2014-01-02",
       "last_date": "2026-08-07",
       "n_observations": 3167
+    },
+    {
+      "id": "TTF",
+      "name": "TTF (gaz EU, Amsterdam)",
+      "unit": "€/MWh",
+      "contract_size": 1000,
+      "contract_unit": "MWh",
+      "category": "Europa",
+      "color": "#66bb6a",
+      "source": "yahoo",
+      "series": "TTF=F",
+      "first_date": "2017-10-23",
+      "last_date": "2026-08-07",
+      "n_observations": 2211
+    },
+    {
+      "id": "EU_NG_MO",
+      "name": "Gaz EU (WB, miesieczny)",
+      "unit": "$/MMBtu",
+      "contract_size": 1,
+      "contract_unit": "MMBtu",
+      "category": "Europa",
+      "color": "#81c784",
+      "source": "fred",
+      "series": "PNGASEUUSDM",
+      "first_date": "2014-01-01",
+      "last_date": "2026-06-01",
+      "n_observations": 150
+    },
+    {
+      "id": "COAL_AU",
+      "name": "Wegiel Australia (WB, miesieczny)",
+      "unit": "$/mt",
+      "contract_size": 1,
+      "contract_unit": "mt",
+      "category": "Energia",
+      "color": "#455a64",
+      "source": "fred",
+      "series": "PCOALAUUSDM",
+      "first_date": "2014-01-01",
+      "last_date": "2026-06-01",
+      "n_observations": 150
+    },
+    {
+      "id": "LNG_JP",
+      "name": "LNG Japonia (WB, miesieczny)",
+      "unit": "$/MMBtu",
+      "contract_size": 1,
+      "contract_unit": "MMBtu",
+      "category": "Energia",
+      "color": "#e57373",
+      "source": "fred",
+      "series": "PNGASJPUSDM",
+      "first_date": "2014-01-01",
+      "last_date": "2026-06-01",
+      "n_observations": 150
     },
     {
       "id": "COFFEE",
