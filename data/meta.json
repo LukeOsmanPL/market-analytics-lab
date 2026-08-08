@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-08T16:17:49.438652+00:00",
+  "generated_at": "2026-08-08T17:05:47.036379+00:00",
   "products": [
     {
       "id": "NG",
@@ -226,6 +226,118 @@
       "n_observations": 6561
     },
     {
+      "id": "PL_PB95_WOB",
+      "name": "Pb95 detal PL (EU WOB)",
+      "unit": "€/1000L",
+      "contract_size": 1,
+      "contract_unit": "L",
+      "category": "Lokalne PL",
+      "color": "#4db6ac",
+      "source": "wob",
+      "series": "PL|Euro-Super 95",
+      "first_date": "2005-01-03",
+      "last_date": "2026-08-03",
+      "n_observations": 1078
+    },
+    {
+      "id": "PL_ON_WOB",
+      "name": "ON detal PL (EU WOB)",
+      "unit": "€/1000L",
+      "contract_size": 1,
+      "contract_unit": "L",
+      "category": "Lokalne PL",
+      "color": "#26a69a",
+      "source": "wob",
+      "series": "PL|Automotive Gas Oil",
+      "first_date": "2005-01-03",
+      "last_date": "2026-08-03",
+      "n_observations": 1078
+    },
+    {
+      "id": "PL_LPG_WOB",
+      "name": "LPG detal PL (EU WOB)",
+      "unit": "€/1000L",
+      "contract_size": 1,
+      "contract_unit": "L",
+      "category": "Lokalne PL",
+      "color": "#80cbc4",
+      "source": "wob",
+      "series": "PL|LPG",
+      "first_date": "2005-01-03",
+      "last_date": "2026-08-03",
+      "n_observations": 1078
+    },
+    {
+      "id": "PL_HEAT_WOB",
+      "name": "Olej opałowy PL (EU WOB)",
+      "unit": "€/1000L",
+      "contract_size": 1,
+      "contract_unit": "L",
+      "category": "Lokalne PL",
+      "color": "#00897b",
+      "source": "wob",
+      "series": "PL|Heating Gas Oil",
+      "first_date": "2005-01-03",
+      "last_date": "2026-08-03",
+      "n_observations": 1078
+    },
+    {
+      "id": "EU_PB95_WOB",
+      "name": "Pb95 detal UE-27 (WOB)",
+      "unit": "€/1000L",
+      "contract_size": 1,
+      "contract_unit": "L",
+      "category": "Europa",
+      "color": "#9575cd",
+      "source": "wob",
+      "series": "EU|Euro-Super 95",
+      "first_date": "2005-01-03",
+      "last_date": "2026-08-03",
+      "n_observations": 1078
+    },
+    {
+      "id": "EU_ON_WOB",
+      "name": "ON detal UE-27 (WOB)",
+      "unit": "€/1000L",
+      "contract_size": 1,
+      "contract_unit": "L",
+      "category": "Europa",
+      "color": "#7e57c2",
+      "source": "wob",
+      "series": "EU|Automotive Gas Oil",
+      "first_date": "2005-01-03",
+      "last_date": "2026-08-03",
+      "n_observations": 1078
+    },
+    {
+      "id": "DE_PB95_WOB",
+      "name": "Pb95 detal Niemcy (WOB)",
+      "unit": "€/1000L",
+      "contract_size": 1,
+      "contract_unit": "L",
+      "category": "Europa",
+      "color": "#b39ddb",
+      "source": "wob",
+      "series": "DE|Euro-Super 95",
+      "first_date": "2005-01-03",
+      "last_date": "2026-08-03",
+      "n_observations": 1078
+    },
+    {
+      "id": "DE_ON_WOB",
+      "name": "ON detal Niemcy (WOB)",
+      "unit": "€/1000L",
+      "contract_size": 1,
+      "contract_unit": "L",
+      "category": "Europa",
+      "color": "#9575cd",
+      "source": "wob",
+      "series": "DE|Automotive Gas Oil",
+      "first_date": "2005-01-03",
+      "last_date": "2026-08-03",
+      "n_observations": 1078
+    },
+    {
       "id": "MATIF_WHEAT",
       "name": "Pszenica młynarska (MATIF Paris)",
       "unit": "€/t",
@@ -340,12 +452,6 @@
   ],
   "failed": [
     "WHEAT_MW",
-    "PL_PB95_WOB",
-    "PL_ON_WOB",
-    "PL_LPG_WOB",
-    "PL_HEAT_WOB",
-    "EU_PB95_WOB",
-    "EU_ON_WOB",
     "MATIF_CORN",
     "MATIF_RAPESEED"
   ]
