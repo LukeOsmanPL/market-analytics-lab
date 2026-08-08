@@ -54,6 +54,21 @@
   .side-toggle button.on-long { background: var(--ok); color: #fff; }
   .side-toggle button.on-short { background: var(--bad); color: #fff; }
   .leg-row input[type=number] { width: 100%; padding: 3px 5px; font-size: 12px; text-align: center; }
+  .leg-row-v2 { display: grid; grid-template-columns: 1fr 60px 50px 24px; gap: 4px; align-items: center;
+    padding: 8px; margin: 6px 0; background: var(--panel-2); border-radius: 6px; border-left: 3px solid var(--accent); font-size: 12px; }
+  .leg-row-v2 select { width: 100%; font-size: 11px; padding: 3px 4px; }
+  .leg-row-v2 input[type=number] { width: 100%; padding: 3px 4px; font-size: 12px; text-align: center; }
+  .leg-row-v2 .remove-leg { background: none; border: 1px solid var(--border); color: var(--muted);
+    font-size: 14px; padding: 2px 6px; border-radius: 4px; cursor: pointer; }
+  .leg-row-v2 .remove-leg:hover { border-color: var(--bad); color: var(--bad); }
+  .leg-row-v2 .leg-info { grid-column: 1 / -1; padding-top: 4px; margin-top: 2px;
+    border-top: 1px solid var(--border); font-size: 11px; color: var(--muted); line-height: 1.5; }
+  .leg-row-v2 .leg-filter-row { grid-column: 1 / -1; padding-top: 4px; font-size: 11px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+  .leg-row-v2 .leg-filter-row select { flex: 1; }
+  .add-leg-btn { width: 100%; background: var(--panel-2); color: var(--accent);
+    border: 1px dashed var(--accent); padding: 8px; border-radius: 6px;
+    font-size: 13px; cursor: pointer; margin-top: 6px; font-family: inherit; }
+  .add-leg-btn:hover { background: var(--panel); }
   .leg-info { grid-column: 1 / -1; padding-top: 6px; margin-top: 4px;
     border-top: 1px solid var(--border); font-size: 11px; color: var(--muted); line-height: 1.5; }
   .leg-info .price-line { color: var(--text); }
@@ -94,7 +109,7 @@
     <h1>Market Analytics Lab</h1>
     <div class="badge" id="dataFreshness">ładuję dane…</div>
   </div>
-  <div class="badge">v1.9 · projekt i realizacja: Łukasz Osman</div>
+  <div class="badge">v2.0 · projekt i realizacja: Łukasz Osman</div>
 </header>
 
 <div id="loading">
@@ -256,7 +271,8 @@
       </div>
 
       <h3 style="margin-top:14px">Nogi spreadu</h3>
-      <div id="legsList"></div>
+      <div id="spreadLegsList"></div>
+      <button id="addLegBtn" class="add-leg-btn">+ Dodaj nogę</button>
       <div id="positionSummary" class="position-summary"></div>
     </section>
   </aside>
@@ -365,8 +381,11 @@ const state = {
   seasonWindow: 5, showMinMax: true, showYears: false,
   seasonPct: false, seasonAvg: 'mean',
   // spread P&L
-  legs: {}, dollarMode: true, spreadPnlPct: false,
+  // spreadLegs: LISTA nog (nie dict) - obsluguje wielokrotne uzycie tego samego produktu
+  // Kazda noga: {id, pid, side: +1|-1, qty, ensoFilter: 'all'|'la_nina'|'el_nino'|'neutral'}
+  spreadLegs: [], dollarMode: true, spreadPnlPct: false,
   spreadView: 'pnl',
+  _nextLegId: 1,
   // spread seasonal
   spreadSeasonWindow: 5, spreadShowMinMax: true, spreadShowYears: false,
   spreadSeasonPct: false, spreadSeasonAvg: 'mean',
@@ -544,25 +563,55 @@ function refreshCheckboxes() {
   });
   document.getElementById('selectHint').textContent = rule.label;
 }
-function syncLegs() {
-  state.selected.forEach((pid, i) => {
-    if (!state.legs[pid]) state.legs[pid] = { side: i % 2 === 0 ? 1 : -1, qty: 1 };
-  });
-  Object.keys(state.legs).forEach(pid => {
-    if (!state.selected.includes(pid)) delete state.legs[pid];
+// === NOWY MODEL SPREADU: lista nog z niezaleznymi produktami i filtrami ===
+function addSpreadLeg(pid) {
+  const chosen = pid || (PRODUCTS[0] && PRODUCTS[0].id);
+  state.spreadLegs.push({
+    id: 'leg_' + (state._nextLegId++),
+    pid: chosen,
+    side: state.spreadLegs.length % 2 === 0 ? 1 : -1,
+    qty: 1,
+    ensoFilter: 'all',
   });
 }
-function renderLegs() {
-  const box = document.getElementById('legsList');
+function removeSpreadLeg(legId) {
+  state.spreadLegs = state.spreadLegs.filter(l => l.id !== legId);
+}
+function updateSpreadLeg(legId, updates) {
+  const leg = state.spreadLegs.find(l => l.id === legId);
+  if (leg) Object.assign(leg, updates);
+}
+function initSpreadLegsFromSelected() {
+  // Wywolane przy pierwszym wejsciu w tryb Spread jesli brak jest nog
+  if (state.spreadLegs.length > 0) return;
+  const pids = state.selected.length >= 2 ? state.selected.slice(0, 2) : PRODUCTS.slice(0, 2).map(p => p.id);
+  pids.forEach(pid => addSpreadLeg(pid));
+}
+function buildProductOptionsHtml(selectedPid) {
+  let html = '';
+  CATS.forEach(cat => {
+    const items = PRODUCTS.filter(p => p.cat === cat);
+    if (!items.length) return;
+    html += `<optgroup label="${cat}">`;
+    items.forEach(p => {
+      html += `<option value="${p.id}" ${p.id === selectedPid ? 'selected' : ''}>${p.name}</option>`;
+    });
+    html += `</optgroup>`;
+  });
+  return html;
+}
+function renderSpreadLegs() {
+  const box = document.getElementById('spreadLegsList');
   const summaryBox = document.getElementById('positionSummary');
   if (!box) return;
   box.innerHTML = '';
   let totalOut = 0, totalIn = 0, grossExposure = 0;
-  state.selected.forEach(pid => {
-    const p = PMAP[pid]; const leg = state.legs[pid];
-    const prices = DATA[pid].prices;
-    if (!prices.length) return;
-    const price = prices[prices.length-1];
+  const showEnso = state.spreadView === 'seasonal';
+  state.spreadLegs.forEach(leg => {
+    const p = PMAP[leg.pid];
+    if (!p) return;
+    const prices = (DATA[leg.pid] || {}).prices || [];
+    const price = prices.length ? prices[prices.length - 1] : 0;
     const notional = p.contractSize * leg.qty * price;
     if (leg.side === 1) totalOut += notional; else totalIn += notional;
     grossExposure += notional;
@@ -570,19 +619,29 @@ function renderLegs() {
     const moneyCls = isLong ? 'money-long' : 'money-short';
     const moneyLabel = isLong ? 'LONG · płacisz' : 'SHORT · dostajesz';
     const row = document.createElement('div');
-    row.className = 'leg-row';
+    row.className = 'leg-row-v2';
     row.innerHTML = `
-      <div class="leg-name"><span class="swatch" style="background:${p.color}"></span>${p.id}</div>
+      <select class="leg-product" data-legid="${leg.id}">${buildProductOptionsHtml(leg.pid)}</select>
       <div class="side-toggle">
-        <button data-pid="${pid}" data-side="1" class="${leg.side === 1 ? 'on-long' : ''}">L</button>
-        <button data-pid="${pid}" data-side="-1" class="${leg.side === -1 ? 'on-short' : ''}">S</button>
+        <button data-legid="${leg.id}" data-side="1" class="${leg.side === 1 ? 'on-long' : ''}">L</button>
+        <button data-legid="${leg.id}" data-side="-1" class="${leg.side === -1 ? 'on-short' : ''}">S</button>
       </div>
-      <input type="number" min="1" max="50" step="1" value="${leg.qty}" data-pid="${pid}" class="qty-input">
+      <input type="number" min="1" max="99" step="1" value="${leg.qty}" data-legid="${leg.id}" class="qty-input">
+      <button class="remove-leg" data-legid="${leg.id}" title="usuń nogę">×</button>
       <div class="leg-info">
-        <div class="price-line">${fmtNum(price)} ${p.unit} · kontrakt = ${p.contractDesc}</div>
-        <div>${leg.qty} × ${p.contractSize.toLocaleString('en-US')} × ${fmtNum(price)} = <span class="${moneyCls}">${fmtMoneyAbs(notional)}</span></div>
-        <div>${moneyLabel}</div>
-      </div>`;
+        <span class="swatch" style="background:${p.color}"></span> <b>${p.id}</b> · ${price ? fmtNum(price) : '—'} ${p.unit} · kontr. ${p.contractDesc}<br>
+        ${leg.qty} × ${p.contractSize.toLocaleString('en-US')} × ${fmtNum(price)} = <span class="${moneyCls}">${fmtMoneyAbs(notional)}</span> · ${moneyLabel}
+      </div>
+      ${showEnso ? `
+        <div class="leg-filter-row">
+          Filtr ENSO: <select class="leg-enso" data-legid="${leg.id}">
+            <option value="all"      ${leg.ensoFilter==='all'?'selected':''}>wszystkie lata</option>
+            <option value="la_nina"  ${leg.ensoFilter==='la_nina'?'selected':''}>❄️ tylko La Niña</option>
+            <option value="el_nino"  ${leg.ensoFilter==='el_nino'?'selected':''}>☀️ tylko El Niño</option>
+            <option value="neutral"  ${leg.ensoFilter==='neutral'?'selected':''}>⚪ tylko neutralne</option>
+          </select>
+        </div>` : ''}
+    `;
     box.appendChild(row);
   });
   const net = totalIn - totalOut;
@@ -591,20 +650,26 @@ function renderLegs() {
     <div class="line"><span>Suma SHORT (dostajesz):</span><span class="money-short">${fmtMoneyAbs(totalIn)}</span></div>
     <div class="line total"><span>Netto na start:</span><span class="${net >= 0 ? 'money-short' : 'money-long'}">${net >= 0 ? '+' : '−'}${fmtMoneyAbs(net)}</span></div>
     <div class="line" style="color:var(--muted); font-size:11px"><span>Zaangażowanie brutto:</span><span>${fmtMoneyAbs(grossExposure)}</span></div>`;
+  box.querySelectorAll('.leg-product').forEach(sel => {
+    sel.addEventListener('change', e => { updateSpreadLeg(e.target.dataset.legid, { pid: e.target.value }); renderSpreadLegs(); render(); });
+  });
   box.querySelectorAll('.side-toggle button').forEach(b => {
-    b.addEventListener('click', () => {
-      const pid = b.dataset.pid;
-      state.legs[pid].side = +b.dataset.side;
-      renderLegs(); render();
-    });
+    b.addEventListener('click', () => { updateSpreadLeg(b.dataset.legid, { side: +b.dataset.side }); renderSpreadLegs(); render(); });
   });
   box.querySelectorAll('.qty-input').forEach(inp => {
-    inp.addEventListener('change', () => {
-      state.legs[inp.dataset.pid].qty = Math.max(1, +inp.value || 1);
-      renderLegs(); render();
-    });
+    inp.addEventListener('change', () => { updateSpreadLeg(inp.dataset.legid, { qty: Math.max(1, +inp.value || 1) }); renderSpreadLegs(); render(); });
+  });
+  box.querySelectorAll('.remove-leg').forEach(b => {
+    b.addEventListener('click', () => { removeSpreadLeg(b.dataset.legid); renderSpreadLegs(); render(); });
+  });
+  box.querySelectorAll('.leg-enso').forEach(sel => {
+    sel.addEventListener('change', e => { updateSpreadLeg(e.target.dataset.legid, { ensoFilter: e.target.value }); render(); });
   });
 }
+
+// Backward-compat stubs (bezpieczne no-op dla obcych trybow)
+function syncLegs() {}
+function renderLegs() { renderSpreadLegs(); }
 
 /* ============ init ============ */
 function init() {
@@ -665,7 +730,10 @@ function init() {
         const missing = PRODUCTS.map(p => p.id).filter(id => !state.selected.includes(id));
         while (state.selected.length < rule.min && missing.length) state.selected.push(missing.shift());
       }
-      syncLegs(); refreshCheckboxes(); renderLegs();
+      refreshCheckboxes();
+      // Jesli wchodzimy w Spread i nie ma nog - zainicjuj z zaznaczonych produktow
+      if (state.mode === 'spread') initSpreadLegsFromSelected();
+      renderSpreadLegs();
       document.querySelectorAll('.mode-panel').forEach(x => x.classList.remove('active'));
       document.getElementById('panel-' + state.mode).classList.add('active');
       ['stdCtrl','seasonalCtrl','spreadCtrl'].forEach(id => document.getElementById(id).style.display = 'none');
@@ -683,6 +751,7 @@ function init() {
       state.spreadView = b.dataset.sv;
       document.getElementById('spreadSeasonalCtrl').style.display = state.spreadView === 'seasonal' ? 'block' : 'none';
       document.getElementById('spreadPnlCtrl').style.display = state.spreadView === 'pnl' ? 'block' : 'none';
+      renderSpreadLegs(); // przerysuj legs zeby pokazac/ukryc filtry ENSO
       render();
     });
   });
@@ -710,7 +779,11 @@ function init() {
   bind('ensoFilter', 'ensoFilter', e => e.target.value);
   bind('unitOverride', 'unitOverride', e => e.target.value);
 
-  syncLegs(); refreshCheckboxes(); renderLegs(); render();
+  document.getElementById('addLegBtn').addEventListener('click', () => {
+    addSpreadLeg(); renderSpreadLegs(); render();
+  });
+
+  refreshCheckboxes(); renderSpreadLegs(); render();
   window.addEventListener('resize', () => {
     ['mainPlot','corrPlot','zscorePlot'].forEach(id => {
       const el = document.getElementById(id);
@@ -777,43 +850,40 @@ function statSummary(prices) {
   return { mean, min, max, last, chg, annVol };
 }
 function legFormula() {
-  return state.selected.map(pid => {
-    const l = state.legs[pid]; const sign = l.side === 1 ? '+' : '−';
-    return `${sign}${l.qty}×${pid}`;
+  return state.spreadLegs.map(l => {
+    const sign = l.side === 1 ? '+' : '−';
+    const filt = (state.spreadView === 'seasonal' && l.ensoFilter && l.ensoFilter !== 'all')
+      ? ('[' + ENSO_ICONS[l.ensoFilter] + ']') : '';
+    return `${sign}${l.qty}×${l.pid}${filt}`;
   }).join('  ');
 }
 function computeGrossAtEntry() {
-  // wartosc brutto zaangazowania w pierwszym dniu widocznego okna (wszystkie nogi po abs)
   const [from, to] = windowIndexes();
   const fromDate = FULL_DATES[Math.max(0, from)] || MIN_DATE;
   let gross = 0;
-  state.selected.forEach(pid => {
-    const p = PMAP[pid]; const l = state.legs[pid];
-    const s = sliceByDates(pid, fromDate, fromDate);
-    // znajdz najblizsza dostepna cene wokol fromDate
+  state.spreadLegs.forEach(l => {
+    const p = PMAP[l.pid]; if (!p) return;
+    const d = DATA[l.pid]; if (!d || !d.prices.length) return;
     let price = null;
-    if (s.prices.length) price = s.prices[0];
-    else {
-      const d = DATA[pid];
-      for (let i = 0; i < d.dates.length; i++) { if (d.dates[i] >= fromDate) { price = d.prices[i]; break; } }
-      if (price == null && d.prices.length) price = d.prices[0];
-    }
+    for (let i = 0; i < d.dates.length; i++) { if (d.dates[i] >= fromDate) { price = d.prices[i]; break; } }
+    if (price == null) price = d.prices[0];
     if (price != null) gross += p.contractSize * l.qty * price;
   });
   return gross;
 }
 function computeSpreadSeries(fromDate, toDate, dollarMode) {
-  const relevantPids = state.selected;
+  // Zbior unikalnych pid uzywanych w nogach
+  const uniquePids = Array.from(new Set(state.spreadLegs.map(l => l.pid)));
   const allDates = new Set();
   const perProduct = {};
-  relevantPids.forEach(pid => {
+  uniquePids.forEach(pid => {
     const s = sliceByDates(pid, fromDate, toDate);
     perProduct[pid] = { byDate: {} };
     for (let i = 0; i < s.dates.length; i++) { perProduct[pid].byDate[s.dates[i]] = s.prices[i]; allDates.add(s.dates[i]); }
   });
   const commonDates = Array.from(allDates).sort();
   const filled = {};
-  relevantPids.forEach(pid => {
+  uniquePids.forEach(pid => {
     filled[pid] = new Array(commonDates.length);
     let last = null;
     for (let i = 0; i < commonDates.length; i++) {
@@ -826,10 +896,10 @@ function computeSpreadSeries(fromDate, toDate, dollarMode) {
     for (let i = 0; i < filled[pid].length; i++) if (filled[pid][i] == null) filled[pid][i] = firstVal;
   });
   const series = new Array(commonDates.length).fill(0);
-  relevantPids.forEach(pid => {
-    const p = PMAP[pid]; const l = state.legs[pid];
+  state.spreadLegs.forEach(l => {
+    const p = PMAP[l.pid]; if (!p || !filled[l.pid]) return;
     const mult = dollarMode ? p.contractSize : 1;
-    for (let i = 0; i < commonDates.length; i++) series[i] += l.side * l.qty * mult * filled[pid][i];
+    for (let i = 0; i < commonDates.length; i++) series[i] += l.side * l.qty * mult * filled[l.pid][i];
   });
   return { dates: commonDates, series };
 }
@@ -1154,15 +1224,128 @@ function renderSeasonal() {
 }
 
 /* ============ Spread ============ */
+// Sezonowy spread z per-noga filtrami: kazda noga liczy wlasna srednia sezonowa (z ew. filtrem ENSO),
+// potem sumujemy: sum_over_legs(side * qty * contractSize * leg_avg[DOY])
+function renderCustomSeasonalSpread(opts) {
+  const { legs, window, method, pct, targetElId } = opts;
+  // Dla kazdej nogi zbuduj byYear[y][doy] i wybierz historicalYears wg filtra
+  const currentYear = new Date().getFullYear();
+  const legAvgs = legs.map(leg => {
+    const p = PMAP[leg.pid];
+    const d = DATA[leg.pid];
+    if (!p || !d) return null;
+    const byYear = {};
+    d.dates.forEach((ds, i) => {
+      const dt = new Date(ds); const y = dt.getFullYear();
+      const doy = Math.floor((dt - new Date(y, 0, 1)) / 86400000);
+      (byYear[y] = byYear[y] || {})[doy] = d.prices[i];
+    });
+    if (pct) {
+      Object.keys(byYear).forEach(y => {
+        const doys = Object.keys(byYear[y]).map(Number).sort((a,b)=>a-b);
+        if (!doys.length) return;
+        const base = byYear[y][doys[0]];
+        if (!base) return;
+        doys.forEach(doy => byYear[y][doy] = (byYear[y][doy] / base - 1) * 100);
+      });
+    }
+    const years = Object.keys(byYear).map(Number).sort();
+    let historicalYears = years.filter(y => y < currentYear).slice(-window);
+    if (leg.ensoFilter && leg.ensoFilter !== 'all') {
+      historicalYears = historicalYears.filter(y => ensoOf(y) === leg.ensoFilter);
+    }
+    const avg = new Array(366).fill(null);
+    for (let doy = 0; doy < 366; doy++) {
+      const vals = historicalYears.map(y => byYear[y][doy]).filter(v => v != null);
+      if (vals.length) avg[doy] = computeAvg(vals, method);
+    }
+    return { avg, historicalYears, byYear, product: p, leg };
+  });
+
+  // Sum per DOY: kazda noga side*qty*contract*(pct?1:contract implicit unit)
+  const spreadY = new Array(366).fill(null);
+  for (let doy = 0; doy < 366; doy++) {
+    let sum = 0, allOk = true;
+    for (let i = 0; i < legs.length; i++) {
+      const la = legAvgs[i]; if (!la) { allOk = false; break; }
+      if (la.avg[doy] == null) { allOk = false; break; }
+      const mult = pct ? 1 : la.product.contractSize;
+      sum += legs[i].side * legs[i].qty * mult * la.avg[doy];
+    }
+    if (allOk) spreadY[doy] = sum;
+  }
+  const spreadYSm = smoothSeries(spreadY, 3);
+
+  // Biezacy rok - kombinacja per-noga
+  const curYearSum = new Array(366).fill(null);
+  for (let doy = 0; doy < 366; doy++) {
+    let sum = 0, allOk = true;
+    for (let i = 0; i < legs.length; i++) {
+      const la = legAvgs[i]; if (!la) { allOk = false; break; }
+      const v = la.byYear[currentYear] && la.byYear[currentYear][doy];
+      if (v == null) { allOk = false; break; }
+      const mult = pct ? 1 : la.product.contractSize;
+      sum += legs[i].side * legs[i].qty * mult * v;
+    }
+    if (allOk) curYearSum[doy] = sum;
+  }
+
+  const dateFor = doy => { const dt = new Date(currentYear, 0, 1); dt.setDate(dt.getDate() + doy); return dt.toISOString().slice(0, 10); };
+  const allDates = Array.from({length: 366}, (_, i) => dateFor(i));
+  const unitLabel = pct ? '% zmiana YTD' : '$';
+
+  const traces = [
+    { x: allDates, y: spreadYSm, name: `spread (${window}L)`, type: 'scatter', mode: 'lines',
+      line: { color: '#ffb74d', width: 3 }, connectgaps: false },
+  ];
+  if (curYearSum.some(v => v != null)) {
+    traces.push({ x: allDates, y: curYearSum, name: `${currentYear} (bieżący)`, type: 'scatter', mode: 'lines',
+      line: { color: '#4fc3f7', width: 2, dash: 'dash' }, connectgaps: false });
+  }
+  // Linia zera dla odniesienia
+  traces.push({ x: [allDates[0], allDates[365]], y: [0, 0], type: 'scatter', mode: 'lines',
+    line: { color: '#8b96a5', width: 1, dash: 'dot' }, showlegend: false });
+
+  Plotly.react(targetElId, traces, {
+    ...layoutBase,
+    xaxis: { ...layoutBase.xaxis, tickformat: '%b', dtick: 'M1' },
+    yaxis: { ...layoutBase.yaxis, title: unitLabel },
+  }, { responsive: true, displaylogo: false });
+
+  // Statystyki
+  const validVals = spreadYSm.filter(v => v != null);
+  const avgVal = validVals.length ? validVals.reduce((s,x)=>s+x,0)/validVals.length : 0;
+  const maxVal = validVals.length ? Math.max(...validVals) : 0;
+  const minVal = validVals.length ? Math.min(...validVals) : 0;
+  const legInfoLines = legAvgs.map((la, i) => {
+    if (!la) return `<div>Noga ${i+1}: BRAK danych</div>`;
+    const l = legs[i];
+    const filt = l.ensoFilter && l.ensoFilter !== 'all' ? ` [${ENSO_ICONS[l.ensoFilter]} ${ENSO_LABELS[l.ensoFilter]}]` : '';
+    return `<div>Noga ${i+1}: ${l.side === 1 ? '+' : '−'}${l.qty}×${l.pid}${filt} · lata: ${la.historicalYears.length ? la.historicalYears.join(', ') : '—'}</div>`;
+  }).join('');
+  return {
+    html: `<div class="stats-grid">
+      <div class="stat"><div class="label">Średnia (rok)</div><div class="value">${fmtNum(avgVal)} ${unitLabel}</div></div>
+      <div class="stat"><div class="label">Max (rok)</div><div class="value up">${fmtNum(maxVal)} ${unitLabel}</div></div>
+      <div class="stat"><div class="label">Min (rok)</div><div class="value down">${fmtNum(minVal)} ${unitLabel}</div></div>
+      <div class="stat"><div class="label">Zakres</div><div class="value">${fmtNum(maxVal - minVal)} ${unitLabel}</div></div>
+    </div>
+    <div style="margin-top:12px; font-size:11px; color:var(--muted); line-height:1.6">
+      ${legInfoLines}
+    </div>`
+  };
+}
+
 function renderSpread() {
-  const active = PRODUCTS.filter(p => state.selected.includes(p.id));
   const detail = document.getElementById('spreadDetail');
-  if (active.length < 2) {
-    document.getElementById('mainTitle').textContent = 'Spread — wybierz min. 2 produkty';
-    setEmpty('mainPlot', 'Spread wymaga co najmniej 2 nóg.');
+  if (state.spreadLegs.length < 2) {
+    document.getElementById('mainTitle').textContent = 'Spread — dodaj min. 2 nogi (przycisk +)';
+    setEmpty('mainPlot', 'Kliknij "+ Dodaj nogę" po lewej. Możesz dodać ten sam produkt wiele razy z różnymi filtrami ENSO.');
     detail.innerHTML = '';
+    document.getElementById('eventsList').innerHTML = '';
     return;
   }
+  const active = Array.from(new Set(state.spreadLegs.map(l => l.pid))).map(pid => PMAP[pid]).filter(Boolean);
   const formula = legFormula();
 
   if (state.spreadView === 'seasonal') {
@@ -1171,13 +1354,15 @@ function renderSpread() {
     document.getElementById('mainTitle').innerHTML =
       `Spread sezonowy: <span style="color:var(--accent-2)">${formula}</span> ` +
       `<span class="sub">${methodLabel} ${state.spreadSeasonWindow}L${state.spreadSeasonPct ? ' · % zmiana YTD' : ' · w $'}</span>`;
-    const spread = computeSpreadSeries(MIN_DATE, MAX_DATE, true);
-    const res = renderSeasonalGeneric(spread.dates, spread.series, {
-      window: state.spreadSeasonWindow, showMinMax: state.spreadShowMinMax, showYears: state.spreadShowYears,
-      colorLine: '#ffb74d', unitLabel: '$', targetElId: 'mainPlot',
-      pct: state.spreadSeasonPct, method: state.spreadSeasonAvg,
+    // Kombinujemy per-noga sezonowe srednie (kazda z wlasnym filtrem ENSO)
+    const res = renderCustomSeasonalSpread({
+      legs: state.spreadLegs,
+      window: state.spreadSeasonWindow,
+      method: state.spreadSeasonAvg,
+      pct: state.spreadSeasonPct,
+      targetElId: 'mainPlot',
     });
-    detail.innerHTML = `<div class="chart-title">Statystyki sezonowe spreadu <span class="sub">${formula}</span></div>` + res.html;
+    detail.innerHTML = `<div class="chart-title">Statystyki sezonowe spreadu <span class="sub">${formula}</span></div>` + (res.html || '');
     renderStats(active);
     return;
   }
