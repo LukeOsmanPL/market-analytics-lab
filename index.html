@@ -114,7 +114,7 @@
     <h1>Market Analytics Lab</h1>
     <div class="badge" id="dataFreshness">ładuję dane…</div>
   </div>
-  <div class="badge">v2.3 · projekt i realizacja: Łukasz Osman</div>
+  <div class="badge">v2.4 · projekt i realizacja: Łukasz Osman</div>
 </header>
 
 <div id="loading">
@@ -442,25 +442,41 @@ function fxLatest(pid) {
   const d = DATA[pid];
   return (d && d.prices && d.prices.length) ? d.prices[d.prices.length - 1] : null;
 }
-function fxRate(from, to) {
+// Kurs na konkretna date (nearest available - back-fill dla weekendow/swiat)
+function fxAtDate(pid, dateStr) {
+  const d = DATA[pid];
+  if (!d || !d.dates || !d.dates.length) return null;
+  // Binary search dla najblizszej daty <= target
+  let lo = 0, hi = d.dates.length - 1, found = -1;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    if (d.dates[mid] <= dateStr) { found = mid; lo = mid + 1; }
+    else hi = mid - 1;
+  }
+  if (found >= 0) return d.prices[found];
+  // Data przed pierwsza obserwacja FX - uzyj najwczesniejszej
+  return d.prices[0];
+}
+const FX_ROUTES = {
+  'EUR-USD': ['FX_EURUSD', false], 'USD-EUR': ['FX_EURUSD', true],
+  'USD-PLN': ['FX_USDPLN', false], 'PLN-USD': ['FX_USDPLN', true],
+  'EUR-PLN': ['FX_EURPLN', false], 'PLN-EUR': ['FX_EURPLN', true],
+  'GBP-USD': ['FX_GBPUSD', false], 'USD-GBP': ['FX_GBPUSD', true],
+  'USD-JPY': ['FX_USDJPY', false], 'JPY-USD': ['FX_USDJPY', true],
+  'USD-CHF': ['FX_USDCHF', false], 'CHF-USD': ['FX_USDCHF', true],
+};
+function fxRate(from, to, atDate) {
   if (from === to) return 1;
-  const rate = (pid, inv) => { const v = fxLatest(pid); return v ? (inv ? 1/v : v) : null; };
   const key = from + '-' + to;
-  const routes = {
-    'EUR-USD': ['FX_EURUSD', false], 'USD-EUR': ['FX_EURUSD', true],
-    'USD-PLN': ['FX_USDPLN', false], 'PLN-USD': ['FX_USDPLN', true],
-    'EUR-PLN': ['FX_EURPLN', false], 'PLN-EUR': ['FX_EURPLN', true],
-    'GBP-USD': ['FX_GBPUSD', false], 'USD-GBP': ['FX_GBPUSD', true],
-    'USD-JPY': ['FX_USDJPY', false], 'JPY-USD': ['FX_USDJPY', true],
-    'USD-CHF': ['FX_USDCHF', false], 'CHF-USD': ['FX_USDCHF', true],
-    'CAD-USD': null,  // no direct - route via ...
+  const r = FX_ROUTES[key];
+  const rateOne = (pid, inv, date) => {
+    const v = date ? fxAtDate(pid, date) : fxLatest(pid);
+    return v ? (inv ? 1/v : v) : null;
   };
-  const r = routes[key];
-  if (r === null) return null;
-  if (r) return rate(r[0], r[1]);
+  if (r) return rateOne(r[0], r[1], atDate);
   // Multi-hop przez USD
-  const midToUsd = fxRate(from, 'USD');
-  const usdToTgt = fxRate('USD', to);
+  const midToUsd = fxRate(from, 'USD', atDate);
+  const usdToTgt = fxRate('USD', to, atDate);
   if (midToUsd && usdToTgt) return midToUsd * usdToTgt;
   return null;
 }
@@ -496,14 +512,57 @@ function convertValue(value, nativeUnit, productId, target) {
   return { v: value * fx * dimFactor, unit: unitLabel };
 }
 
-function convertSeries(prices, fromUnit, productId) {
+// Konwersja serii z time-aligned FX (kazdy punkt uzywa kursu FX z jego wlasnej daty)
+function convertSeries(dates, prices, fromUnit, productId) {
+  // Backward compat: jesli ktos wywola convertSeries(prices, fromUnit, pid) - stara sygnatura
+  if (typeof fromUnit === 'undefined' && Array.isArray(dates)) {
+    // Wykryj stara sygnature: dates=prices, prices=fromUnit
+    console.warn('convertSeries called with old signature');
+    return { prices: dates, unit: prices };
+  }
   const target = state.unitOverride;
   if (!target || target === 'native') return { prices, unit: fromUnit };
-  // Skalowana konwersja: FX i dimFactor stale -> jeden mnoznik na cala serie
-  const sample = convertValue(1, fromUnit, productId, target);
-  if (sample.unit === fromUnit) return { prices, unit: fromUnit };  // konwersja nieudana
-  const mult = sample.v;
-  return { prices: prices.map(p => p * mult), unit: sample.unit };
+  const src = UNIT_INFO[fromUnit];
+  if (!src) return { prices, unit: fromUnit };
+  const [tgtCur, tgtSub] = target.split('/');
+
+  // Wymiar fizyczny - staly czynnik
+  let dimFactor = null;
+  if (tgtSub === 'gal' || tgtSub === 'L' || tgtSub === '1000L') {
+    if (src.kind !== 'volume') return { prices, unit: fromUnit };
+    const tgtL = { gal: 3.7854, L: 1, '1000L': 1000 }[tgtSub];
+    dimFactor = src.liters / tgtL;
+  } else if (tgtSub === 'mt' || tgtSub === 't') {
+    let srcKg;
+    if (src.kind === 'bushel') { srcKg = BUSHEL_KG[productId]; if (!srcKg) return { prices, unit: fromUnit }; }
+    else if (src.kind === 'mass') srcKg = src.kg;
+    else return { prices, unit: fromUnit };
+    dimFactor = srcKg / 1000;
+  } else if (tgtSub === 'MWh') {
+    if (src.kind !== 'energy_mwh') return { prices, unit: fromUnit };
+    dimFactor = 1;
+  } else {
+    return { prices, unit: fromUnit };
+  }
+
+  const symbolMap = { USD: '$', EUR: '€', PLN: 'zł', GBP: '£', JPY: '¥', CHF: 'Fr', CAD: 'C$' };
+  const unitLabel = (symbolMap[tgtCur] || tgtCur) + '/' + tgtSub;
+
+  // Time-aligned FX: dla kazdej daty pobierz kurs z tej daty
+  const sameCur = src.cur === tgtCur;
+  if (sameCur) {
+    // Nie potrzeba konwersji walutowej - tylko dimFactor
+    return { prices: prices.map(p => p * dimFactor), unit: unitLabel };
+  }
+  const newPrices = new Array(prices.length);
+  let firstFx = null;
+  for (let i = 0; i < prices.length; i++) {
+    const fx = fxRate(src.cur, tgtCur, dates[i]);
+    if (fx === null) { return { prices, unit: fromUnit }; }  // konwersja nieudana
+    if (firstFx === null) firstFx = fx;
+    newPrices[i] = prices[i] * fx * dimFactor;
+  }
+  return { prices: newPrices, unit: unitLabel };
 }
 
 const SELECT_RULES = {
@@ -1045,7 +1104,7 @@ function renderStandard() {
   const convertedUnits = [];
   active.forEach((p, i) => {
     const s = slice(p.id);
-    const conv = convertSeries(s.prices, p.unit, p.id);
+    const conv = convertSeries(s.dates, s.prices, p.unit, p.id);
     convertedUnits.push(conv.unit);
     let y = conv.prices; if (state.pct && y.length) y = pctNormalize(y);
     traces.push({
@@ -1282,7 +1341,7 @@ function renderSeasonalMulti(products) {
   const traces = [];
   let commonUnit = null;
   products.forEach(p => {
-    const conv = convertSeries(DATA[p.id].prices, p.unit, p.id);
+    const conv = convertSeries(DATA[p.id].dates, DATA[p.id].prices, p.unit, p.id);
     if (commonUnit === null) commonUnit = conv.unit;
     else if (commonUnit !== conv.unit) commonUnit = 'różne';
     const byYear = {};
@@ -1339,7 +1398,7 @@ function renderSeasonalMulti(products) {
 
   // Statystyki - dla kazdego produktu ostatnia wartosc vs srednia
   const items = products.map(p => {
-    const conv = convertSeries(DATA[p.id].prices, p.unit, p.id);
+    const conv = convertSeries(DATA[p.id].dates, DATA[p.id].prices, p.unit, p.id);
     const last = conv.prices.length ? conv.prices[conv.prices.length - 1] : 0;
     return `<div class="stat"><div class="label">${p.name}</div><div class="value">${fmtNum(last)} ${conv.unit}</div><div class="sub">ostatnia obserwacja</div></div>`;
   }).join('');
@@ -1370,8 +1429,8 @@ function renderSeasonal() {
   const methodLabel = state.seasonAvg === 'median' ? 'mediana' : state.seasonAvg === 'trimmed' ? 'średnia obc.' : 'średnia';
   const d = DATA[p.id];
 
-  // konwersja jednostek (bbl→gal/L, gal→L)
-  const convD = convertSeries(d.prices, p.unit, p.id);
+  // konwersja jednostek (bbl→gal/L, gal→L) z time-aligned FX
+  const convD = convertSeries(d.dates, d.prices, p.unit, p.id);
 
   // Tryb spread La Niña - El Niño
   if (state.ensoFilter === 'spread') {
@@ -1682,7 +1741,7 @@ function renderStats(active) {
   active.forEach(p => {
     const s = slice(p.id);
     if (!s.prices.length) return;
-    const conv = convertSeries(s.prices, p.unit, p.id);
+    const conv = convertSeries(s.dates, s.prices, p.unit, p.id);
     const st = statSummary(conv.prices);
     const cls = st.chg >= 0 ? 'up' : 'down';
     const arrow = st.chg >= 0 ? '▲' : '▼';
