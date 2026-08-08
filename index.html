@@ -94,7 +94,7 @@
     <h1>Market Analytics Lab</h1>
     <div class="badge" id="dataFreshness">ładuję dane…</div>
   </div>
-  <div class="badge">v1.5 · projekt i realizacja: Łukasz Osman</div>
+  <div class="badge">v1.6 · projekt i realizacja: Łukasz Osman</div>
 </header>
 
 <div id="loading">
@@ -167,7 +167,15 @@
 
     <section class="divider" id="seasonalCtrl" style="display:none">
       <div class="row"><label>Okno średniej</label>
-        <select id="seasonWindow"><option value="3">3 lata</option><option value="5" selected>5 lat</option><option value="10">10 lat</option></select>
+        <select id="seasonWindow">
+          <option value="3">3 lata</option>
+          <option value="5" selected>5 lat</option>
+          <option value="10">10 lat</option>
+          <option value="15">15 lat</option>
+          <option value="20">20 lat</option>
+          <option value="25">25 lat</option>
+          <option value="30">30 lat</option>
+        </select>
       </div>
       <div class="row"><label>Metoda uśredniania</label>
         <select id="seasonAvg">
@@ -211,7 +219,15 @@
 
       <div id="spreadSeasonalCtrl" style="display:none">
         <div class="row"><label>Okno średniej</label>
-          <select id="spreadSeasonWindow"><option value="3">3 lata</option><option value="5" selected>5 lat</option><option value="10">10 lat</option></select>
+          <select id="spreadSeasonWindow">
+            <option value="3">3 lata</option>
+            <option value="5" selected>5 lat</option>
+            <option value="10">10 lat</option>
+            <option value="15">15 lat</option>
+            <option value="20">20 lat</option>
+            <option value="25">25 lat</option>
+            <option value="30">30 lat</option>
+          </select>
         </div>
         <div class="row"><label>Metoda uśredniania</label>
           <select id="spreadSeasonAvg">
