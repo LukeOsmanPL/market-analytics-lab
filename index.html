@@ -94,7 +94,7 @@
     <h1>Market Analytics Lab</h1>
     <div class="badge" id="dataFreshness">ładuję dane…</div>
   </div>
-  <div class="badge">v1.6 · projekt i realizacja: Łukasz Osman</div>
+  <div class="badge">v1.8 · projekt i realizacja: Łukasz Osman</div>
 </header>
 
 <div id="loading">
@@ -138,15 +138,29 @@
     <section class="divider">
       <div class="toggle"><input type="checkbox" id="showEvents" checked><label for="showEvents"><b>Pokaż wydarzenia</b> na wykresach</label></div>
       <div class="hint">Historyczne wydarzenia (inwazja Ukrainy, sabotaż Nord Stream, decyzje OPEC, itd.).</div>
-      <div class="row" style="margin-top:10px"><label>Jednostka</label>
+      <div class="row" style="margin-top:10px"><label>Jednostka docelowa</label>
         <select id="unitOverride">
-          <option value="native" selected>oryginalna</option>
-          <option value="per_gal">$/gal (ropa → galon)</option>
-          <option value="per_liter">$/L (ropa/benzyna → litr)</option>
-          <option value="per_mt">$/t (zboża → tona metryczna)</option>
+          <option value="native" selected>oryginalna (per produkt)</option>
+          <optgroup label="Paliwa - USD">
+            <option value="USD/gal">$ / gal</option>
+            <option value="USD/L">$ / L</option>
+          </optgroup>
+          <optgroup label="Paliwa - EUR">
+            <option value="EUR/L">€ / L</option>
+            <option value="EUR/1000L">€ / 1000 L</option>
+          </optgroup>
+          <optgroup label="Paliwa - PLN">
+            <option value="PLN/L">zł / L</option>
+            <option value="PLN/1000L">zł / 1000 L</option>
+          </optgroup>
+          <optgroup label="Zboża/metale (masa)">
+            <option value="USD/mt">$ / tona</option>
+            <option value="EUR/mt">€ / tona</option>
+            <option value="PLN/mt">zł / tona</option>
+          </optgroup>
         </select>
       </div>
-      <div class="hint">Przelicza jednostki: ropa $/bbl→$/gal/L (do porównania z retail), zboża $/bu→$/mt (do porównania z cenami krajowymi). Kukurydza: 56 lb/bu = 25.4 kg. Pszenica/soja: 60 lb/bu = 27.2 kg. Działa w Nakładce i Sezonowej.</div>
+      <div class="hint">Konwertuje ceny na wybraną jednostkę z użyciem aktualnych kursów walutowych (EUR/USD/PLN). Np. WTI ($/bbl) → zł/L do porównania z Orlen hurt. Kukurydza CBOT ($/bu) → €/mt do porównania z MATIF Paris. Bushel: kukurydza 25.4 kg, pszenica/soja 27.2 kg.</div>
     </section>
 
     <section class="divider">
@@ -364,36 +378,98 @@ const state = {
   unitOverride: 'native',
 };
 
-// mapa konwersji jednostek objetosciowych
-const UNIT_CONV = {
-  '$/bbl': {
-    per_gal:   { factor: 1/42,       unit: '$/gal' },
-    per_liter: { factor: 1/158.987,  unit: '$/L'   },
-  },
-  '$/gal': {
-    per_liter: { factor: 1/3.7854,   unit: '$/L'   },
-  },
+// ============ UNIWERSALNA KONWERSJA JEDNOSTEK + WALUT ============
+// Kazda cena ma (waluta, wymiar fizyczny). Konwersja: FX(z→do) * (native/target) w wymiarze.
+const UNIT_INFO = {
+  '$/MMBtu':   { cur: 'USD', kind: 'energy_mmbtu', factor: 1 },
+  '$/bbl':     { cur: 'USD', kind: 'volume', liters: 158.987 },
+  '$/gal':     { cur: 'USD', kind: 'volume', liters: 3.7854 },
+  '$/L':       { cur: 'USD', kind: 'volume', liters: 1 },
+  '$/oz':      { cur: 'USD', kind: 'mass',   kg: 0.0311035 },  // troy oz
+  '$/lb':      { cur: 'USD', kind: 'mass',   kg: 0.453592 },
+  '$/bu':      { cur: 'USD', kind: 'bushel' },  // per-product
+  '$/ton':     { cur: 'USD', kind: 'mass',   kg: 907.185 },   // short ton US
+  '$/mt':      { cur: 'USD', kind: 'mass',   kg: 1000 },
+  '€/MWh':     { cur: 'EUR', kind: 'energy_mwh', factor: 1 },
+  '€/1000L':   { cur: 'EUR', kind: 'volume', liters: 1000 },
+  '€/L':       { cur: 'EUR', kind: 'volume', liters: 1 },
+  '€/t':       { cur: 'EUR', kind: 'mass',   kg: 1000 },
+  'zł/L':      { cur: 'PLN', kind: 'volume', liters: 1 },
+  'zł/1000L':  { cur: 'PLN', kind: 'volume', liters: 1000 },
+  'zł/t':      { cur: 'PLN', kind: 'mass',   kg: 1000 },
+  'CAD/t':     { cur: 'CAD', kind: 'mass',   kg: 1000 },
 };
-// Waga bushela w kg per produkt (dla konwersji $/bu -> $/mt)
 const BUSHEL_KG = {
-  CORN: 25.4012,       // 56 lb/bu
-  WHEAT: 27.2155,      // 60 lb/bu
-  WHEAT_KC: 27.2155,
-  WHEAT_MW: 27.2155,
-  SOYBEAN: 27.2155,
+  CORN: 25.4012, WHEAT: 27.2155, WHEAT_KC: 27.2155, WHEAT_MW: 27.2155, SOYBEAN: 27.2155,
 };
+
+// Pobierz aktualny kurs walutowy z zaladowanych danych FX
+function fxLatest(pid) {
+  const d = DATA[pid];
+  return (d && d.prices && d.prices.length) ? d.prices[d.prices.length - 1] : null;
+}
+function fxRate(from, to) {
+  if (from === to) return 1;
+  const rate = (pid, inv) => { const v = fxLatest(pid); return v ? (inv ? 1/v : v) : null; };
+  const key = from + '-' + to;
+  const routes = {
+    'EUR-USD': ['FX_EURUSD', false], 'USD-EUR': ['FX_EURUSD', true],
+    'USD-PLN': ['FX_USDPLN', false], 'PLN-USD': ['FX_USDPLN', true],
+    'EUR-PLN': ['FX_EURPLN', false], 'PLN-EUR': ['FX_EURPLN', true],
+    'GBP-USD': ['FX_GBPUSD', false], 'USD-GBP': ['FX_GBPUSD', true],
+    'USD-JPY': ['FX_USDJPY', false], 'JPY-USD': ['FX_USDJPY', true],
+    'USD-CHF': ['FX_USDCHF', false], 'CHF-USD': ['FX_USDCHF', true],
+    'CAD-USD': null,  // no direct - route via ...
+  };
+  const r = routes[key];
+  if (r === null) return null;
+  if (r) return rate(r[0], r[1]);
+  // Multi-hop przez USD
+  const midToUsd = fxRate(from, 'USD');
+  const usdToTgt = fxRate('USD', to);
+  if (midToUsd && usdToTgt) return midToUsd * usdToTgt;
+  return null;
+}
+
+// Konwersja pojedynczej wartosci
+function convertValue(value, nativeUnit, productId, target) {
+  if (!target || target === 'native') return { v: value, unit: nativeUnit };
+  const src = UNIT_INFO[nativeUnit];
+  if (!src) return { v: value, unit: nativeUnit };
+  const [tgtCur, tgtSub] = target.split('/');
+  const fx = fxRate(src.cur, tgtCur);
+  if (fx === null) return { v: value, unit: nativeUnit };
+  // Wymiar fizyczny
+  let dimFactor = null;
+  if (tgtSub === 'gal' || tgtSub === 'L' || tgtSub === '1000L') {
+    if (src.kind !== 'volume') return { v: value, unit: nativeUnit };
+    const tgtL = { gal: 3.7854, L: 1, '1000L': 1000 }[tgtSub];
+    dimFactor = src.liters / tgtL;
+  } else if (tgtSub === 'mt' || tgtSub === 't') {
+    let srcKg;
+    if (src.kind === 'bushel') { srcKg = BUSHEL_KG[productId]; if (!srcKg) return { v: value, unit: nativeUnit }; }
+    else if (src.kind === 'mass') srcKg = src.kg;
+    else return { v: value, unit: nativeUnit };
+    dimFactor = srcKg / 1000;
+  } else if (tgtSub === 'MWh') {
+    if (src.kind !== 'energy_mwh') return { v: value, unit: nativeUnit };
+    dimFactor = 1;
+  } else {
+    return { v: value, unit: nativeUnit };
+  }
+  const symbolMap = { USD: '$', EUR: '€', PLN: 'zł', GBP: '£', JPY: '¥', CHF: 'Fr', CAD: 'C$' };
+  const unitLabel = (symbolMap[tgtCur] || tgtCur) + '/' + tgtSub;
+  return { v: value * fx * dimFactor, unit: unitLabel };
+}
+
 function convertSeries(prices, fromUnit, productId) {
   const target = state.unitOverride;
-  // konwersja zbóż $/bu -> $/mt
-  if (target === 'per_mt' && fromUnit === '$/bu' && BUSHEL_KG[productId]) {
-    const factor = 1000 / BUSHEL_KG[productId]; // 1 mt = 1000 kg
-    return { prices: prices.map(p => p * factor), unit: '$/mt' };
-  }
-  if (target === 'native' || !UNIT_CONV[fromUnit] || !UNIT_CONV[fromUnit][target]) {
-    return { prices, unit: fromUnit };
-  }
-  const c = UNIT_CONV[fromUnit][target];
-  return { prices: prices.map(p => p * c.factor), unit: c.unit };
+  if (!target || target === 'native') return { prices, unit: fromUnit };
+  // Skalowana konwersja: FX i dimFactor stale -> jeden mnoznik na cala serie
+  const sample = convertValue(1, fromUnit, productId, target);
+  if (sample.unit === fromUnit) return { prices, unit: fromUnit };  // konwersja nieudana
+  const mult = sample.v;
+  return { prices: prices.map(p => p * mult), unit: sample.unit };
 }
 
 const SELECT_RULES = {
