@@ -156,6 +156,24 @@ PRODUCTS = [
          contract_size=1, contract_unit="L",
          category="Europa", color="#9575cd"),
 
+    # Polska: hurt Orlen (append-only, scraping z cenypaliw.fyi - historia narasta od dzis)
+    dict(id="PL_ORLEN_PB95", source="orlen_scrape", series="PB95",
+         name="Orlen Pb95 hurt",          unit="zł/L",
+         contract_size=1, contract_unit="L",
+         category="Lokalne PL", color="#ff8f00"),
+    dict(id="PL_ORLEN_PB98", source="orlen_scrape", series="PB98",
+         name="Orlen Pb98 hurt",          unit="zł/L",
+         contract_size=1, contract_unit="L",
+         category="Lokalne PL", color="#ff6f00"),
+    dict(id="PL_ORLEN_ON",   source="orlen_scrape", series="ON",
+         name="Orlen ON hurt",            unit="zł/L",
+         contract_size=1, contract_unit="L",
+         category="Lokalne PL", color="#ef6c00"),
+    dict(id="PL_ORLEN_EKOTERM", source="orlen_scrape", series="ON_EKOTERM",
+         name="Orlen ON Ekoterm hurt",    unit="zł/L",
+         contract_size=1, contract_unit="L",
+         category="Lokalne PL", color="#e65100"),
+
     # MATIF Paryz (Euronext) - best-effort, Yahoo bywa kaprysny dla EU futures
     dict(id="MATIF_WHEAT", source="yahoo", series="EBM.PA",
          name="Pszenica młynarska (MATIF Paris)", unit="€/t",
@@ -412,6 +430,64 @@ def fetch_wob(series_key: str) -> list:
     return obs
 
 
+_ORLEN_CACHE = None
+
+def _scrape_orlen_current():
+    """Scrapuje aktualne hurtowe ceny Orlen z cenypaliw.fyi. Zwraca dict {klucz: cena_pln_per_L}."""
+    global _ORLEN_CACHE
+    if _ORLEN_CACHE is not None:
+        return _ORLEN_CACHE
+    import re
+    url = "https://cenypaliw.fyi/"
+    print(f"  [ORLEN] scraping {url} ...", flush=True)
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (energy-analytics)"})
+        with urllib.request.urlopen(req, timeout=30) as r:
+            html = r.read().decode('utf-8', errors='replace')
+        print(f"  [ORLEN] pobrano {len(html)/1024:.1f} KB HTML", flush=True)
+    except Exception as e:
+        print(f"  [ORLEN] BLAD pobierania: {e}", flush=True)
+        _ORLEN_CACHE = {}
+        return _ORLEN_CACHE
+
+    # Kombinuj kilka wzorcow zeby znalezc ceny - strony moga zmienic layout
+    # cenypaliw.fyi zwykle pokazuje: "PB95 6,98 zł/l" albo w JSON w scripcie
+    result = {}
+    patterns = {
+        'PB95':       [r'PB\s*95[^0-9]{0,20}(\d[\d,\.]{2,6})\s*z[łl]', r'"pb95"[^0-9]*(\d[\d,\.]{2,6})'],
+        'PB98':       [r'PB\s*98[^0-9]{0,20}(\d[\d,\.]{2,6})\s*z[łl]', r'"pb98"[^0-9]*(\d[\d,\.]{2,6})'],
+        'ON':         [r'(?<![a-zA-Z])ON\s+(?!Ekoterm)[^0-9]{0,20}(\d[\d,\.]{2,6})\s*z[łl]', r'"on"[^0-9]*(\d[\d,\.]{2,6})'],
+        'ON_EKOTERM': [r'Ekoterm[^0-9]{0,20}(\d[\d,\.]{2,6})\s*z[łl]', r'"ekoterm"[^0-9]*(\d[\d,\.]{2,6})'],
+    }
+    for key, pats in patterns.items():
+        for pat in pats:
+            m = re.search(pat, html, re.IGNORECASE)
+            if m:
+                try:
+                    v = float(m.group(1).replace(',', '.'))
+                    if 0.5 < v < 20:  # sensowna cena PLN/L
+                        result[key] = v
+                        break
+                except: pass
+    print(f"  [ORLEN] znalezione ceny: {result}", flush=True)
+    _ORLEN_CACHE = result
+    return result
+
+
+def fetch_orlen_append(product_key: str, existing_obs: list) -> list:
+    """Dopisuje dzisiejsza cene do istniejacej historii Orlen. Zwraca zmergowana liste."""
+    from datetime import datetime as _dt2, timezone as _tz2
+    today = _dt2.now(_tz2.utc).strftime('%Y-%m-%d')
+    prices = _scrape_orlen_current()
+    today_val = prices.get(product_key)
+    obs = list(existing_obs) if existing_obs else []
+    if today_val is not None:
+        if not any(o.get('date') == today for o in obs):
+            obs.append({'date': today, 'value': today_val})
+        obs.sort(key=lambda o: o['date'])
+    return obs
+
+
 def fetch_yahoo(ticker: str, unit_scale: float = 1.0) -> list:
     """Zwraca liste {date, value} z Yahoo Finance przez yfinance."""
     try:
@@ -438,9 +514,26 @@ def fetch_yahoo(ticker: str, unit_scale: float = 1.0) -> list:
     return obs
 
 
+def _load_existing_prices():
+    """Zwraca istniejacy prices.json (jesli jest) jako slownik products {pid: [obs]}."""
+    fp = DATA_DIR / "prices.json"
+    if not fp.exists():
+        return {}
+    try:
+        with fp.open() as f:
+            data = json.load(f)
+        return data.get('products', {})
+    except Exception as e:
+        print(f"[WARN] Nie moge odczytac istniejacego prices.json: {e}", flush=True)
+        return {}
+
+
 def main():
     print(f"Start: {datetime.now(timezone.utc).isoformat()}")
     print(f"Zakres historii: od {START_DATE}")
+
+    existing = _load_existing_prices()
+    print(f"Wczytano istniejaca historie: {len(existing)} produktow", flush=True)
 
     products_out = {}
     meta_out = []
@@ -458,6 +551,9 @@ def main():
                 obs = fetch_yahoo(p["series"], scale)
             elif p["source"] == "wob":
                 obs = fetch_wob(p["series"])
+            elif p["source"] == "orlen_scrape":
+                # Append-only: rozszerz istniejaca historie o dzisiejsza cene
+                obs = fetch_orlen_append(p["series"], existing.get(pid, []))
             else:
                 print(f"  [SKIP] nieznane zrodlo {p['source']}")
                 continue
