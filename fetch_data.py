@@ -234,133 +234,141 @@ def _download_wob_xlsx():
     return _WOB_CACHE
 
 
-def _parse_wob_workbook():
-    """Parsuje XLSX WOB. Zwraca slownik: {(country, product): [(date, value_eur_per_1000L), ...]}.
+_WOB_PARSED = None
 
-    Struktura pliku (na podstawie dokumentacji WOB):
-      - tall format: kazdy wiersz to (date, country, product, price)
-      - albo per-country sheets
-    Parser probuje oba warianty defensywnie.
+def _parse_wob_workbook():
+    """Parsuje XLSX WOB (wielopoziomowe naglowki: kraj + produkt).
+    Zwraca slownik: {(country, product): [(date_iso, price), ...]}.
+    Wynik cache'owany globalnie - pobierany raz na uruchomienie skryptu.
     """
+    global _WOB_PARSED
+    if _WOB_PARSED is not None:
+        return _WOB_PARSED
+
     import openpyxl
     from io import BytesIO
+    from datetime import datetime as _dt
 
     raw = _download_wob_xlsx()
-    wb = openpyxl.load_workbook(BytesIO(raw), read_only=True, data_only=True)
+    wb = openpyxl.load_workbook(BytesIO(raw), read_only=False, data_only=True)
     print(f"  [WOB] arkusze: {wb.sheetnames}", flush=True)
 
-    results = {}  # (country_name, product_name) -> [(date_iso, price)]
+    # Interesuje nas "Prices with taxes" (retail z podatkami - najbardziej porownywalne z cenami na stacjach)
+    if 'Prices with taxes' not in wb.sheetnames:
+        print(f"  [WOB] BLAD: brak arkusza 'Prices with taxes'", flush=True)
+        _WOB_PARSED = {}
+        return _WOB_PARSED
+    ws = wb['Prices with taxes']
 
-    # Znane nazwy produktow w WOB (do dopasowania)
-    PRODUCT_ALIASES = {
-        'Euro-Super 95': ['euro-super 95', 'eurosuper 95', 'euro super 95', 'gasoline'],
-        'Automotive Gas Oil': ['automotive gas oil', 'diesel', 'gas oil'],
-        'Heating Gas Oil': ['heating gas oil', 'heating oil'],
-        'LPG': ['lpg', 'liquefied'],
-        'Residual Fuel Oil': ['residual fuel oil'],
-    }
-    COUNTRY_ALIASES = {
-        'Poland': ['poland', 'polska', 'pl '],
-        'Euro Area': ['euro area', 'eu-27', 'eu 27', 'european union', 'eurozone'],
-        'Germany': ['germany', 'deutschland'],
-        'France': ['france'],
-    }
+    # Merged cells: rozprowadz wartosc top-left po calym merge
+    merged_values = {}
+    for mrange in ws.merged_cells.ranges:
+        top = ws.cell(row=mrange.min_row, column=mrange.min_col).value
+        for r in range(mrange.min_row, mrange.max_row + 1):
+            for c in range(mrange.min_col, mrange.max_col + 1):
+                merged_values[(r, c)] = top
 
-    def match_alias(cell_value, aliases_dict):
-        """Zwraca kanoniczna nazwe albo None."""
-        if not cell_value: return None
-        s = str(cell_value).strip().lower()
-        for canonical, aliases in aliases_dict.items():
-            for a in aliases:
-                if a in s:
-                    return canonical
-        return None
+    def cell(r, c):
+        v = merged_values.get((r, c))
+        if v is not None: return v
+        return ws.cell(row=r, column=c).value
 
-    total_rows_scanned = 0
-    for sheet_name in wb.sheetnames:
-        ws = wb[sheet_name]
-        # Zbierz naglowki z pierwszych 5 wierszy (na wypadek zlozonych naglowkow)
-        header_rows = []
-        for i, row in enumerate(ws.iter_rows(min_row=1, max_row=5, values_only=True)):
-            header_rows.append(row)
+    # DEBUG: pokaz pierwsze 8 wierszy zeby zrozumiec strukture
+    max_col_check = min(ws.max_column, 100)
+    print(f"  [WOB] wymiary: {ws.max_row} wierszy x {ws.max_column} kolumn", flush=True)
+    print(f"  [WOB] === pierwsze wiersze (kolumny 1-20) ===", flush=True)
+    for r in range(1, 9):
+        vals = [str(cell(r, c))[:15] if cell(r, c) is not None else '' for c in range(1, 21)]
+        print(f"  [WOB] R{r}: {vals}", flush=True)
 
-        # Wykryj kolumny: szukamy kolumny 'date', kolumny z krajami, kolumny z produktami
-        # Podejscie 1: WYSZUKAJ komorki z nazwami krajow w wierszach naglowka
-        col_country_map = {}   # col_idx -> canonical country
-        col_product_map = {}   # col_idx -> canonical product
-        for hrow in header_rows:
-            for col_idx, cell in enumerate(hrow):
-                c_country = match_alias(cell, COUNTRY_ALIASES)
-                if c_country:
-                    col_country_map[col_idx] = c_country
-                c_product = match_alias(cell, PRODUCT_ALIASES)
-                if c_product:
-                    col_product_map[col_idx] = c_product
+    # Znajdz wiersze naglowka: country row (zawiera 'Poland' albo 'Belgium'/'Germany')
+    # i product row (zawiera 'Euro-Super 95' albo 'Automotive Gas Oil')
+    country_row = None
+    product_row = None
+    for r in range(1, 8):
+        row_str = ' | '.join(str(cell(r, c) or '') for c in range(1, max_col_check + 1)).lower()
+        if country_row is None and ('poland' in row_str or 'belgium' in row_str or 'germany' in row_str):
+            country_row = r
+            print(f"  [WOB] wykryto wiersz krajow: R{r}", flush=True)
+        if product_row is None and ('euro-super' in row_str or 'gas oil' in row_str.replace('heating gas oil', '').replace('automotive gas oil', '') or 'gasoline' in row_str):
+            product_row = r
+            print(f"  [WOB] wykryto wiersz produktow: R{r}", flush=True)
+        # Alternatywnie wykryj po innych markerach
+        if product_row is None and ('automotive' in row_str or 'diesel' in row_str):
+            product_row = r
+            print(f"  [WOB] wykryto wiersz produktow (alt): R{r}", flush=True)
 
-        # Wariant A: sheet zawiera osobne kolumny per (country, product) - wtedy col_country_map lub col_product_map ma wpisy
-        # Wariant B: sheet ma kolumny 'date', 'country', 'product', 'value' - tall format
+    if country_row is None or product_row is None:
+        print(f"  [WOB] BLAD: naglowki nie znalezione (country={country_row}, product={product_row})", flush=True)
+        _WOB_PARSED = {}
+        return _WOB_PARSED
 
-        # Skanujemy wiersze danych
-        for row_idx, row in enumerate(ws.iter_rows(min_row=6, values_only=True)):
-            total_rows_scanned += 1
-            if total_rows_scanned > 500000:  # safety
-                break
-            if not row or all(c is None for c in row):
-                continue
+    # Zbuduj mape kolumn -> (country, product)
+    col_map = {}
+    for c in range(2, max_col_check + 1):  # kolumna 1 to zwykle data
+        country = cell(country_row, c)
+        product = cell(product_row, c)
+        if country and product:
+            country_s = str(country).strip()
+            product_s = str(product).strip()
+            # Odrzuc gdzie country wyglada jak inna wartosc (np. sub-header)
+            if len(country_s) < 60 and len(product_s) < 60:
+                col_map[c] = (country_s, product_s)
 
-            # Szukamy komorki z data (datetime)
-            date_val = None
-            for cell in row:
-                if hasattr(cell, 'strftime'):
-                    date_val = cell.strftime('%Y-%m-%d')
+    print(f"  [WOB] zmapowanych kolumn: {len(col_map)}", flush=True)
+    seen_countries = set(co for co, _ in col_map.values())
+    seen_products = set(pr for _, pr in col_map.values())
+    print(f"  [WOB] wykryte kraje ({len(seen_countries)}): {sorted(seen_countries)[:30]}", flush=True)
+    print(f"  [WOB] wykryte produkty ({len(seen_products)}): {sorted(seen_products)}", flush=True)
+
+    # Znajdz kolumne daty (pierwsza kolumna z datami w tresci)
+    data_start_row = max(country_row, product_row) + 1
+    date_col = None
+    for test_col in [1, 2]:
+        v = cell(data_start_row, test_col)
+        if hasattr(v, 'strftime') or (isinstance(v, str) and len(v) >= 8):
+            date_col = test_col
+            break
+    if date_col is None:
+        date_col = 1
+    print(f"  [WOB] data w kolumnie {date_col}, dane od wiersza {data_start_row}", flush=True)
+
+    # Skanowanie danych
+    results = {}
+    n_scanned = 0
+    n_valid = 0
+    for r in range(data_start_row, ws.max_row + 1):
+        n_scanned += 1
+        date_val = cell(r, date_col)
+        if not date_val:
+            continue
+        if hasattr(date_val, 'strftime'):
+            date_str = date_val.strftime('%Y-%m-%d')
+        elif isinstance(date_val, str):
+            s = date_val.strip()
+            date_str = None
+            for fmt in ('%Y-%m-%d', '%d/%m/%Y', '%d.%m.%Y', '%Y/%m/%d'):
+                try:
+                    date_str = _dt.strptime(s[:10], fmt).strftime('%Y-%m-%d')
                     break
-                # Moze byc str "2020-01-06" lub "06/01/2020"
-                if isinstance(cell, str):
-                    s = cell.strip()
-                    # Sprobuj format YYYY-MM-DD
-                    if len(s) == 10 and s[4] == '-' and s[7] == '-':
-                        try:
-                            datetime.strptime(s, '%Y-%m-%d')
-                            date_val = s
-                            break
-                        except: pass
-
-            if not date_val:
+                except: pass
+            if not date_str:
                 continue
+        else:
+            continue
 
-            # Tall format? Sprobuj znalezc country i product w komorkach tego wiersza
-            row_country = None
-            row_product = None
-            row_value = None
-            for cell in row:
-                if cell is None: continue
-                c = match_alias(cell, COUNTRY_ALIASES)
-                if c and not row_country:
-                    row_country = c
-                p = match_alias(cell, PRODUCT_ALIASES)
-                if p and not row_product:
-                    row_product = p
-                if isinstance(cell, (int, float)) and cell > 100 and cell < 5000:  # sensowna cena w EUR/1000L
-                    row_value = float(cell)
+        for col, (country, product) in col_map.items():
+            val = cell(r, col)
+            if isinstance(val, (int, float)) and val > 0 and val < 100000:
+                results.setdefault((country, product), []).append((date_str, float(val)))
+                n_valid += 1
 
-            if row_country and row_product and row_value:
-                key = (row_country, row_product)
-                results.setdefault(key, []).append((date_val, row_value))
-                continue
+    print(f"  [WOB] przeskanowano {n_scanned} wierszy, {n_valid} valid data points", flush=True)
+    # Sample: kilka par
+    for k, v in list(results.items())[:8]:
+        print(f"  [WOB] sample: {k[0]}|{k[1]}: {len(v)} obs, pierwsza {v[0]}, ostatnia {v[-1]}", flush=True)
 
-            # Wariant kolumnowy: iteruj po znanych kolumnach country/product
-            for col_idx, cell in enumerate(row):
-                if col_idx in col_country_map and col_idx in col_product_map:
-                    if isinstance(cell, (int, float)) and cell > 100:
-                        country = col_country_map[col_idx]
-                        product = col_product_map[col_idx]
-                        results.setdefault((country, product), []).append((date_val, float(cell)))
-
-    # Statystyki
-    print(f"  [WOB] przeskanowano {total_rows_scanned} wierszy", flush=True)
-    for key, vals in list(results.items())[:10]:
-        print(f"  [WOB] {key[0]}|{key[1]}: {len(vals)} obs", flush=True)
-
+    _WOB_PARSED = results
     return results
 
 
