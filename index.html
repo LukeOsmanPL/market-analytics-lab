@@ -109,7 +109,7 @@
     <h1>Market Analytics Lab</h1>
     <div class="badge" id="dataFreshness">ładuję dane…</div>
   </div>
-  <div class="badge">v2.1 · projekt i realizacja: Łukasz Osman</div>
+  <div class="badge">v2.2 · projekt i realizacja: Łukasz Osman</div>
 </header>
 
 <div id="loading">
@@ -213,7 +213,8 @@
           <option value="trimmed">średnia obcięta 20%</option>
         </select>
       </div>
-      <div class="toggle"><input type="checkbox" id="seasonPct"><label for="seasonPct">Skala % (od 1 stycznia każdego roku)</label></div>
+      <div class="toggle"><input type="checkbox" id="seasonPct"><label for="seasonPct">Skala % (od początku widocznego zakresu)</label></div>
+      <div class="hint" style="margin-top:2px">Domyślnie liczy od 1 stycznia. Kiedy zaznaczysz myszką fragment wykresu (np. marzec-lipiec), % przelicza się automatycznie od pierwszego dnia widocznego. Dwuklik cofa do 1 stycznia.</div>
       <div class="toggle"><input type="checkbox" id="showMinMax" checked><label for="showMinMax">Koperta min/max</label></div>
       <div class="toggle"><input type="checkbox" id="showYears"><label for="showYears">Pokaż wszystkie lata</label></div>
       <div class="row"><label>Filtr ENSO</label>
@@ -380,6 +381,7 @@ const state = {
   // seasonal
   seasonWindow: 5, showMinMax: true, showYears: false,
   seasonPct: false, seasonAvg: 'mean',
+  seasonPctBaseDoy: 0,  // dzien roku od ktorego liczyc % (0 = 1 stycznia; ustawiane przez zoom)
   // spread P&L
   // spreadLegs: LISTA nog (nie dict) - obsluguje wielokrotne uzycie tego samego produktu
   // Kazda noga: {id, pid, side: +1|-1, qty, ensoFilter: 'all'|'la_nina'|'el_nino'|'neutral'}
@@ -723,6 +725,7 @@ function init() {
       document.querySelectorAll('#modes button').forEach(x => x.classList.remove('active'));
       b.classList.add('active');
       state.mode = b.dataset.m;
+      state.seasonPctBaseDoy = 0;  // reset zoom-rebase przy zmianie trybu
       const rule = SELECT_RULES[state.mode];
       if (rule.kind === 'single' && state.selected.length > 1) state.selected = state.selected.slice(0, 1);
       if (rule.kind === 'pair' && state.selected.length > 2)   state.selected = state.selected.slice(0, 2);
@@ -782,6 +785,34 @@ function init() {
   document.getElementById('addLegBtn').addEventListener('click', () => {
     addSpreadLeg(); renderSpreadLegs(); render();
   });
+
+  // Bind zoom event na mainPlot - w Sezonowej z pct auto-rebase % od poczatku widocznego zakresu
+  const bindZoom = () => {
+    const el = document.getElementById('mainPlot');
+    if (!el || el._zoomBound) return;
+    el._zoomBound = true;
+    if (typeof el.on === 'function') {
+      el.on('plotly_relayout', (ed) => {
+        if (state.mode !== 'seasonal' || !state.seasonPct) return;
+        let newBase = null;
+        if (('xaxis.autorange' in ed) && ed['xaxis.autorange']) {
+          newBase = 0;
+        } else if (ed['xaxis.range[0]']) {
+          const sd = new Date(ed['xaxis.range[0]']);
+          if (!isNaN(sd.getTime())) {
+            newBase = Math.max(0, Math.min(365, Math.floor((sd - new Date(sd.getFullYear(), 0, 1)) / 86400000)));
+          }
+        }
+        if (newBase !== null && newBase !== state.seasonPctBaseDoy) {
+          state.seasonPctBaseDoy = newBase;
+          render();
+        }
+      });
+    }
+  };
+  // Retry, bo mainPlot moze byc jeszcze niezainicjalizowany
+  setTimeout(bindZoom, 500);
+  setTimeout(bindZoom, 2000);
 
   refreshCheckboxes(); renderSpreadLegs(); render();
   window.addEventListener('resize', () => {
@@ -1011,15 +1042,22 @@ function renderSeasonalGeneric(seriesDates, seriesValues, opts) {
     const start = new Date(y, 0, 1); const doy = Math.floor((dt - start) / 86400000);
     (byYear[y] = byYear[y] || {})[doy] = seriesValues[i];
   });
-  // Jeśli pct: przelicz każdy rok na % zmianę od pierwszej dostępnej wartości w tym roku
+  // Jeśli pct: przelicz każdy rok na % zmianę od bazy (domyślnie DOY 0 = 1 stycznia,
+  // ale ustawiane przez zoom - state.seasonPctBaseDoy)
   const yearsSorted = Object.keys(byYear).map(Number).sort();
   if (pct) {
+    const baseDoy = state.seasonPctBaseDoy || 0;
     yearsSorted.forEach(y => {
-      const doys = Object.keys(byYear[y]).map(Number).sort((a,b)=>a-b);
-      if (!doys.length) return;
-      const base = byYear[y][doys[0]];
+      // Znajdz baze: wartosc dokladnie w baseDoy albo najblizsza dalej
+      let base = byYear[y][baseDoy];
+      if (base == null) {
+        for (let d = baseDoy + 1; d < 366; d++) {
+          if (byYear[y][d] != null) { base = byYear[y][d]; break; }
+        }
+      }
       if (!base) return;
-      doys.forEach(doy => {
+      Object.keys(byYear[y]).forEach(doyStr => {
+        const doy = +doyStr;
         byYear[y][doy] = (byYear[y][doy] / base - 1) * 100;
       });
     });
@@ -1120,12 +1158,19 @@ function renderSeasonalENSOSpread(seriesDates, seriesValues, opts) {
   const laNinaYears = historicalYears.filter(y => ensoOf(y) === 'la_nina');
   const elNinoYears = historicalYears.filter(y => ensoOf(y) === 'el_nino');
   if (pct) {
+    const baseDoy = state.seasonPctBaseDoy || 0;
     yearsSorted.forEach(y => {
-      const doys = Object.keys(byYear[y]).map(Number).sort((a,b)=>a-b);
-      if (!doys.length) return;
-      const base = byYear[y][doys[0]];
+      let base = byYear[y][baseDoy];
+      if (base == null) {
+        for (let d = baseDoy + 1; d < 366; d++) {
+          if (byYear[y][d] != null) { base = byYear[y][d]; break; }
+        }
+      }
       if (!base) return;
-      doys.forEach(doy => { byYear[y][doy] = (byYear[y][doy] / base - 1) * 100; });
+      Object.keys(byYear[y]).forEach(doyStr => {
+        const doy = +doyStr;
+        byYear[y][doy] = (byYear[y][doy] / base - 1) * 100;
+      });
     });
   }
   const lnY = [], enY = [], diffY = [], dates = [];
@@ -1192,11 +1237,19 @@ function renderSeasonalMulti(products) {
       (byYear[y] = byYear[y] || {})[doy] = conv.prices[i];
     });
     if (state.seasonPct) {
+      const baseDoy = state.seasonPctBaseDoy || 0;
       Object.keys(byYear).forEach(y => {
-        const doys = Object.keys(byYear[y]).map(Number).sort((a,b)=>a-b);
-        if (!doys.length) return;
-        const base = byYear[y][doys[0]]; if (!base) return;
-        doys.forEach(doy => byYear[y][doy] = (byYear[y][doy] / base - 1) * 100);
+        let base = byYear[y][baseDoy];
+        if (base == null) {
+          for (let d = baseDoy + 1; d < 366; d++) {
+            if (byYear[y][d] != null) { base = byYear[y][d]; break; }
+          }
+        }
+        if (!base) return;
+        Object.keys(byYear[y]).forEach(doyStr => {
+          const doy = +doyStr;
+          byYear[y][doy] = (byYear[y][doy] / base - 1) * 100;
+        });
       });
     }
     const years = Object.keys(byYear).map(Number).sort();
