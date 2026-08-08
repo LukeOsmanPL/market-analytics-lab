@@ -114,7 +114,7 @@
     <h1>Market Analytics Lab</h1>
     <div class="badge" id="dataFreshness">ładuję dane…</div>
   </div>
-  <div class="badge">v2.5 · projekt i realizacja: Łukasz Osman</div>
+  <div class="badge">v2.5.1 · projekt i realizacja: Łukasz Osman</div>
 </header>
 
 <div id="loading">
@@ -567,9 +567,9 @@ function convertSeries(dates, prices, fromUnit, productId) {
 
 const SELECT_RULES = {
   dashboard:{ min: 0, max: 99, kind: 'multi',  label: 'Dashboard skanuje wszystkie produkty automatycznie.' },
-  standard: { min: 1, max: 6, kind: 'multi',  label: 'Wybierz 1-6 produktów.' },
-  seasonal: { min: 1, max: 5, kind: 'multi',  label: 'Wybierz 1-5 produktów. Jeden: pełne detale. Wiele: nakładka średnich sezonowych (włącz % przy różnych jednostkach).' },
-  spread:   { min: 2, max: 5, kind: 'multi',  label: 'Wybierz 2-5 produktów (nogi spreadu).' },
+  standard: { min: 1, max: 8, kind: 'multi',  label: 'Wybierz 1-8 produktów.' },
+  seasonal: { min: 1, max: 8, kind: 'multi',  label: 'Wybierz 1-8 produktów. Jeden: pełne detale. Wiele: nakładka średnich sezonowych (włącz % przy różnych jednostkach).' },
+  spread:   { min: 2, max: 8, kind: 'multi',  label: 'Wybierz 2-8 produktów (nogi spreadu).' },
   ratio:    { min: 2, max: 2, kind: 'pair',   label: 'Wybierz DOKŁADNIE 2 produkty.' },
 };
 
