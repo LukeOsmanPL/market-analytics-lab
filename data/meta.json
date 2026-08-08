@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-08T17:05:47.036379+00:00",
+  "generated_at": "2026-08-08T17:20:03.024524+00:00",
   "products": [
     {
       "id": "NG",
@@ -338,6 +338,48 @@
       "n_observations": 1078
     },
     {
+      "id": "PL_ORLEN_PB95",
+      "name": "Orlen Pb95 hurt",
+      "unit": "zł/L",
+      "contract_size": 1,
+      "contract_unit": "L",
+      "category": "Lokalne PL",
+      "color": "#ff8f00",
+      "source": "orlen_scrape",
+      "series": "PB95",
+      "first_date": "2026-08-08",
+      "last_date": "2026-08-08",
+      "n_observations": 1
+    },
+    {
+      "id": "PL_ORLEN_PB98",
+      "name": "Orlen Pb98 hurt",
+      "unit": "zł/L",
+      "contract_size": 1,
+      "contract_unit": "L",
+      "category": "Lokalne PL",
+      "color": "#ff6f00",
+      "source": "orlen_scrape",
+      "series": "PB98",
+      "first_date": "2026-08-08",
+      "last_date": "2026-08-08",
+      "n_observations": 1
+    },
+    {
+      "id": "PL_ORLEN_ON",
+      "name": "Orlen ON hurt",
+      "unit": "zł/L",
+      "contract_size": 1,
+      "contract_unit": "L",
+      "category": "Lokalne PL",
+      "color": "#ef6c00",
+      "source": "orlen_scrape",
+      "series": "ON",
+      "first_date": "2026-08-08",
+      "last_date": "2026-08-08",
+      "n_observations": 1
+    },
+    {
       "id": "MATIF_WHEAT",
       "name": "Pszenica młynarska (MATIF Paris)",
       "unit": "€/t",
@@ -452,6 +494,7 @@
   ],
   "failed": [
     "WHEAT_MW",
+    "PL_ORLEN_EKOTERM",
     "MATIF_CORN",
     "MATIF_RAPESEED"
   ]
