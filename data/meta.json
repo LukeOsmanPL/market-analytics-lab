@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-08T18:48:38.337608+00:00",
+  "generated_at": "2026-08-08T18:59:36.462352+00:00",
   "products": [
     {
       "id": "NG",
@@ -604,6 +604,132 @@
       "n_observations": 5952
     },
     {
+      "id": "PL_POWER",
+      "name": "Elektryka hurt Polska",
+      "unit": "€/MWh",
+      "contract_size": 1,
+      "contract_unit": "MWh",
+      "category": "Elektryka",
+      "color": "#ffca28",
+      "source": "ember",
+      "series": "Poland",
+      "first_date": "2015-01-01",
+      "last_date": "2026-08-07",
+      "n_observations": 4237
+    },
+    {
+      "id": "DE_POWER",
+      "name": "Elektryka hurt Niemcy",
+      "unit": "€/MWh",
+      "contract_size": 1,
+      "contract_unit": "MWh",
+      "category": "Elektryka",
+      "color": "#ff9800",
+      "source": "ember",
+      "series": "Germany",
+      "first_date": "2015-01-01",
+      "last_date": "2026-08-07",
+      "n_observations": 4237
+    },
+    {
+      "id": "FR_POWER",
+      "name": "Elektryka hurt Francja",
+      "unit": "€/MWh",
+      "contract_size": 1,
+      "contract_unit": "MWh",
+      "category": "Elektryka",
+      "color": "#5c6bc0",
+      "source": "ember",
+      "series": "France",
+      "first_date": "2015-01-01",
+      "last_date": "2026-08-07",
+      "n_observations": 4236
+    },
+    {
+      "id": "ES_POWER",
+      "name": "Elektryka hurt Hiszpania",
+      "unit": "€/MWh",
+      "contract_size": 1,
+      "contract_unit": "MWh",
+      "category": "Elektryka",
+      "color": "#ec407a",
+      "source": "ember",
+      "series": "Spain",
+      "first_date": "2015-01-01",
+      "last_date": "2026-08-07",
+      "n_observations": 4237
+    },
+    {
+      "id": "IT_POWER",
+      "name": "Elektryka hurt Włochy",
+      "unit": "€/MWh",
+      "contract_size": 1,
+      "contract_unit": "MWh",
+      "category": "Elektryka",
+      "color": "#66bb6a",
+      "source": "ember",
+      "series": "Italy",
+      "first_date": "2015-01-01",
+      "last_date": "2026-08-06",
+      "n_observations": 4236
+    },
+    {
+      "id": "SK_POWER",
+      "name": "Elektryka hurt Słowacja",
+      "unit": "€/MWh",
+      "contract_size": 1,
+      "contract_unit": "MWh",
+      "category": "Elektryka",
+      "color": "#42a5f5",
+      "source": "ember",
+      "series": "Slovakia",
+      "first_date": "2015-01-01",
+      "last_date": "2026-08-07",
+      "n_observations": 4230
+    },
+    {
+      "id": "HU_POWER",
+      "name": "Elektryka hurt Węgry",
+      "unit": "€/MWh",
+      "contract_size": 1,
+      "contract_unit": "MWh",
+      "category": "Elektryka",
+      "color": "#ff7043",
+      "source": "ember",
+      "series": "Hungary",
+      "first_date": "2015-01-01",
+      "last_date": "2026-08-07",
+      "n_observations": 4230
+    },
+    {
+      "id": "NL_POWER",
+      "name": "Elektryka hurt Holandia",
+      "unit": "€/MWh",
+      "contract_size": 1,
+      "contract_unit": "MWh",
+      "category": "Elektryka",
+      "color": "#ffb74d",
+      "source": "ember",
+      "series": "Netherlands",
+      "first_date": "2015-01-01",
+      "last_date": "2026-08-07",
+      "n_observations": 4230
+    },
+    {
+      "id": "GB_POWER",
+      "name": "Elektryka hurt UK",
+      "unit": "€/MWh",
+      "contract_size": 1,
+      "contract_unit": "MWh",
+      "category": "Elektryka",
+      "color": "#7e57c2",
+      "source": "ember",
+      "series": "United Kingdom",
+      "first_date": "2016-06-30",
+      "last_date": "2026-08-06",
+      "n_observations": 3710
+    },
+    {
       "id": "MATIF_WHEAT",
       "name": "Pszenica młynarska (MATIF Paris)",
       "unit": "€/t",
@@ -719,6 +845,7 @@
   "failed": [
     "WHEAT_MW",
     "PL_ORLEN_EKOTERM",
+    "CZ_POWER",
     "MATIF_CORN",
     "MATIF_RAPESEED"
   ]
