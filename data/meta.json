@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-08T09:20:52.469341+00:00",
+  "generated_at": "2026-08-08T16:04:48.065050+00:00",
   "products": [
     {
       "id": "NG",
@@ -11,9 +11,9 @@
       "color": "#4fc3f7",
       "source": "fred",
       "series": "DHHNGSP",
-      "first_date": "2014-01-02",
+      "first_date": "1997-01-07",
       "last_date": "2026-08-03",
-      "n_observations": 3172
+      "n_observations": 7425
     },
     {
       "id": "WTI",
@@ -25,9 +25,9 @@
       "color": "#ff8a65",
       "source": "fred",
       "series": "DCOILWTICO",
-      "first_date": "2014-01-02",
+      "first_date": "1995-01-03",
       "last_date": "2026-08-03",
-      "n_observations": 3151
+      "n_observations": 7924
     },
     {
       "id": "BRENT",
@@ -39,9 +39,9 @@
       "color": "#ba68c8",
       "source": "fred",
       "series": "DCOILBRENTEU",
-      "first_date": "2014-01-02",
+      "first_date": "1995-01-03",
       "last_date": "2026-08-03",
-      "n_observations": 3195
+      "n_observations": 8004
     },
     {
       "id": "HEAT",
@@ -53,9 +53,9 @@
       "color": "#ff5722",
       "source": "fred",
       "series": "DHOILNYH",
-      "first_date": "2014-01-02",
+      "first_date": "1995-01-03",
       "last_date": "2026-08-03",
-      "n_observations": 3149
+      "n_observations": 7922
     },
     {
       "id": "RBOB",
@@ -67,9 +67,9 @@
       "color": "#ffb74d",
       "source": "fred",
       "series": "DGASUSGULF",
-      "first_date": "2014-01-02",
+      "first_date": "1995-01-03",
       "last_date": "2026-08-03",
-      "n_observations": 3149
+      "n_observations": 7917
     },
     {
       "id": "GAS_RETAIL_US",
@@ -81,9 +81,9 @@
       "color": "#ffa000",
       "source": "fred",
       "series": "GASREGW",
-      "first_date": "2014-01-06",
+      "first_date": "1995-01-02",
       "last_date": "2026-08-03",
-      "n_observations": 657
+      "n_observations": 1649
     },
     {
       "id": "GOLD",
@@ -95,9 +95,9 @@
       "color": "#ffd54f",
       "source": "yahoo",
       "series": "GC=F",
-      "first_date": "2014-01-02",
+      "first_date": "2000-08-30",
       "last_date": "2026-08-07",
-      "n_observations": 3167
+      "n_observations": 6508
     },
     {
       "id": "SILVER",
@@ -109,9 +109,9 @@
       "color": "#b0bec5",
       "source": "yahoo",
       "series": "SI=F",
-      "first_date": "2014-01-02",
+      "first_date": "2000-08-30",
       "last_date": "2026-08-07",
-      "n_observations": 3167
+      "n_observations": 6510
     },
     {
       "id": "COPPER",
@@ -123,9 +123,9 @@
       "color": "#d84315",
       "source": "yahoo",
       "series": "HG=F",
-      "first_date": "2014-01-02",
+      "first_date": "2000-08-30",
       "last_date": "2026-08-07",
-      "n_observations": 3168
+      "n_observations": 6513
     },
     {
       "id": "PLATINUM",
@@ -137,9 +137,9 @@
       "color": "#78909c",
       "source": "yahoo",
       "series": "PL=F",
-      "first_date": "2014-01-02",
+      "first_date": "1997-10-29",
       "last_date": "2026-08-07",
-      "n_observations": 3166
+      "n_observations": 6536
     },
     {
       "id": "CORN",
@@ -151,9 +151,9 @@
       "color": "#fbc02d",
       "source": "yahoo",
       "series": "ZC=F",
-      "first_date": "2014-01-02",
+      "first_date": "2000-07-17",
       "last_date": "2026-08-07",
-      "n_observations": 3165
+      "n_observations": 6520
     },
     {
       "id": "WHEAT",
@@ -165,9 +165,9 @@
       "color": "#8d6e63",
       "source": "yahoo",
       "series": "ZW=F",
-      "first_date": "2014-01-02",
+      "first_date": "2000-07-17",
       "last_date": "2026-08-07",
-      "n_observations": 3167
+      "n_observations": 6532
     },
     {
       "id": "WHEAT_KC",
@@ -179,9 +179,9 @@
       "color": "#a1887f",
       "source": "yahoo",
       "series": "KE=F",
-      "first_date": "2014-01-02",
+      "first_date": "2000-09-21",
       "last_date": "2026-08-07",
-      "n_observations": 3167
+      "n_observations": 6509
     },
     {
       "id": "SOYBEAN",
@@ -193,9 +193,65 @@
       "color": "#7cb342",
       "source": "yahoo",
       "series": "ZS=F",
-      "first_date": "2014-01-02",
+      "first_date": "2000-09-15",
       "last_date": "2026-08-07",
-      "n_observations": 3167
+      "n_observations": 6512
+    },
+    {
+      "id": "SOYMEAL",
+      "name": "Mączka sojowa (CBOT)",
+      "unit": "$/ton",
+      "contract_size": 100,
+      "contract_unit": "short tons",
+      "category": "Rolne",
+      "color": "#689f38",
+      "source": "yahoo",
+      "series": "ZM=F",
+      "first_date": "2000-05-15",
+      "last_date": "2026-08-07",
+      "n_observations": 6523
+    },
+    {
+      "id": "SOYOIL",
+      "name": "Olej sojowy (CBOT)",
+      "unit": "$/lb",
+      "contract_size": 60000,
+      "contract_unit": "lb",
+      "category": "Rolne",
+      "color": "#f9a825",
+      "source": "yahoo",
+      "series": "ZL=F",
+      "first_date": "2000-03-15",
+      "last_date": "2026-08-07",
+      "n_observations": 6561
+    },
+    {
+      "id": "PL_LPG_WOB",
+      "name": "LPG detal PL (EU WOB)",
+      "unit": "€/1000L",
+      "contract_size": 1,
+      "contract_unit": "L",
+      "category": "Lokalne PL",
+      "color": "#80cbc4",
+      "source": "wob",
+      "series": "Poland|LPG",
+      "first_date": "1995-01-01",
+      "last_date": "2026-07-20",
+      "n_observations": 1131
+    },
+    {
+      "id": "MATIF_WHEAT",
+      "name": "Pszenica młynarska (MATIF Paris)",
+      "unit": "€/t",
+      "contract_size": 50,
+      "contract_unit": "t",
+      "category": "Rolne",
+      "color": "#ff7043",
+      "source": "yahoo",
+      "series": "EBM.PA",
+      "first_date": "2015-03-30",
+      "last_date": "2015-03-30",
+      "n_observations": 1
     },
     {
       "id": "TTF",
@@ -221,9 +277,9 @@
       "color": "#81c784",
       "source": "fred",
       "series": "PNGASEUUSDM",
-      "first_date": "2014-01-01",
+      "first_date": "1995-01-01",
       "last_date": "2026-06-01",
-      "n_observations": 150
+      "n_observations": 378
     },
     {
       "id": "COAL_AU",
@@ -235,9 +291,9 @@
       "color": "#455a64",
       "source": "fred",
       "series": "PCOALAUUSDM",
-      "first_date": "2014-01-01",
+      "first_date": "1995-01-01",
       "last_date": "2026-06-01",
-      "n_observations": 150
+      "n_observations": 378
     },
     {
       "id": "LNG_JP",
@@ -249,9 +305,9 @@
       "color": "#e57373",
       "source": "fred",
       "series": "PNGASJPUSDM",
-      "first_date": "2014-01-01",
+      "first_date": "1995-01-01",
       "last_date": "2026-06-01",
-      "n_observations": 150
+      "n_observations": 378
     },
     {
       "id": "COFFEE",
@@ -263,9 +319,9 @@
       "color": "#6d4c41",
       "source": "yahoo",
       "series": "KC=F",
-      "first_date": "2014-01-02",
+      "first_date": "2000-01-03",
       "last_date": "2026-08-07",
-      "n_observations": 3168
+      "n_observations": 6668
     },
     {
       "id": "COCOA",
@@ -277,9 +333,9 @@
       "color": "#5d4037",
       "source": "yahoo",
       "series": "CC=F",
-      "first_date": "2014-01-02",
+      "first_date": "2000-01-03",
       "last_date": "2026-08-07",
-      "n_observations": 3168
+      "n_observations": 6670
     },
     {
       "id": "SUGAR",
@@ -291,10 +347,19 @@
       "color": "#f8bbd0",
       "source": "yahoo",
       "series": "SB=F",
-      "first_date": "2014-01-02",
+      "first_date": "2000-03-01",
       "last_date": "2026-08-07",
-      "n_observations": 3169
+      "n_observations": 6631
     }
   ],
-  "failed": []
+  "failed": [
+    "WHEAT_MW",
+    "PL_PB95_WOB",
+    "PL_ON_WOB",
+    "PL_HEAT_WOB",
+    "EU_PB95_WOB",
+    "EU_ON_WOB",
+    "MATIF_CORN",
+    "MATIF_RAPESEED"
+  ]
 }
