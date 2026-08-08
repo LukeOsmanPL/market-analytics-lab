@@ -174,6 +174,58 @@ PRODUCTS = [
          contract_size=1, contract_unit="L",
          category="Lokalne PL", color="#e65100"),
 
+    # Dodatkowe kraje EU (WOB) - do porownan miedzynarodowych
+    dict(id="FR_PB95_WOB", source="wob", series="FR|Euro-Super 95",
+         name="Pb95 detal Francja (WOB)", unit="€/1000L",
+         contract_size=1, contract_unit="L", category="Europa", color="#5c6bc0"),
+    dict(id="FR_ON_WOB",   source="wob", series="FR|Automotive Gas Oil",
+         name="ON detal Francja (WOB)",   unit="€/1000L",
+         contract_size=1, contract_unit="L", category="Europa", color="#3f51b5"),
+    dict(id="ES_PB95_WOB", source="wob", series="ES|Euro-Super 95",
+         name="Pb95 detal Hiszpania (WOB)", unit="€/1000L",
+         contract_size=1, contract_unit="L", category="Europa", color="#ec407a"),
+    dict(id="ES_ON_WOB",   source="wob", series="ES|Automotive Gas Oil",
+         name="ON detal Hiszpania (WOB)", unit="€/1000L",
+         contract_size=1, contract_unit="L", category="Europa", color="#d81b60"),
+    dict(id="IT_PB95_WOB", source="wob", series="IT|Euro-Super 95",
+         name="Pb95 detal Włochy (WOB)",  unit="€/1000L",
+         contract_size=1, contract_unit="L", category="Europa", color="#66bb6a"),
+    dict(id="IT_ON_WOB",   source="wob", series="IT|Automotive Gas Oil",
+         name="ON detal Włochy (WOB)",    unit="€/1000L",
+         contract_size=1, contract_unit="L", category="Europa", color="#43a047"),
+    dict(id="CZ_PB95_WOB", source="wob", series="CZ|Euro-Super 95",
+         name="Pb95 detal Czechy (WOB)",  unit="€/1000L",
+         contract_size=1, contract_unit="L", category="Europa", color="#26a69a"),
+    dict(id="CZ_ON_WOB",   source="wob", series="CZ|Automotive Gas Oil",
+         name="ON detal Czechy (WOB)",    unit="€/1000L",
+         contract_size=1, contract_unit="L", category="Europa", color="#00897b"),
+    dict(id="HU_PB95_WOB", source="wob", series="HU|Euro-Super 95",
+         name="Pb95 detal Węgry (WOB)",   unit="€/1000L",
+         contract_size=1, contract_unit="L", category="Europa", color="#ff7043"),
+    dict(id="HU_ON_WOB",   source="wob", series="HU|Automotive Gas Oil",
+         name="ON detal Węgry (WOB)",     unit="€/1000L",
+         contract_size=1, contract_unit="L", category="Europa", color="#f4511e"),
+
+    # Kursy walutowe (do konwersji miedzy jednostkami w rożnych walutach)
+    dict(id="FX_EURUSD", source="yahoo", series="EURUSD=X",
+         name="EUR/USD (kurs)", unit="USD/EUR",
+         contract_size=1, contract_unit="EUR", category="Waluty", color="#42a5f5"),
+    dict(id="FX_EURPLN", source="yahoo", series="EURPLN=X",
+         name="EUR/PLN (kurs)", unit="PLN/EUR",
+         contract_size=1, contract_unit="EUR", category="Waluty", color="#7e57c2"),
+    dict(id="FX_USDPLN", source="yahoo", series="PLN=X",
+         name="USD/PLN (kurs)", unit="PLN/USD",
+         contract_size=1, contract_unit="USD", category="Waluty", color="#26a69a"),
+    dict(id="FX_GBPUSD", source="yahoo", series="GBPUSD=X",
+         name="GBP/USD (kurs)", unit="USD/GBP",
+         contract_size=1, contract_unit="GBP", category="Waluty", color="#5c6bc0"),
+    dict(id="FX_USDJPY", source="yahoo", series="JPY=X",
+         name="USD/JPY (kurs)", unit="JPY/USD",
+         contract_size=1, contract_unit="USD", category="Waluty", color="#ec407a"),
+    dict(id="FX_USDCHF", source="yahoo", series="CHF=X",
+         name="USD/CHF (kurs)", unit="CHF/USD",
+         contract_size=1, contract_unit="USD", category="Waluty", color="#ef5350"),
+
     # MATIF Paryz (Euronext) - best-effort, Yahoo bywa kaprysny dla EU futures
     dict(id="MATIF_WHEAT", source="yahoo", series="EBM.PA",
          name="Pszenica młynarska (MATIF Paris)", unit="€/t",
@@ -450,22 +502,47 @@ def _scrape_orlen_current():
         _ORLEN_CACHE = {}
         return _ORLEN_CACHE
 
-    # Kombinuj kilka wzorcow zeby znalezc ceny - strony moga zmienic layout
-    # cenypaliw.fyi zwykle pokazuje: "PB95 6,98 zł/l" albo w JSON w scripcie
+    # Najpierw wyodrebnij sekcje z tabela hurtowych cen (zeby nie chwytac retail)
+    # Format tabeli: "PB 95: 5.33 PLN/litr" (netto) - hurt Orlen
     result = {}
+    # Znajdz obszar tabeli hurtowych
+    section_m = re.search(
+        r'(?:Tabela\s+hurtowych\s+cen\s+paliw|hurtowe\s+ceny\s+paliw)(.{0,5000})',
+        html, re.DOTALL | re.IGNORECASE
+    )
+    section = section_m.group(1) if section_m else html
+    print(f"  [ORLEN] szukam w sekcji {len(section)} znakow (znaleziona sekcja hurt: {bool(section_m)})", flush=True)
+
+    # Patterny: kazdy produkt szuka nazwy + separatora + ceny + jednostki
+    # Sekcja hurt uzywa formatu "PB 95: 5.33 PLN/litr netto"
     patterns = {
-        'PB95':       [r'PB\s*95[^0-9]{0,20}(\d[\d,\.]{2,6})\s*z[łl]', r'"pb95"[^0-9]*(\d[\d,\.]{2,6})'],
-        'PB98':       [r'PB\s*98[^0-9]{0,20}(\d[\d,\.]{2,6})\s*z[łl]', r'"pb98"[^0-9]*(\d[\d,\.]{2,6})'],
-        'ON':         [r'(?<![a-zA-Z])ON\s+(?!Ekoterm)[^0-9]{0,20}(\d[\d,\.]{2,6})\s*z[łl]', r'"on"[^0-9]*(\d[\d,\.]{2,6})'],
-        'ON_EKOTERM': [r'Ekoterm[^0-9]{0,20}(\d[\d,\.]{2,6})\s*z[łl]', r'"ekoterm"[^0-9]*(\d[\d,\.]{2,6})'],
+        'PB95': [
+            r'PB\s*95[^0-9]{1,30}?(\d[\d,\.]{1,6})\s*PLN',
+            r'PB\s*95[^0-9]{1,30}?(\d[\d,\.]{1,6})\s*z[łl]',
+        ],
+        'PB98': [
+            r'PB\s*98[^0-9]{1,30}?(\d[\d,\.]{1,6})\s*PLN',
+            r'PB\s*98[^0-9]{1,30}?(\d[\d,\.]{1,6})\s*z[łl]',
+        ],
+        'ON': [
+            # ON ale nie ON Ekoterm - negative lookahead
+            r'(?<![a-zA-Z])ON(?!\s*Ekoterm)\s*(?:\(Diesel\))?[^0-9]{1,30}?(\d[\d,\.]{1,6})\s*PLN',
+            r'(?<![a-zA-Z])ON(?!\s*Ekoterm)\s*(?:\(Diesel\))?[^0-9]{1,30}?(\d[\d,\.]{1,6})\s*z[łl]',
+        ],
+        'ON_EKOTERM': [
+            r'ON\s*Ekoterm[^0-9]{1,30}?(\d[\d,\.]{1,6})\s*PLN',
+            r'Ekoterm[^0-9]{1,30}?(\d[\d,\.]{1,6})\s*PLN',
+            r'ON\s*Ekoterm[^0-9]{1,30}?(\d[\d,\.]{1,6})\s*z[łl]',
+        ],
     }
     for key, pats in patterns.items():
         for pat in pats:
-            m = re.search(pat, html, re.IGNORECASE)
+            m = re.search(pat, section, re.IGNORECASE)
             if m:
                 try:
                     v = float(m.group(1).replace(',', '.'))
-                    if 0.5 < v < 20:  # sensowna cena PLN/L
+                    # Hurt Orlen sensowny zakres: 3-9 zl/l (retail wychodzi wyzej)
+                    if 3.0 < v < 9.0:
                         result[key] = v
                         break
                 except: pass
@@ -475,15 +552,16 @@ def _scrape_orlen_current():
 
 
 def fetch_orlen_append(product_key: str, existing_obs: list) -> list:
-    """Dopisuje dzisiejsza cene do istniejacej historii Orlen. Zwraca zmergowana liste."""
+    """Dopisuje/nadpisuje dzisiejsza cene do istniejacej historii Orlen.
+    Nadpisuje jesli data juz jest (na wypadek gdyby wczesniejszy run zapisal zla wartosc).
+    """
     from datetime import datetime as _dt2, timezone as _tz2
     today = _dt2.now(_tz2.utc).strftime('%Y-%m-%d')
     prices = _scrape_orlen_current()
     today_val = prices.get(product_key)
-    obs = list(existing_obs) if existing_obs else []
+    obs = [o for o in (existing_obs or []) if o.get('date') != today]  # usun dzisiejsza jesli byla
     if today_val is not None:
-        if not any(o.get('date') == today for o in obs):
-            obs.append({'date': today, 'value': today_val})
+        obs.append({'date': today, 'value': today_val})
         obs.sort(key=lambda o: o['date'])
     return obs
 
