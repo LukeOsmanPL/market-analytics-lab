@@ -94,7 +94,7 @@
     <h1>Market Analytics Lab</h1>
     <div class="badge" id="dataFreshness">ładuję dane…</div>
   </div>
-  <div class="badge">v1.3.1 · projekt i realizacja: Łukasz Osman</div>
+  <div class="badge">v1.4 · projekt i realizacja: Łukasz Osman</div>
 </header>
 
 <div id="loading">
@@ -137,7 +137,15 @@
 
     <section class="divider">
       <div class="toggle"><input type="checkbox" id="showEvents" checked><label for="showEvents"><b>Pokaż wydarzenia</b> na wykresach</label></div>
-      <div class="hint" id="eventsHint">Historyczne wydarzenia (inwazja Ukrainy, sabotaż Nord Stream, decyzje OPEC, itd.) - najedź na pionową linię żeby zobaczyć szczegóły.</div>
+      <div class="hint">Historyczne wydarzenia (inwazja Ukrainy, sabotaż Nord Stream, decyzje OPEC, itd.).</div>
+      <div class="row" style="margin-top:10px"><label>Jednostka ropy/benzyny</label>
+        <select id="unitOverride">
+          <option value="native" selected>oryginalna</option>
+          <option value="per_gal">$/gal (ropa → galon)</option>
+          <option value="per_liter">$/L (do porównania z retail)</option>
+        </select>
+      </div>
+      <div class="hint">Przelicza ropę ($/bbl) na galony/litry i benzynę ($/gal) na litry - żeby porównać z cenami na stacjach. Działa w Nakładce i Sezonowej. 1 bbl = 42 gal = 159 L; 1 gal = 3.79 L.</div>
     </section>
 
     <section class="divider">
@@ -335,7 +343,36 @@ const state = {
   showEvents: true,
   // ENSO
   ensoFilter: 'all',
+  // konwersja jednostek
+  unitOverride: 'native',
 };
+
+// mapa konwersji jednostek objetosciowych
+const UNIT_CONV = {
+  '$/bbl': {
+    per_gal:   { factor: 1/42,       unit: '$/gal' },
+    per_liter: { factor: 1/158.987,  unit: '$/L'   },
+  },
+  '$/gal': {
+    per_liter: { factor: 1/3.7854,   unit: '$/L'   },
+  },
+};
+function convertPrice(value, fromUnit) {
+  const target = state.unitOverride;
+  if (target === 'native' || !UNIT_CONV[fromUnit] || !UNIT_CONV[fromUnit][target]) {
+    return { v: value, unit: fromUnit };
+  }
+  const c = UNIT_CONV[fromUnit][target];
+  return { v: value * c.factor, unit: c.unit };
+}
+function convertSeries(prices, fromUnit) {
+  const target = state.unitOverride;
+  if (target === 'native' || !UNIT_CONV[fromUnit] || !UNIT_CONV[fromUnit][target]) {
+    return { prices, unit: fromUnit };
+  }
+  const c = UNIT_CONV[fromUnit][target];
+  return { prices: prices.map(p => p * c.factor), unit: c.unit };
+}
 
 const SELECT_RULES = {
   standard: { min: 1, max: 6, kind: 'multi',  label: 'Wybierz 1-6 produktów.' },
@@ -573,6 +610,7 @@ function init() {
   bind('spreadSeasonAvg', 'spreadSeasonAvg', e => e.target.value);
   bind('showEvents', 'showEvents');
   bind('ensoFilter', 'ensoFilter', e => e.target.value);
+  bind('unitOverride', 'unitOverride', e => e.target.value);
 
   syncLegs(); refreshCheckboxes(); renderLegs(); render();
   window.addEventListener('resize', () => {
@@ -750,9 +788,12 @@ function renderStandard() {
     : 'Nakładka — brak wyboru';
   if (!active.length) { setEmpty('mainPlot', 'Zaznacz produkt po lewej.'); Plotly.purge('corrPlot'); return; }
   const traces = [];
+  const convertedUnits = [];
   active.forEach((p, i) => {
     const s = slice(p.id);
-    let y = s.prices; if (state.pct && y.length) y = pctNormalize(y);
+    const conv = convertSeries(s.prices, p.unit);
+    convertedUnits.push(conv.unit);
+    let y = conv.prices; if (state.pct && y.length) y = pctNormalize(y);
     traces.push({
       x: s.dates, y, name: p.name, type: 'scatter', mode: 'lines',
       line: { color: p.color, width: 2 },
@@ -760,9 +801,9 @@ function renderStandard() {
     });
   });
   const layout = { ...layoutBase };
-  layout.yaxis = { ...layoutBase.yaxis, title: state.pct ? '% zmiana' : (active[0]?.unit || '') };
+  layout.yaxis = { ...layoutBase.yaxis, title: state.pct ? '% zmiana' : (convertedUnits[0] || '') };
   if (state.dual && active.length > 1 && !state.pct) {
-    layout.yaxis2 = { ...layoutBase.yaxis, title: active[1].unit, overlaying: 'y', side: 'right' };
+    layout.yaxis2 = { ...layoutBase.yaxis, title: convertedUnits[1], overlaying: 'y', side: 'right' };
   }
   // wydarzenia
   const ev = buildEventOverlay(active[0] ? slice(active[0].id).dates[0] || MIN_DATE : MIN_DATE,
@@ -973,12 +1014,15 @@ function renderSeasonal() {
   const methodLabel = state.seasonAvg === 'median' ? 'mediana' : state.seasonAvg === 'trimmed' ? 'średnia obc.' : 'średnia';
   const d = DATA[p.id];
 
+  // konwersja jednostek (bbl→gal/L, gal→L)
+  const convD = convertSeries(d.prices, p.unit);
+
   // Tryb spread La Niña - El Niño
   if (state.ensoFilter === 'spread') {
     document.getElementById('mainTitle').innerHTML =
       `Sezonowa spread ENSO: ${p.name} <span class="sub">La Niña vs El Niño · ${methodLabel} ${state.seasonWindow}L${state.seasonPct ? ' · % zmiana YTD' : ''}</span>`;
-    const res = renderSeasonalENSOSpread(d.dates, d.prices, {
-      window: state.seasonWindow, unitLabel: p.unit, targetElId: 'mainPlot',
+    const res = renderSeasonalENSOSpread(d.dates, convD.prices, {
+      window: state.seasonWindow, unitLabel: convD.unit, targetElId: 'mainPlot',
       pct: state.seasonPct, method: state.seasonAvg,
     });
     document.getElementById('seasonalStats').innerHTML = res.html;
@@ -991,9 +1035,9 @@ function renderSeasonal() {
   document.getElementById('mainTitle').innerHTML =
     `Sezonowa: ${p.name} <span class="sub">${methodLabel} ${state.seasonWindow}L${state.seasonPct ? ' · % zmiana YTD' : ''}${ensoLabel}</span>`;
   const yearFilter = state.ensoFilter === 'all' ? null : (y => ensoOf(y) === state.ensoFilter);
-  const res = renderSeasonalGeneric(d.dates, d.prices, {
+  const res = renderSeasonalGeneric(d.dates, convD.prices, {
     window: state.seasonWindow, showMinMax: state.showMinMax, showYears: state.showYears,
-    colorLine: p.color, unitLabel: p.unit, targetElId: 'mainPlot',
+    colorLine: p.color, unitLabel: convD.unit, targetElId: 'mainPlot',
     pct: state.seasonPct, method: state.seasonAvg, yearFilter,
   });
   // Grupowanie lat wg ENSO (do wyswietlenia pod statystykami)
@@ -1167,13 +1211,14 @@ function renderStats(active) {
   active.forEach(p => {
     const s = slice(p.id);
     if (!s.prices.length) return;
-    const st = statSummary(s.prices);
+    const conv = convertSeries(s.prices, p.unit);
+    const st = statSummary(conv.prices);
     const cls = st.chg >= 0 ? 'up' : 'down';
     const arrow = st.chg >= 0 ? '▲' : '▼';
     el.innerHTML += `
       <div class="stat">
         <div class="label">${p.name}</div>
-        <div class="value">${st.last.toFixed(2)} <span style="font-size:11px;color:var(--muted)">${p.unit}</span></div>
+        <div class="value">${st.last.toFixed(2)} <span style="font-size:11px;color:var(--muted)">${conv.unit}</span></div>
         <div class="sub ${cls}">${arrow} ${st.chg.toFixed(2)}% w okresie</div>
         <div class="sub">min ${st.min.toFixed(2)} · max ${st.max.toFixed(2)} · zmienność ${st.annVol.toFixed(1)}%</div>
       </div>`;
