@@ -121,31 +121,40 @@ PRODUCTS = [
          category="Rolne", color="#f9a825"),
 
     # Polska: retail (detal) z EU Weekly Oil Bulletin - historia tygodniowa od 2005
-    dict(id="PL_PB95_WOB", source="wob", series="Poland|Euro-Super 95",
+    # Klucze uzywaja kodow ISO alpha-2 wg struktury pliku WOB (PL_, DE_, EU_, ...)
+    dict(id="PL_PB95_WOB", source="wob", series="PL|Euro-Super 95",
          name="Pb95 detal PL (EU WOB)",   unit="€/1000L",
          contract_size=1, contract_unit="L",
          category="Lokalne PL", color="#4db6ac"),
-    dict(id="PL_ON_WOB",   source="wob", series="Poland|Automotive Gas Oil",
+    dict(id="PL_ON_WOB",   source="wob", series="PL|Automotive Gas Oil",
          name="ON detal PL (EU WOB)",     unit="€/1000L",
          contract_size=1, contract_unit="L",
          category="Lokalne PL", color="#26a69a"),
-    dict(id="PL_LPG_WOB",  source="wob", series="Poland|LPG",
+    dict(id="PL_LPG_WOB",  source="wob", series="PL|LPG",
          name="LPG detal PL (EU WOB)",    unit="€/1000L",
          contract_size=1, contract_unit="L",
          category="Lokalne PL", color="#80cbc4"),
-    dict(id="PL_HEAT_WOB", source="wob", series="Poland|Heating Gas Oil",
+    dict(id="PL_HEAT_WOB", source="wob", series="PL|Heating Gas Oil",
          name="Olej opałowy PL (EU WOB)", unit="€/1000L",
          contract_size=1, contract_unit="L",
          category="Lokalne PL", color="#00897b"),
-    # Odniesienie EU
-    dict(id="EU_PB95_WOB", source="wob", series="Euro Area|Euro-Super 95",
-         name="Pb95 detal Eurozone (WOB)",unit="€/1000L",
+    # Odniesienie EU-27 i Eurozone
+    dict(id="EU_PB95_WOB", source="wob", series="EU|Euro-Super 95",
+         name="Pb95 detal UE-27 (WOB)",   unit="€/1000L",
          contract_size=1, contract_unit="L",
          category="Europa", color="#9575cd"),
-    dict(id="EU_ON_WOB",   source="wob", series="Euro Area|Automotive Gas Oil",
-         name="ON detal Eurozone (WOB)",  unit="€/1000L",
+    dict(id="EU_ON_WOB",   source="wob", series="EU|Automotive Gas Oil",
+         name="ON detal UE-27 (WOB)",     unit="€/1000L",
          contract_size=1, contract_unit="L",
          category="Europa", color="#7e57c2"),
+    dict(id="DE_PB95_WOB", source="wob", series="DE|Euro-Super 95",
+         name="Pb95 detal Niemcy (WOB)",  unit="€/1000L",
+         contract_size=1, contract_unit="L",
+         category="Europa", color="#b39ddb"),
+    dict(id="DE_ON_WOB",   source="wob", series="DE|Automotive Gas Oil",
+         name="ON detal Niemcy (WOB)",    unit="€/1000L",
+         contract_size=1, contract_unit="L",
+         category="Europa", color="#9575cd"),
 
     # MATIF Paryz (Euronext) - best-effort, Yahoo bywa kaprysny dla EU futures
     dict(id="MATIF_WHEAT", source="yahoo", series="EBM.PA",
@@ -253,7 +262,6 @@ def _parse_wob_workbook():
     wb = openpyxl.load_workbook(BytesIO(raw), read_only=False, data_only=True)
     print(f"  [WOB] arkusze: {wb.sheetnames}", flush=True)
 
-    # Interesuje nas "Prices with taxes" (retail z podatkami - najbardziej porownywalne z cenami na stacjach)
     if 'Prices with taxes' not in wb.sheetnames:
         print(f"  [WOB] BLAD: brak arkusza 'Prices with taxes'", flush=True)
         _WOB_PARSED = {}
@@ -273,100 +281,111 @@ def _parse_wob_workbook():
         if v is not None: return v
         return ws.cell(row=r, column=c).value
 
-    # DEBUG: pokaz pierwsze 8 wierszy zeby zrozumiec strukture
-    max_col_check = min(ws.max_column, 100)
     print(f"  [WOB] wymiary: {ws.max_row} wierszy x {ws.max_column} kolumn", flush=True)
-    print(f"  [WOB] === pierwsze wiersze (kolumny 1-20) ===", flush=True)
-    for r in range(1, 9):
-        vals = [str(cell(r, c))[:15] if cell(r, c) is not None else '' for c in range(1, 21)]
-        print(f"  [WOB] R{r}: {vals}", flush=True)
 
-    # Znajdz wiersze naglowka: country row (zawiera 'Poland' albo 'Belgium'/'Germany')
-    # i product row (zawiera 'Euro-Super 95' albo 'Automotive Gas Oil')
-    country_row = None
-    product_row = None
-    for r in range(1, 8):
-        row_str = ' | '.join(str(cell(r, c) or '') for c in range(1, max_col_check + 1)).lower()
-        if country_row is None and ('poland' in row_str or 'belgium' in row_str or 'germany' in row_str):
-            country_row = r
-            print(f"  [WOB] wykryto wiersz krajow: R{r}", flush=True)
-        if product_row is None and ('euro-super' in row_str or 'gas oil' in row_str.replace('heating gas oil', '').replace('automotive gas oil', '') or 'gasoline' in row_str):
-            product_row = r
-            print(f"  [WOB] wykryto wiersz produktow: R{r}", flush=True)
-        # Alternatywnie wykryj po innych markerach
-        if product_row is None and ('automotive' in row_str or 'diesel' in row_str):
-            product_row = r
-            print(f"  [WOB] wykryto wiersz produktow (alt): R{r}", flush=True)
+    # Struktura WOB:
+    #   R2 = nazwa produktu po francusku (np. 'Euro-super 95', 'Gas oil automob')
+    #   R4+ = dane: kol 1 = data, kol 2 = 'EU_' marker, kol 3-8 = 6 produktow EU,
+    #             kol 9 = 'EUR_' marker, kol 10-15 = 6 produktow EUR, itd.
+    #   Kazdy kraj: 1 kolumna markera + 6 kolumn produktow.
 
-    if country_row is None or product_row is None:
-        print(f"  [WOB] BLAD: naglowki nie znalezione (country={country_row}, product={product_row})", flush=True)
-        _WOB_PARSED = {}
-        return _WOB_PARSED
+    # Kanonizacja nazw produktow (po francusku w R2 -> nazwy angielskie)
+    def normalize_product(s):
+        if not s: return None
+        s = str(s).strip().lower()
+        if 'euro-super 95' in s or 'euro super 95' in s: return 'Euro-Super 95'
+        if 'gas oil automob' in s or 'diesel' in s:      return 'Automotive Gas Oil'
+        if 'gas oil de cha' in s or 'heating' in s:      return 'Heating Gas Oil'
+        if 'gpl' in s or 'lpg' in s:                     return 'LPG'
+        if 'fuel oil -schw' in s.replace(' ', ''):       return 'Residual Fuel Oil (low S)'
+        if 'fuel oil - sch' in s or 'fuel oil -sch' in s: return 'Residual Fuel Oil (high S)'
+        return None
 
-    # Zbuduj mape kolumn -> (country, product)
-    col_map = {}
-    for c in range(2, max_col_check + 1):  # kolumna 1 to zwykle data
-        country = cell(country_row, c)
-        product = cell(product_row, c)
-        if country and product:
-            country_s = str(country).strip()
-            product_s = str(product).strip()
-            # Odrzuc gdzie country wyglada jak inna wartosc (np. sub-header)
-            if len(country_s) < 60 and len(product_s) < 60:
-                col_map[c] = (country_s, product_s)
+    # Mapa kolumn produktow z R2
+    product_by_col = {}
+    for c in range(2, ws.max_column + 1):
+        v = cell(2, c)
+        prod = normalize_product(v)
+        if prod:
+            product_by_col[c] = prod
 
-    print(f"  [WOB] zmapowanych kolumn: {len(col_map)}", flush=True)
-    seen_countries = set(co for co, _ in col_map.values())
-    seen_products = set(pr for _, pr in col_map.values())
-    print(f"  [WOB] wykryte kraje ({len(seen_countries)}): {sorted(seen_countries)[:30]}", flush=True)
-    print(f"  [WOB] wykryte produkty ({len(seen_products)}): {sorted(seen_products)}", flush=True)
+    print(f"  [WOB] kolumn z produktami: {len(product_by_col)}", flush=True)
 
-    # Znajdz kolumne daty (pierwsza kolumna z datami w tresci)
-    data_start_row = max(country_row, product_row) + 1
-    date_col = None
-    for test_col in [1, 2]:
-        v = cell(data_start_row, test_col)
-        if hasattr(v, 'strftime') or (isinstance(v, str) and len(v) >= 8):
-            date_col = test_col
+    # Znajdz pierwszy wiersz z danymi (data + kod kraju typu 'EU_', 'PL_', 'DE_')
+    first_data_row = None
+    for r in range(3, 10):
+        v1 = cell(r, 1)
+        if hasattr(v1, 'strftime'):
+            first_data_row = r
             break
-    if date_col is None:
-        date_col = 1
-    print(f"  [WOB] data w kolumnie {date_col}, dane od wiersza {data_start_row}", flush=True)
+        if isinstance(v1, str):
+            try:
+                _dt.strptime(v1[:10], '%Y-%m-%d')
+                first_data_row = r
+                break
+            except: pass
+    if first_data_row is None:
+        first_data_row = 4
+    print(f"  [WOB] pierwsze dane w wierszu {first_data_row}", flush=True)
 
-    # Skanowanie danych
+    # Wykryj kolumny markerow krajow z pierwszego wiersza danych (wartosci konczace sie na '_')
+    country_by_col = {}  # col -> country_code (bez '_')
+    for c in range(1, ws.max_column + 1):
+        v = cell(first_data_row, c)
+        if isinstance(v, str) and v.endswith('_') and 1 <= len(v) <= 5:
+            country_by_col[c] = v.rstrip('_')
+
+    print(f"  [WOB] wykryte kolumny markerow krajow: {len(country_by_col)}", flush=True)
+    print(f"  [WOB] kody krajow: {sorted(set(country_by_col.values()))}", flush=True)
+
+    # Dla kazdej kolumny produktu znajdz najblizszy poprzedzajacy marker kraju
+    sorted_country_cols = sorted(country_by_col.keys())
+    col_to_cp = {}  # col -> (country_code, product_name)
+    for prod_col, product_name in product_by_col.items():
+        # znajdz country marker column najblizszy z lewej (<= prod_col)
+        cc_code = None
+        for cc in sorted_country_cols:
+            if cc <= prod_col:
+                cc_code = country_by_col[cc]
+            else:
+                break
+        if cc_code:
+            col_to_cp[prod_col] = (cc_code, product_name)
+
+    print(f"  [WOB] zmapowanych par kraj+produkt: {len(col_to_cp)}", flush=True)
+    seen_countries = set(cp[0] for cp in col_to_cp.values())
+    print(f"  [WOB] kraje w mapie: {sorted(seen_countries)}", flush=True)
+
+    # Skanuj wiersze danych
     results = {}
     n_scanned = 0
     n_valid = 0
-    for r in range(data_start_row, ws.max_row + 1):
+    for r in range(first_data_row, ws.max_row + 1):
         n_scanned += 1
-        date_val = cell(r, date_col)
-        if not date_val:
-            continue
+        date_val = cell(r, 1)
+        date_str = None
         if hasattr(date_val, 'strftime'):
             date_str = date_val.strftime('%Y-%m-%d')
         elif isinstance(date_val, str):
-            s = date_val.strip()
-            date_str = None
-            for fmt in ('%Y-%m-%d', '%d/%m/%Y', '%d.%m.%Y', '%Y/%m/%d'):
-                try:
-                    date_str = _dt.strptime(s[:10], fmt).strftime('%Y-%m-%d')
-                    break
-                except: pass
-            if not date_str:
-                continue
-        else:
+            try:
+                date_str = _dt.strptime(date_val[:10], '%Y-%m-%d').strftime('%Y-%m-%d')
+            except: pass
+        if not date_str:
             continue
-
-        for col, (country, product) in col_map.items():
+        for col, (country, product) in col_to_cp.items():
             val = cell(r, col)
-            if isinstance(val, (int, float)) and val > 0 and val < 100000:
+            if isinstance(val, (int, float)) and 0 < val < 100000:
                 results.setdefault((country, product), []).append((date_str, float(val)))
                 n_valid += 1
 
-    print(f"  [WOB] przeskanowano {n_scanned} wierszy, {n_valid} valid data points", flush=True)
-    # Sample: kilka par
-    for k, v in list(results.items())[:8]:
-        print(f"  [WOB] sample: {k[0]}|{k[1]}: {len(v)} obs, pierwsza {v[0]}, ostatnia {v[-1]}", flush=True)
+    print(f"  [WOB] przeskanowano {n_scanned} wierszy danych, {n_valid} valid values", flush=True)
+    # Pokaz kilka przykladow zeby zwalidowac
+    for k in [('PL', 'Euro-Super 95'), ('PL', 'Automotive Gas Oil'), ('PL', 'LPG'), ('EU', 'Euro-Super 95'), ('DE', 'Euro-Super 95')]:
+        vals = results.get(k, [])
+        if vals:
+            print(f"  [WOB] check {k[0]}|{k[1]}: {len(vals)} obs, ostatnia {vals[-1]}", flush=True)
+        else:
+            print(f"  [WOB] check {k[0]}|{k[1]}: BRAK", flush=True)
 
     _WOB_PARSED = results
     return results
