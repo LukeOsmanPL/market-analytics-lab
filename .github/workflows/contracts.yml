@@ -1,0 +1,48 @@
+name: Kontrakty terminowe (Stooq)
+
+on:
+  # Codziennie o 06:00 UTC (08:00 PL) - przed glownym fetchem
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Tryb: full (backfill wszystko) lub incremental (default)'
+        required: false
+        default: 'incremental'
+        type: choice
+        options:
+          - incremental
+          - full
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Fetch kontrakty terminowe
+        run: |
+          python3 fetch_contracts.py "${{ github.event.inputs.mode || 'incremental' }}"
+
+      - name: Commit
+        run: |
+          git config user.name "contracts-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/contracts/ 2>/dev/null || true
+          if ! git diff --cached --quiet; then
+            git commit -m "auto: kontrakty terminowe $(date -u '+%Y-%m-%d %H:%M')"
+            git push
+          else
+            echo "Brak nowych danych"
+          fi
