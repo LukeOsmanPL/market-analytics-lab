@@ -1,0 +1,42 @@
+name: Alerty (sprawdzanie regul)
+
+on:
+  # Uruchamia sie 30 min po glownym fetchu (07:30 UTC i 19:30 UTC)
+  schedule:
+    - cron: '30 7,19 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Sprawdz alerty
+        env:
+          SMTP_HOST: ${{ secrets.SMTP_HOST || 'smtp.gmail.com' }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          ALERT_EMAIL_TO: ${{ secrets.ALERT_EMAIL_TO }}
+        run: python3 check_alerts.py
+
+      - name: Commit log alertow
+        run: |
+          git config user.name "alerts-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/alerts_log.json 2>/dev/null || true
+          if ! git diff --cached --quiet; then
+            git commit -m "auto: alerty $(date -u '+%Y-%m-%d %H:%M')"
+            git push
+          else
+            echo "Brak zmian w logu alertow"
+          fi
