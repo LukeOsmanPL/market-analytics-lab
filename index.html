@@ -172,6 +172,8 @@
     <ul>
       <li><b>Okno średniej</b> — 3/5/10/15/20/25/30 lat (zależnie od dostępności danych).</li>
       <li><b>Metoda uśredniania</b>: <code>średnia</code> / <code>mediana</code> (odporna na skrajności jak 2022) / <code>trimmed 20%</code>.</li>
+      <li><b>Koperta min/max</b> — najniższa/najwyższa historia (skrajności).</li>
+      <li><b>Percentyle 25/75</b> — ciemniejszy pas w środku pokazuje <b>typowy zakres</b> (interkwartyl); często ważniejsze niż min/max, bo ignoruje outliery.</li>
       <li><b>Skala %</b> — od 1 stycznia każdego roku (domyślnie), <b>automatycznie przelicza od początku widocznego zakresu po zoom-ie myszką</b>. Dwuklik = powrót.</li>
       <li><b>Filtr ENSO</b> — pokaż tylko lata El Niño / La Niña / neutralne, albo <b>spread La Niña − El Niño</b> (klasyczna analiza agro).</li>
     </ul>
@@ -258,6 +260,7 @@
     <b>Europa</b>: retail paliw 5 krajów UE + UE-27, <b>EUA (CO2, EU ETS)</b> — uprawnienia do emisji, kluczowe dla marż elektrowni.<br>
     <b>Elektryka</b>: day-ahead <b>hurt</b> dla 10 krajów UE (PL/DE/FR/ES/IT/CZ/SK/HU/NL/GB), <b>detal (Eurostat, półroczne)</b> dla 7 krajów + UE-27.<br>
     <b>Waluty</b>: EUR/USD, EUR/PLN, USD/PLN, GBP/USD, USD/JPY, USD/CHF (kursy z Yahoo).<br>
+    <b>Makro</b>: <b>DXY</b> (Dollar Index — leading indicator dla wszystkich surowców), <b>VIX</b> (risk-on/off), <b>S&amp;P 500</b>, <b>Bitcoin</b>, rentowności 10Y/2Y US, <b>spread 10Y−2Y</b> (klasyczny wskaźnik recesji: &lt;0 = inversion).<br>
     <b>COT</b>: pozycje Money Managers dla 9 rynków (WTI, Brent, NG, Gold, Silver, Copper, Corn, Wheat, Soybean).</p>
 
     <h3>🔌 Źródła danych (wszystkie darmowe)</h3>
@@ -410,6 +413,7 @@
       <div class="toggle"><input type="checkbox" id="seasonPct"><label for="seasonPct">Skala % (od początku widocznego zakresu)</label></div>
       <div class="hint" style="margin-top:2px">Domyślnie liczy od 1 stycznia. Kiedy zaznaczysz myszką fragment wykresu (np. marzec-lipiec), % przelicza się automatycznie od pierwszego dnia widocznego. Dwuklik cofa do 1 stycznia.</div>
       <div class="toggle"><input type="checkbox" id="showMinMax" checked><label for="showMinMax">Koperta min/max</label></div>
+      <div class="toggle"><input type="checkbox" id="showPct2575"><label for="showPct2575">Percentyle 25/75 (kwartyle)</label></div>
       <div class="toggle"><input type="checkbox" id="showYears"><label for="showYears">Pokaż wszystkie lata</label></div>
       <div class="row"><label>Filtr ENSO</label>
         <select id="ensoFilter">
@@ -617,7 +621,7 @@ const state = {
   corrWindow: 60,   // rolling correlation window (dni)
   showSMA: false, showBB: false, showRSI: false,   // wskazniki techniczne
   // seasonal
-  seasonWindow: 5, showMinMax: true, showYears: false,
+  seasonWindow: 5, showMinMax: true, showPct2575: false, showYears: false,
   seasonPct: false, seasonAvg: 'mean',
   seasonPctBaseDoy: 0,  // dzien roku od ktorego liczyc % (0 = 1 stycznia; ustawiane przez zoom)
   // spread P&L
@@ -1070,6 +1074,7 @@ function init() {
   bind('showRSI', 'showRSI');
   bind('seasonWindow', 'seasonWindow', e => +e.target.value);
   bind('showMinMax', 'showMinMax');
+  bind('showPct2575', 'showPct2575');
   bind('showYears', 'showYears');
   bind('seasonPct', 'seasonPct');
   bind('seasonAvg', 'seasonAvg', e => e.target.value);
@@ -1555,7 +1560,7 @@ function renderStandard() {
 
 /* ============ Sezonowa (uniwersalna, obsługuje pct + method) ============ */
 function renderSeasonalGeneric(seriesDates, seriesValues, opts) {
-  const { window, showMinMax, showYears, colorLine, unitLabel, targetElId, pct, method, yearFilter } = opts;
+  const { window, showMinMax, showPct2575, showYears, colorLine, unitLabel, targetElId, pct, method, yearFilter } = opts;
   // Grupuj po roku
   const byYear = {};
   seriesDates.forEach((ds, i) => {
@@ -1604,6 +1609,27 @@ function renderSeasonalGeneric(seriesDates, seriesValues, opts) {
     const minsSm = smoothSeries(mins, 3), maxsSm = smoothSeries(maxs, 3);
     traces.push({ x: doyDates, y: maxsSm, type: 'scatter', mode: 'lines', line: { width: 0 }, showlegend: false, hovertemplate: 'max: %{y:.2f}<extra></extra>' });
     traces.push({ x: doyDates, y: minsSm, type: 'scatter', mode: 'lines', fill: 'tonexty', fillcolor: 'rgba(79,195,247,0.12)', line: { width: 0 }, name: `min-max ${window}L`, hovertemplate: 'min: %{y:.2f}<extra></extra>' });
+  }
+  // Percentyle 25/75 (kwartyle) - ciemniejsze wypelnienie w srodku, "typowy zakres"
+  if (showPct2575) {
+    const doys = Array.from({length: 366}, (_, i) => i);
+    const p25 = [], p75 = [];
+    const q = (arr, p) => {
+      if (!arr.length) return null;
+      const s = arr.slice().sort((a,b)=>a-b);
+      const pos = (s.length - 1) * p;
+      const lo = Math.floor(pos), hi = Math.ceil(pos), frac = pos - lo;
+      return s[lo] * (1 - frac) + s[hi] * frac;
+    };
+    doys.forEach(doy => {
+      const vals = historicalYears.map(y => byYear[y][doy]).filter(v => v != null);
+      p25.push(q(vals, 0.25));
+      p75.push(q(vals, 0.75));
+    });
+    const doyDates = doys.map(doy => { const dt = new Date(currentYear, 0, 1); dt.setDate(dt.getDate() + doy); return dt.toISOString().slice(0, 10); });
+    const p25Sm = smoothSeries(p25, 3), p75Sm = smoothSeries(p75, 3);
+    traces.push({ x: doyDates, y: p75Sm, type: 'scatter', mode: 'lines', line: { width: 0, color: '#4fc3f7' }, showlegend: false, hovertemplate: 'p75: %{y:.2f}<extra></extra>' });
+    traces.push({ x: doyDates, y: p25Sm, type: 'scatter', mode: 'lines', fill: 'tonexty', fillcolor: 'rgba(79,195,247,0.25)', line: { width: 0, color: '#4fc3f7' }, name: `p25-p75 ${window}L`, hovertemplate: 'p25: %{y:.2f}<extra></extra>' });
   }
   if (showYears) {
     historicalYears.forEach(y => {
@@ -1858,7 +1884,7 @@ function renderSeasonal() {
     `Sezonowa: ${p.name} <span class="sub">${methodLabel} ${state.seasonWindow}L${state.seasonPct ? ' · % zmiana YTD' : ''}${ensoLabel}</span>`;
   const yearFilter = state.ensoFilter === 'all' ? null : (y => ensoOf(y) === state.ensoFilter);
   const res = renderSeasonalGeneric(d.dates, convD.prices, {
-    window: state.seasonWindow, showMinMax: state.showMinMax, showYears: state.showYears,
+    window: state.seasonWindow, showMinMax: state.showMinMax, showPct2575: state.showPct2575, showYears: state.showYears,
     colorLine: p.color, unitLabel: convD.unit, targetElId: 'mainPlot',
     pct: state.seasonPct, method: state.seasonAvg, yearFilter,
   });
