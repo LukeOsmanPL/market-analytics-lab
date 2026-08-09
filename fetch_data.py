@@ -75,6 +75,15 @@ PRODUCTS = [
          name="Benzyna detal USA (avg)",  unit="$/gal",
          contract_size=1, contract_unit="gal",
          category="Energia", color="#ffa000"),
+    # Inventories & storage - wskazniki fundamentalne (leading indicators dla cen)
+    dict(id="NG_STORAGE_US", source="fred", series="WNGSTUS",
+         name="Zapasy gazu US (48 stanów)", unit="Bcf",
+         contract_size=1, contract_unit="Bcf",
+         category="Energia", color="#0288d1"),
+    dict(id="CRUDE_STORAGE_US", source="fred", series="WCESTUS",
+         name="Zapasy ropy US (komercyjne)", unit="tys. bbl",
+         contract_size=1, contract_unit="tys. bbl",
+         category="Energia", color="#ef5350"),
 
     # Metale (Yahoo Finance)
     dict(id="GOLD",     source="yahoo", series="GC=F",
@@ -372,6 +381,12 @@ PRODUCTS = [
          name="TTF (gaz EU, Amsterdam)",  unit="€/MWh",
          contract_size=1000, contract_unit="MWh",
          category="Europa", color="#66bb6a"),
+    # EUA - EU Emission Allowances (uprawnienia do emisji CO2, ICE Amsterdam)
+    # Kluczowe dla marz elektrowni gazowych/weglowych - clean spark/dark spread
+    dict(id="EUA",   source="stooq", series="co2.f",
+         name="EUA (CO2, EU ETS)",       unit="€/t",
+         contract_size=1000, contract_unit="t CO2",
+         category="Europa", color="#78909c"),
     dict(id="EU_NG_MO", source="fred", series="PNGASEUUSDM",
          name="Gaz EU (WB, miesieczny)", unit="$/MMBtu",
          contract_size=1, contract_unit="MMBtu",
