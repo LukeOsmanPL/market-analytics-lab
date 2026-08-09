@@ -136,7 +136,7 @@
   </div>
   <div style="display:flex; gap:10px; align-items:center">
     <button class="help-btn" onclick="document.getElementById('manualModal').classList.add('active')">? Manual</button>
-    <div class="badge">v2.7 · projekt i realizacja: Łukasz Osman</div>
+    <div class="badge">v2.8 · projekt i realizacja: Łukasz Osman</div>
   </div>
 </header>
 
@@ -494,12 +494,15 @@ const ENSO_LABELS = { el_nino: 'El Niño', la_nina: 'La Niña', neutral: 'Neutra
 const ENSO_COLORS = { el_nino: '#ef5350', la_nina: '#4fc3f7', neutral: '#8b96a5' };
 function ensoOf(year) { return ENSO[String(year)] || 'neutral'; }
 
+let ALERTS_LOG = [];
+
 async function loadData() {
   try {
-    const [pricesRes, metaRes, eventsRes, ensoRes] = await Promise.all([
+    const [pricesRes, metaRes, eventsRes, ensoRes, alertsRes] = await Promise.all([
       fetch('data/prices.json'), fetch('data/meta.json'),
       fetch('data/events.json').catch(() => ({ ok: false })),
       fetch('data/enso.json').catch(() => ({ ok: false })),
+      fetch('data/alerts_log.json').catch(() => ({ ok: false })),
     ]);
     if (!pricesRes.ok) throw new Error(`prices.json: ${pricesRes.status}`);
     if (!metaRes.ok)  throw new Error(`meta.json: ${metaRes.status}`);
@@ -510,6 +513,9 @@ async function loadData() {
     }
     if (ensoRes.ok) {
       try { ENSO = (await ensoRes.json()).years || {}; } catch(_) { ENSO = {}; }
+    }
+    if (alertsRes.ok) {
+      try { ALERTS_LOG = (await alertsRes.json()).alerts || []; } catch(_) { ALERTS_LOG = []; }
     }
 
     PRODUCTS = meta.products.map(p => ({
@@ -2010,11 +2016,31 @@ function renderDashboard() {
 
   const lastUpdate = movers.length ? movers.map(m => m.lastDate).sort().slice(-1)[0] : '';
 
+  // Alerty z ostatnich 7 dni
+  const alertsCutoff = new Date(Date.now() - 7*24*3600*1000).toISOString();
+  const recentAlerts = ALERTS_LOG.filter(a => (a.at || '') >= alertsCutoff).slice(-30).reverse();
+  const alertsHtml = recentAlerts.length ? `
+    <div class="card" style="padding:12px; margin-bottom:16px; border-left:4px solid var(--accent-2)">
+      <div style="font-weight:600; margin-bottom:8px; color:var(--accent-2)">🚨 Alerty (ostatnie 7 dni)</div>
+      <div style="max-height:250px; overflow-y:auto">
+        ${recentAlerts.map(a => `
+          <div style="padding:6px 0; border-bottom:1px solid rgba(45,55,70,0.4); font-size:12px">
+            <div><b>${a.message || a.type}</b></div>
+            ${a.note ? `<div style="color:var(--muted); font-size:11px; margin-top:2px">${a.note}</div>` : ''}
+            <div style="color:var(--muted); font-size:10px">${(a.at || '').slice(0,16).replace('T', ' ')}</div>
+          </div>`).join('')}
+      </div>
+    </div>` : `
+    <div class="card" style="padding:12px; margin-bottom:16px; color:var(--muted); font-size:12px">
+      Brak alertów w ostatnich 7 dniach. Konfiguracja w <code>data/alerts_config.json</code>.
+    </div>`;
+
   const content = `
     <div class="chart-title"><span class="title-text">Dashboard — co się dzieje na rynkach</span></div>
     <div style="color:var(--muted); font-size:12px; margin-bottom:16px">
       Skan ${relevant.length} produktów. Ostatnia aktualizacja danych: <b>${lastUpdate}</b>.
     </div>
+    ${alertsHtml}
 
     <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:16px">
       <div class="card" style="padding:12px">
