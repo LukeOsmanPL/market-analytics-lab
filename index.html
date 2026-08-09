@@ -158,6 +158,13 @@
       <li><b>Druga oś Y</b> — druga oś Y dla drugiego produktu (przy różnych jednostkach).</li>
       <li><b>Korelacja</b> pod wykresem — <b>dla 2 produktów</b>: krocząca (line) z wyborem okna 20/30/60/90/120/252 dni; <b>dla 3+</b>: macierz Pearson NxN (heatmap, cały widoczny okres).</li>
       <li><b>Statystyki na dole</b> — min/max/zmienność ann., <b>Sharpe</b> (annRet/annVol, bez rf), <b>max drawdown</b> (peak-to-trough w oknie), <b>z-score</b> ostatniej ceny (|z|≥2 podświetla).</li>
+      <li><b>Wskaźniki techniczne</b> (dla 1 produktu, bez % mode):
+        <ul>
+          <li><b>SMA 50 &amp; 200</b> — dwie średnie ruchome jako przerywane; wizualizacja golden/death cross (koreluje z alertem <code>ma_cross</code>).</li>
+          <li><b>Bollinger Bands 20d ±2σ</b> — kanał wypełniony delikatnym niebieskim; dotknięcie krawędzi = ekstremum krótkoterminowe.</li>
+          <li><b>RSI 14</b> — osobny wykres pod głównym; strefa &gt;70 wykupienie, &lt;30 wyprzedanie, 50 linia neutralna.</li>
+        </ul>
+      </li>
     </ul>
 
     <h4>Sezonowa (do 10 produktów)</h4>
@@ -243,12 +250,12 @@
     <p>Przycisk <code>📥 CSV</code> w prawym górnym rogu głównego wykresu. Pobiera aktualnie widoczne dane jako plik CSV do dalszej analizy w Excelu.</p>
 
     <h3>🗂️ Kategorie produktów</h3>
-    <p><b>Energia</b>: WTI, Brent, Henry Hub, Heating Oil, RBOB, US Gulf Gasoline, US Retail Gasoline, TTF, węgiel AU, LNG JP.<br>
+    <p><b>Energia</b>: WTI, Brent, Henry Hub, Heating Oil, RBOB, US Gulf Gasoline, US Retail Gasoline, TTF, węgiel AU, LNG JP, <b>NG storage US (Bcf, tygodniowo)</b>, <b>Crude storage US (tys. bbl, tygodniowo)</b>.<br>
     <b>Metale</b>: Gold, Silver, Copper, Platinum (wszystkie z COMEX/NYMEX).<br>
-    <b>Rolne</b>: 3 pszenice US (SRW, HRW, Spring), kukurydza, soja (bean/meal/oil), kawa, kakao, cukier, próba MATIF Paris.<br>
-    <b>Lokalne PL</b>: retail Pb95/ON/LPG/Olej opałowy (z EU WOB od 2005), hurt Orlen (Pb95/Pb98/ON/Ekoterm - narastające od uruchomienia), skup zbóż (w budowie).<br>
-    <b>Europa</b>: retail 5 krajów UE (DE, FR, ES, IT, CZ, HU), średnia UE-27.<br>
-    <b>Elektryka</b>: day-ahead prices dla 10 krajów UE (PL, DE, FR, ES, IT, CZ, SK, HU, NL, GB).<br>
+    <b>Rolne</b>: 3 pszenice US (SRW, HRW, Spring), kukurydza, soja (bean/meal/oil), kawa, kakao, cukier, MATIF Paris (pszenica, kukurydza, rzepak).<br>
+    <b>Lokalne PL</b>: retail Pb95/ON/LPG/Olej opałowy (z EU WOB od 2005), hurt Orlen (Pb95/Pb98/ON/Ekoterm - narastające od uruchomienia), skup zbóż (Common wheat / Feed maize / Rye / Feed barley z aliasami).<br>
+    <b>Europa</b>: retail paliw 5 krajów UE + UE-27, <b>EUA (CO2, EU ETS)</b> — uprawnienia do emisji, kluczowe dla marż elektrowni.<br>
+    <b>Elektryka</b>: day-ahead <b>hurt</b> dla 10 krajów UE (PL/DE/FR/ES/IT/CZ/SK/HU/NL/GB), <b>detal (Eurostat, półroczne)</b> dla 7 krajów + UE-27.<br>
     <b>Waluty</b>: EUR/USD, EUR/PLN, USD/PLN, GBP/USD, USD/JPY, USD/CHF (kursy z Yahoo).<br>
     <b>COT</b>: pozycje Money Managers dla 9 rynków (WTI, Brent, NG, Gold, Silver, Copper, Corn, Wheat, Soybean).</p>
 
@@ -374,7 +381,10 @@
     <section class="divider" id="stdCtrl">
       <div class="toggle"><input type="checkbox" id="pctToggle"><label for="pctToggle">Skala procentowa (od początku okna)</label></div>
       <div class="toggle"><input type="checkbox" id="dualAxis" checked><label for="dualAxis">Druga oś Y</label></div>
-      <div class="hint">Włącz % kiedy porównujesz produkty o różnej skali.</div>
+      <div class="toggle"><input type="checkbox" id="showSMA"><label for="showSMA">SMA 50 &amp; 200 (dla 1 produktu)</label></div>
+      <div class="toggle"><input type="checkbox" id="showBB"><label for="showBB">Bollinger Bands 20d ±2σ</label></div>
+      <div class="toggle"><input type="checkbox" id="showRSI"><label for="showRSI">RSI 14 (osobny wykres pod głównym)</label></div>
+      <div class="hint">Włącz % kiedy porównujesz produkty o różnej skali. Wskaźniki techniczne działają dla pojedynczego produktu (lub pierwszego z zaznaczonych).</div>
     </section>
 
     <section class="divider" id="seasonalCtrl" style="display:none">
@@ -468,6 +478,7 @@
         <button class="export-btn" onclick="exportPlotCSV('mainPlot', 'chart')">📥 CSV</button>
       </div>
       <div id="mainPlot" class="plot"></div>
+      <div id="rsiPlot" class="plot-small" style="display:none; margin-top:8px"></div>
       <div id="eventsList"></div>
     </div>
     <div class="card mode-panel" id="panel-dashboard">
@@ -587,6 +598,7 @@ const state = {
   mode: 'standard',
   pct: false, dual: true,
   corrWindow: 60,   // rolling correlation window (dni)
+  showSMA: false, showBB: false, showRSI: false,   // wskazniki techniczne
   // seasonal
   seasonWindow: 5, showMinMax: true, showYears: false,
   seasonPct: false, seasonAvg: 'mean',
@@ -1036,6 +1048,9 @@ function init() {
   bind('pctToggle', 'pct');
   bind('dualAxis', 'dual');
   bind('corrWindow', 'corrWindow', e => +e.target.value);
+  bind('showSMA', 'showSMA');
+  bind('showBB',  'showBB');
+  bind('showRSI', 'showRSI');
   bind('seasonWindow', 'seasonWindow', e => +e.target.value);
   bind('showMinMax', 'showMinMax');
   bind('showYears', 'showYears');
@@ -1137,6 +1152,51 @@ function rollingCorr(a, b, win) {
   }
   return out;
 }
+function rollingSMA(prices, win) {
+  const out = new Array(prices.length).fill(null);
+  if (prices.length < win) return out;
+  let sum = 0;
+  for (let i = 0; i < prices.length; i++) {
+    sum += prices[i];
+    if (i >= win) sum -= prices[i - win];
+    if (i >= win - 1) out[i] = sum / win;
+  }
+  return out;
+}
+function bollingerBands(prices, win = 20, k = 2) {
+  const sma = rollingSMA(prices, win);
+  const upper = new Array(prices.length).fill(null);
+  const lower = new Array(prices.length).fill(null);
+  for (let i = win - 1; i < prices.length; i++) {
+    const seg = prices.slice(i - win + 1, i + 1);
+    const m = sma[i];
+    const varSum = seg.reduce((s, x) => s + (x - m) ** 2, 0) / win;
+    const sd = Math.sqrt(varSum);
+    upper[i] = m + k * sd;
+    lower[i] = m - k * sd;
+  }
+  return { sma, upper, lower };
+}
+function rsi14(prices, win = 14) {
+  const out = new Array(prices.length).fill(null);
+  if (prices.length < win + 1) return out;
+  let gains = 0, losses = 0;
+  for (let i = 1; i <= win; i++) {
+    const d = prices[i] - prices[i - 1];
+    if (d >= 0) gains += d; else losses -= d;
+  }
+  let avgG = gains / win, avgL = losses / win;
+  out[win] = avgL === 0 ? 100 : 100 - 100 / (1 + avgG / avgL);
+  for (let i = win + 1; i < prices.length; i++) {
+    const d = prices[i] - prices[i - 1];
+    const g = d > 0 ? d : 0, l = d < 0 ? -d : 0;
+    avgG = (avgG * (win - 1) + g) / win;
+    avgL = (avgL * (win - 1) + l) / win;
+    out[i] = avgL === 0 ? 100 : 100 - 100 / (1 + avgG / avgL);
+  }
+  return out;
+}
+
 function statSummary(prices) {
   const n = prices.length;
   if (n < 2) return { mean: prices[0]||0, min: prices[0]||0, max: prices[0]||0, last: prices[0]||0,
@@ -1324,6 +1384,48 @@ function renderStandard() {
       yaxis: (state.dual && i === 1 && !state.pct) ? 'y2' : 'y',
     });
   });
+  // Wskazniki techniczne dla PIERWSZEGO produktu (SMA/BB/RSI) - tylko dla 1 produktu i nie w %
+  const rsiEl = document.getElementById('rsiPlot');
+  if (!state.pct && active.length === 1) {
+    const p0 = active[0]; const s0 = slice(p0.id);
+    const conv0 = convertSeries(s0.dates, s0.prices, p0.unit, p0.id);
+    const px = conv0.prices;
+    if (state.showSMA && px.length >= 50) {
+      const sma50 = rollingSMA(px, 50);
+      traces.push({ x: s0.dates, y: sma50, name: 'SMA50', type: 'scatter', mode: 'lines',
+        line: { color: '#ffd54f', width: 1.2, dash: 'dash' }, yaxis: 'y' });
+      if (px.length >= 200) {
+        const sma200 = rollingSMA(px, 200);
+        traces.push({ x: s0.dates, y: sma200, name: 'SMA200', type: 'scatter', mode: 'lines',
+          line: { color: '#ff8a65', width: 1.2, dash: 'dash' }, yaxis: 'y' });
+      }
+    }
+    if (state.showBB && px.length >= 20) {
+      const bb = bollingerBands(px, 20, 2);
+      traces.push({ x: s0.dates, y: bb.upper, name: 'BB upper', type: 'scatter', mode: 'lines',
+        line: { color: '#4fc3f7', width: 1, dash: 'dot' }, yaxis: 'y', showlegend: false });
+      traces.push({ x: s0.dates, y: bb.lower, name: 'BB±2σ', type: 'scatter', mode: 'lines',
+        line: { color: '#4fc3f7', width: 1, dash: 'dot' }, yaxis: 'y',
+        fill: 'tonexty', fillcolor: 'rgba(79,195,247,0.06)' });
+    }
+    if (state.showRSI && px.length >= 20) {
+      const rsi = rsi14(px, 14);
+      const first = s0.dates[0], last = s0.dates[s0.dates.length - 1];
+      rsiEl.style.display = '';
+      Plotly.react('rsiPlot', [
+        { x: s0.dates, y: rsi, type: 'scatter', mode: 'lines', name: `RSI14 ${p0.id}`, line: { color: '#ba68c8', width: 1.5 } },
+        { x: [first, last], y: [70, 70], type: 'scatter', mode: 'lines', name: 'overbought 70', line: { color: '#ef5350', width: 1, dash: 'dot' }, showlegend: false },
+        { x: [first, last], y: [30, 30], type: 'scatter', mode: 'lines', name: 'oversold 30',  line: { color: '#66bb6a', width: 1, dash: 'dot' }, showlegend: false },
+        { x: [first, last], y: [50, 50], type: 'scatter', mode: 'lines', line: { color: '#8b96a5', width: 1, dash: 'dot' }, showlegend: false },
+      ], { ...layoutBase, yaxis: { ...layoutBase.yaxis, range: [0, 100], title: 'RSI(14)' }, height: 220 },
+         { responsive: true, displaylogo: false });
+    } else {
+      rsiEl.style.display = 'none'; Plotly.purge('rsiPlot');
+    }
+  } else {
+    rsiEl.style.display = 'none'; Plotly.purge('rsiPlot');
+  }
+
   const layout = { ...layoutBase };
   layout.yaxis = { ...layoutBase.yaxis, title: state.pct ? '% zmiana' : (convertedUnits[0] || '') };
   if (state.dual && active.length > 1 && !state.pct) {
