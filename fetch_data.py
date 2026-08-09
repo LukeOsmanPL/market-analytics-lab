@@ -102,6 +102,10 @@ PRODUCTS = [
          name="Platyna (NYMEX)",          unit="$/oz",
          contract_size=50,    contract_unit="oz",
          category="Metale", color="#78909c"),
+    dict(id="PALLADIUM", source="yahoo", series="PA=F",
+         name="Pallad (NYMEX)",           unit="$/oz",
+         contract_size=100,   contract_unit="oz",
+         category="Metale", color="#8d6e63"),
 
     # Zboza (Yahoo Finance) - Yahoo daje ceny w centach; przeliczamy na dolary
     dict(id="CORN",    source="yahoo", series="ZC=F", unit_scale=0.01,
@@ -239,6 +243,29 @@ PRODUCTS = [
          name="USD/CHF (kurs)", unit="CHF/USD",
          contract_size=1, contract_unit="USD", category="Waluty", color="#ef5350"),
 
+    # Makro - kluczowe globalne wskazniki wplywajace na surowce
+    dict(id="DXY",  source="yahoo", series="DX-Y.NYB",
+         name="DXY (Dollar Index)",      unit="pkt",
+         contract_size=1000, contract_unit="pkt", category="Makro", color="#7cb342"),
+    dict(id="VIX",  source="yahoo", series="^VIX",
+         name="VIX (S&P 500 volatility)", unit="pkt",
+         contract_size=1000, contract_unit="pkt", category="Makro", color="#ef5350"),
+    dict(id="SPX",  source="yahoo", series="^GSPC",
+         name="S&P 500 (US equities)",   unit="pkt",
+         contract_size=1, contract_unit="pkt", category="Makro", color="#42a5f5"),
+    dict(id="BTC",  source="yahoo", series="BTC-USD",
+         name="Bitcoin (BTC/USD)",       unit="$/BTC",
+         contract_size=1, contract_unit="BTC", category="Makro", color="#ffb300"),
+    dict(id="US10Y", source="fred", series="DGS10",
+         name="Rentownosc 10Y US",       unit="%",
+         contract_size=1, contract_unit="%", category="Makro", color="#5c6bc0"),
+    dict(id="US2Y",  source="fred", series="DGS2",
+         name="Rentownosc 2Y US",        unit="%",
+         contract_size=1, contract_unit="%", category="Makro", color="#7e57c2"),
+    dict(id="US10Y2Y", source="fred", series="T10Y2Y",
+         name="Spread 10Y-2Y US (recesja)", unit="%",
+         contract_size=1, contract_unit="%", category="Makro", color="#d32f2f"),
+
     # Elektryka hurt (day-ahead) - dzienne, Ember Energy (CSV, bez rejestracji)
     dict(id="PL_POWER", source="ember", series="Poland",
          name="Elektryka hurt Polska",      unit="€/MWh",
@@ -300,51 +327,51 @@ PRODUCTS = [
 
     # CFTC COT - pozycja NETTO Money Managers (Long - Short) per market, tygodniowo
     # Klasyczny wskaźnik kontrariański - ekstremum netto sygnalizuje odwrócenie
-    # CFTC COT - series_alt to alternatywne nazwy market (CFTC czasem zmienia formatowanie).
-    # Fetcher tworzy union z wszystkich alternatyw. Merge_history zabezpiecza stara historie.
+    # UWAGA: CFTC zmienia nazwy rynkow (np. w 2022 dodali suffiksy "-WTI", zmienili exchange).
+    # Uzywamy `series_patterns` (lista SUBSTRINGOW) zamiast dokladnej nazwy - fetcher matchuje
+    # WSZYSTKIE market names ktore zawieraja KAZDE ze slow kluczowych (AND per pattern grupa).
+    # Dane z wielu matchujacych markets sa laczone union po dacie (najnowsza publikacja wygrywa).
     dict(id="COT_WTI_NET",    source="cftc",
-         series="CRUDE OIL, LIGHT SWEET - NEW YORK MERCANTILE EXCHANGE",
-         series_alt=["WTI FINANCIAL CRUDE OIL - NEW YORK MERCANTILE EXCHANGE",
-                     "CRUDE OIL, LIGHT SWEET-WTI - ICE FUTURES EUROPE"],
+         series_patterns=[["CRUDE OIL", "LIGHT SWEET"], ["WTI"]],
          name="COT WTI - Money Mgr netto",  unit="kontrakty", contract_size=1, contract_unit="kontrakty",
          category="COT", color="#ff8a65"),
     dict(id="COT_BRENT_NET",  source="cftc",
-         series="BRENT CRUDE OIL LAST DAY - NEW YORK MERCANTILE EXCHANGE",
-         series_alt=["BRENT LAST DAY - NEW YORK MERCANTILE EXCHANGE",
-                     "BRENT FINANCIAL FUTURES - NEW YORK MERCANTILE EXCHANGE"],
+         series_patterns=[["BRENT"]],
          name="COT Brent - Money Mgr netto",unit="kontrakty", contract_size=1, contract_unit="kontrakty",
          category="COT", color="#ba68c8"),
     dict(id="COT_NG_NET",     source="cftc",
-         series="NATURAL GAS - NEW YORK MERCANTILE EXCHANGE",
-         series_alt=["HENRY HUB NATURAL GAS - NEW YORK MERCANTILE EXCHANGE",
-                     "NAT GAS ICE LD1 - NEW YORK MERCANTILE EXCHANGE",
-                     "NATURAL GAS HENRY HUB LAST DAY - NEW YORK MERCANTILE EXCHANGE"],
+         series_patterns=[["NATURAL GAS"], ["HENRY HUB"], ["NAT GAS"]],
          name="COT NG - Money Mgr netto",   unit="kontrakty", contract_size=1, contract_unit="kontrakty",
          category="COT", color="#4fc3f7"),
     dict(id="COT_GOLD_NET",   source="cftc",
-         series="GOLD - COMMODITY EXCHANGE INC.",
+         series_patterns=[["GOLD"]],
+         # UWAGA: to zlapie tez COMEX ETF etc, ale filtrujemy do lucznika: exchange musi zawierac COMEX/CMX/COMMODITY EXCHANGE
+         series_exchange_filter=["COMEX", "COMMODITY EXCHANGE"],
          name="COT Gold - Money Mgr netto", unit="kontrakty", contract_size=1, contract_unit="kontrakty",
          category="COT", color="#ffd54f"),
     dict(id="COT_SILVER_NET", source="cftc",
-         series="SILVER - COMMODITY EXCHANGE INC.",
+         series_patterns=[["SILVER"]],
+         series_exchange_filter=["COMEX", "COMMODITY EXCHANGE"],
          name="COT Silver - Money Mgr netto", unit="kontrakty", contract_size=1, contract_unit="kontrakty",
          category="COT", color="#b0bec5"),
     dict(id="COT_COPPER_NET", source="cftc",
-         series="COPPER-GRADE #1 - COMMODITY EXCHANGE INC.",
-         series_alt=["COPPER - COMMODITY EXCHANGE INC.",
-                     "COPPER-GRADE #1 - COMEX"],
+         series_patterns=[["COPPER"]],
+         series_exchange_filter=["COMEX", "COMMODITY EXCHANGE"],
          name="COT Copper - Money Mgr netto", unit="kontrakty", contract_size=1, contract_unit="kontrakty",
          category="COT", color="#d84315"),
     dict(id="COT_CORN_NET",   source="cftc",
-         series="CORN - CHICAGO BOARD OF TRADE",
+         series_patterns=[["CORN"]],
+         series_exchange_filter=["CHICAGO BOARD OF TRADE", "CBOT"],
          name="COT Corn - Money Mgr netto", unit="kontrakty", contract_size=1, contract_unit="kontrakty",
          category="COT", color="#fbc02d"),
     dict(id="COT_WHEAT_NET",  source="cftc",
-         series="WHEAT-SRW - CHICAGO BOARD OF TRADE",
+         series_patterns=[["WHEAT-SRW"], ["WHEAT SRW"]],
+         series_exchange_filter=["CHICAGO BOARD OF TRADE", "CBOT"],
          name="COT Wheat - Money Mgr netto",unit="kontrakty", contract_size=1, contract_unit="kontrakty",
          category="COT", color="#8d6e63"),
     dict(id="COT_SOYBEAN_NET",source="cftc",
-         series="SOYBEANS - CHICAGO BOARD OF TRADE",
+         series_patterns=[["SOYBEAN"]],
+         series_exchange_filter=["CHICAGO BOARD OF TRADE", "CBOT"],
          name="COT Soybean - Money Mgr netto", unit="kontrakty", contract_size=1, contract_unit="kontrakty",
          category="COT", color="#7cb342"),
 
@@ -363,7 +390,7 @@ PRODUCTS = [
          contract_size=1, contract_unit="t", category="Lokalne PL", color="#c0ca33"),
 
     # MATIF Paryz (Euronext) - best-effort, Yahoo bywa kaprysny dla EU futures
-    dict(id="MATIF_WHEAT", source="yahoo", series="EBM.PA",
+    dict(id="MATIF_WHEAT", source="stooq", series="ml.f",
          name="Pszenica młynarska (MATIF Paris)", unit="€/t",
          contract_size=50, contract_unit="t",
          category="Rolne", color="#ff7043"),
@@ -413,6 +440,23 @@ PRODUCTS = [
          name="Cukier (ICE 11)",          unit="$/lb",
          contract_size=112000, contract_unit="lb",
          category="Rolne", color="#f8bbd0"),
+    dict(id="COTTON",  source="yahoo", series="CT=F", unit_scale=0.01,
+         name="Bawelna (ICE)",            unit="$/lb",
+         contract_size=50000, contract_unit="lb",
+         category="Rolne", color="#f5f5dc"),
+    dict(id="OJ",      source="yahoo", series="OJ=F", unit_scale=0.01,
+         name="Sok pomaranczowy (ICE)",   unit="$/lb",
+         contract_size=15000, contract_unit="lb",
+         category="Rolne", color="#ff9800"),
+    # Zywiec (Yahoo, CME)
+    dict(id="LIVE_CATTLE", source="yahoo", series="LE=F", unit_scale=0.01,
+         name="Bydlo zywe (CME)",         unit="$/lb",
+         contract_size=40000, contract_unit="lb",
+         category="Rolne", color="#8d6e63"),
+    dict(id="LEAN_HOGS",   source="yahoo", series="HE=F", unit_scale=0.01,
+         name="Trzoda chlewna (CME)",     unit="$/lb",
+         contract_size=40000, contract_unit="lb",
+         category="Rolne", color="#e91e63"),
 ]
 
 
@@ -742,44 +786,41 @@ def fetch_agrifood_cereal(product_name: str) -> list:
 _CFTC_CACHE = None
 
 def _fetch_cftc_all():
-    """Pobiera dane CFTC COT dla wszystkich zdefiniowanych rynkow COT_* w jednym API call.
-    Zwraca slownik {market_name: [{date, value=long-short}]}.
-    Wskaznik: Managed Money Net = long_all - short_all (klasyczny miernik kontrariański).
+    """Pobiera dane CFTC COT dla WSZYSTKICH rynkow ktore matchuja jakikolwiek pattern z produktow COT_*.
+    Query: SoQL LIKE po wszystkich unikalnych slowach kluczowych - broad discovery.
+    Zwraca slownik {market_and_exchange_name: [{date, value=long-short}]}.
+    Wskaznik: Managed Money Net = long_all - short_all (kontrariański).
     """
     global _CFTC_CACHE
     if _CFTC_CACHE is not None:
         return _CFTC_CACHE
 
-    import urllib.parse
-    # Zbierz PRIMARY + ALT market names ze wszystkich produktow CFTC
-    markets = []
+    # Zbierz zbior UNIKALNYCH slow kluczowych ze wszystkich patternow produktow
+    all_keywords = set()
     for p in PRODUCTS:
         if p["source"] != "cftc": continue
-        markets.append(p["series"])
-        for alt in p.get("series_alt", []) or []:
-            markets.append(alt)
-    # dedup
-    seen_m = set()
-    markets = [m for m in markets if not (m in seen_m or seen_m.add(m))]
-    if not markets:
+        for pat_group in p.get("series_patterns", []):
+            for kw in pat_group:
+                all_keywords.add(kw.upper())
+    if not all_keywords:
         _CFTC_CACHE = {}
         return _CFTC_CACHE
 
-    # Zbuduj klauzule WHERE z listy rynkow (escapuj apostrofy w SoQL)
-    market_list = ",".join("'" + m.replace("'", "''") + "'" for m in markets)
-    where = f"market_and_exchange_names in ({market_list})"
+    # Broad SoQL query: dowolny rynek zawierajacy JAKIKOLWIEK z keywords, filtr od 2018 dla rozmiaru
+    like_clauses = " OR ".join(f"upper(market_and_exchange_names) like '%{kw}%'" for kw in sorted(all_keywords))
+    where = f"({like_clauses}) AND report_date_as_yyyy_mm_dd > '2010-01-01T00:00:00'"
     params = urllib.parse.urlencode({
         "$select": "market_and_exchange_names,report_date_as_yyyy_mm_dd,m_money_positions_long_all,m_money_positions_short_all",
         "$where": where,
         "$order": "report_date_as_yyyy_mm_dd",
-        "$limit": "50000",
+        "$limit": "200000",
     })
     url = "https://publicreporting.cftc.gov/resource/72hh-3qpy.json?" + params
 
-    print(f"  [CFTC] pobieram COT dla {len(markets)} rynkow ...", flush=True)
+    print(f"  [CFTC] pobieram COT z {len(all_keywords)} keyword-patterns (broad LIKE) ...", flush=True)
     try:
         req = urllib.request.Request(url, headers={"User-Agent": "energy-analytics/1.0"})
-        with urllib.request.urlopen(req, timeout=90) as r:
+        with urllib.request.urlopen(req, timeout=180) as r:
             rows = json.load(r)
         print(f"  [CFTC] pobrano {len(rows)} wierszy", flush=True)
     except Exception as e:
@@ -789,6 +830,7 @@ def _fetch_cftc_all():
 
     result = {}
     counts_per_market = {}
+    latest_per_market = {}
     for row in rows:
         market = row.get("market_and_exchange_names", "").strip()
         raw_date = row.get("report_date_as_yyyy_mm_dd", "") or ""
@@ -798,11 +840,12 @@ def _fetch_cftc_all():
             short_p = float(row.get("m_money_positions_short_all") or 0)
         except (ValueError, TypeError):
             continue
-        if not market or not date_str:
-            continue
+        if not market or not date_str: continue
         net = long_p - short_p
         result.setdefault(market, []).append({"date": date_str, "value": net})
         counts_per_market[market] = counts_per_market.get(market, 0) + 1
+        if date_str > latest_per_market.get(market, ""):
+            latest_per_market[market] = date_str
 
     # Sortuj i deduplikuj per market
     for market in list(result.keys()):
@@ -811,22 +854,47 @@ def _fetch_cftc_all():
             seen[o["date"]] = o["value"]
         result[market] = [{"date": d, "value": v} for d, v in sorted(seen.items())]
 
-    for m, c in counts_per_market.items():
-        print(f"  [CFTC] {m[:50]}...: {c} wierszy", flush=True)
+    # Log: znalezione market names z ostatnia data (do debugu zmian nazewnictwa)
+    for m, c in sorted(counts_per_market.items(), key=lambda x: -x[1])[:40]:
+        print(f"  [CFTC] {c:>5}w, ost {latest_per_market.get(m,'-')}: {m[:75]}", flush=True)
 
     _CFTC_CACHE = result
     return _CFTC_CACHE
 
 
-def fetch_cftc(market_name: str, alts=None) -> list:
-    """Zwraca liste {date, value} dla podanego rynku (union primary + alts po dacie).
-    Jesli sa alty, ostatnia wartosc per data wygrywa (kolejnosc: primary, potem alts)."""
+def fetch_cftc_patterns(patterns, exchange_filter=None) -> list:
+    """Zwraca liste {date, value} dla WSZYSTKICH rynkow ktore matchuja jakis wzorzec z `patterns`.
+    patterns: lista grup slow. Kazda grupa (lista) = wszystkie slowa MUSZA byc w market name (AND).
+    Dowolna grupa moze pasowac (OR miedzy grupami).
+    exchange_filter: opcjonalna lista - market name musi ZAWIERAC jedno z tych slow (dodatkowe zawezenie).
+    Union po dacie: najnowsza data z jakiegokolwiek matchujacego rynku.
+    """
     cache = _fetch_cftc_all()
+    exch_filter = [e.upper() for e in (exchange_filter or [])]
+    matched_markets = []
+    for market in cache.keys():
+        mu = market.upper()
+        # matchuj dowolna grupe (kazde slowo w grupie musi wystapic)
+        group_match = any(all(kw.upper() in mu for kw in group) for group in patterns)
+        if not group_match: continue
+        # dodatkowy filtr po exchange (jesli podany)
+        if exch_filter and not any(ef in mu for ef in exch_filter): continue
+        matched_markets.append(market)
+
+    if not matched_markets:
+        print(f"  [CFTC-match] BRAK dopasowania dla patternow {patterns} (exch={exchange_filter})", flush=True)
+        return []
+    print(f"  [CFTC-match] {len(matched_markets)} rynkow: {[m[:60] for m in matched_markets]}", flush=True)
     combined = {}
-    for name in [market_name] + list(alts or []):
-        for o in cache.get(name, []):
+    for m in matched_markets:
+        for o in cache[m]:
             combined[o["date"]] = o["value"]
     return [{"date": d, "value": v} for d, v in sorted(combined.items())]
+
+
+# Backward-compat shim (na wypadek starych wywolan)
+def fetch_cftc(market_name: str, alts=None) -> list:
+    return fetch_cftc_patterns([[market_name]] + [[a] for a in (alts or [])])
 
 
 _EMBER_CACHE = None
@@ -1248,7 +1316,12 @@ def main():
             elif p["source"] == "eurostat_elec":
                 obs = fetch_eurostat_elec(p["series"])
             elif p["source"] == "cftc":
-                obs = fetch_cftc(p["series"], p.get("series_alt"))
+                # Nowy model: pattern-based matching. Backward-compat: jesli produkt ma
+                # `series` (stara definicja) a nie `series_patterns`, uzywamy legacy shim.
+                if p.get("series_patterns"):
+                    obs = fetch_cftc_patterns(p["series_patterns"], p.get("series_exchange_filter"))
+                else:
+                    obs = fetch_cftc(p.get("series", ""), p.get("series_alt"))
             elif p["source"] == "agrifood_cereal":
                 obs = fetch_agrifood_cereal(p["series"])
             else:
