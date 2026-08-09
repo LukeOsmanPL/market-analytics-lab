@@ -156,7 +156,8 @@
     <ul>
       <li><b>Skala procentowa</b> — znormalizowanie wszystkich linii od 0% w pierwszym punkcie widocznego okna. Kluczowe przy porównaniu produktów o różnej skali.</li>
       <li><b>Druga oś Y</b> — druga oś Y dla drugiego produktu (przy różnych jednostkach).</li>
-      <li><b>Korelacja krocząca</b> pod wykresem — 60-dniowa korelacja pomiędzy pierwszymi dwoma produktami.</li>
+      <li><b>Korelacja krocząca</b> pod wykresem — pomiędzy pierwszymi dwoma produktami; okno 20/30/60/90/120/252 dni do wyboru.</li>
+      <li><b>Statystyki na dole</b> — min/max/zmienność ann., <b>Sharpe</b> (annRet/annVol, bez rf), <b>max drawdown</b> (peak-to-trough w oknie), <b>z-score</b> ostatniej ceny (|z|≥2 podświetla).</li>
     </ul>
 
     <h4>Sezonowa (do 10 produktów)</h4>
@@ -463,6 +464,18 @@
 
     <div class="card mode-panel active" id="panel-standard">
       <div class="chart-title" id="corrTitle">Korelacja krocząca (60 dni)</div>
+      <div class="row" style="margin-bottom:6px">
+        <label style="min-width:auto">Okno korelacji</label>
+        <select id="corrWindow" style="max-width:120px">
+          <option value="20">20 dni</option>
+          <option value="30">30 dni</option>
+          <option value="60" selected>60 dni</option>
+          <option value="90">90 dni</option>
+          <option value="120">120 dni</option>
+          <option value="252">252 dni (1Y)</option>
+        </select>
+        <button class="export-btn" onclick="exportPlotCSV('corrPlot', 'correlation')" style="margin-left:8px">📥 CSV</button>
+      </div>
       <div id="corrPlot" class="plot-small"></div>
     </div>
     <div class="card mode-panel" id="panel-seasonal">
@@ -561,6 +574,7 @@ const state = {
   customFrom: null, customTo: null,
   mode: 'standard',
   pct: false, dual: true,
+  corrWindow: 60,   // rolling correlation window (dni)
   // seasonal
   seasonWindow: 5, showMinMax: true, showYears: false,
   seasonPct: false, seasonAvg: 'mean',
@@ -1009,6 +1023,7 @@ function init() {
   };
   bind('pctToggle', 'pct');
   bind('dualAxis', 'dual');
+  bind('corrWindow', 'corrWindow', e => +e.target.value);
   bind('seasonWindow', 'seasonWindow', e => +e.target.value);
   bind('showMinMax', 'showMinMax');
   bind('showYears', 'showYears');
@@ -1112,7 +1127,8 @@ function rollingCorr(a, b, win) {
 }
 function statSummary(prices) {
   const n = prices.length;
-  if (n < 2) return { mean: prices[0]||0, min: prices[0]||0, max: prices[0]||0, last: prices[0]||0, chg: 0, annVol: 0 };
+  if (n < 2) return { mean: prices[0]||0, min: prices[0]||0, max: prices[0]||0, last: prices[0]||0,
+                       chg: 0, annVol: 0, maxDD: 0, sharpe: 0, zLast: 0 };
   const mean = prices.reduce((s,x)=>s+x,0)/n;
   const min = Math.min(...prices), max = Math.max(...prices);
   const first = prices[0], last = prices[n-1];
@@ -1121,7 +1137,20 @@ function statSummary(prices) {
   const meanR = rets.reduce((s,x)=>s+x,0)/rets.length;
   const varR = rets.reduce((s,x)=>s+(x-meanR)**2,0)/rets.length;
   const annVol = Math.sqrt(varR * 252) * 100;
-  return { mean, min, max, last, chg, annVol };
+  // Sharpe-like (bez rf): sredni zwrot roczny / zmiennosc roczna
+  const annRet = meanR * 252 * 100;
+  const sharpe = annVol > 1e-9 ? annRet / annVol : 0;
+  // Max drawdown na cenach (peak-to-trough w oknie)
+  let peak = prices[0], maxDD = 0;
+  for (let i = 0; i < n; i++) {
+    if (prices[i] > peak) peak = prices[i];
+    const dd = (prices[i] / peak - 1) * 100;
+    if (dd < maxDD) maxDD = dd;
+  }
+  // Z-score dla ostatniej ceny wzgl. calego okna
+  const sdP = Math.sqrt(prices.reduce((s,x)=>s+(x-mean)**2,0)/n);
+  const zLast = sdP > 1e-9 ? (last - mean) / sdP : 0;
+  return { mean, min, max, last, chg, annVol, maxDD, sharpe, zLast };
 }
 function legFormula() {
   return state.spreadLegs.map(l => {
@@ -1296,14 +1325,16 @@ function renderStandard() {
   document.getElementById('eventsList').innerHTML = ev.listHtml;
   Plotly.react('mainPlot', traces, layout, { responsive: true, displaylogo: false });
   if (active.length >= 2) {
-    document.getElementById('corrTitle').innerHTML = `Korelacja krocząca (60 dni): <span class="sub">${active[0].id} ↔ ${active[1].id}</span>`;
     const sa = slice(active[0].id), sb = slice(active[1].id);
     const dm = {}; sa.dates.forEach((d,i)=>dm[d]=[sa.prices[i]]);
     sb.dates.forEach((d,i)=>{ if (dm[d]) dm[d].push(sb.prices[i]); });
     const commonDates = Object.keys(dm).filter(d=>dm[d].length===2).sort();
     const a = commonDates.map(d=>dm[d][0]);
     const b = commonDates.map(d=>dm[d][1]);
-    const win = Math.min(60, Math.max(5, Math.floor(a.length / 3)));
+    const wantWin = state.corrWindow || 60;
+    const win = Math.min(wantWin, Math.max(5, Math.floor(a.length / 3)));
+    const winNote = win < wantWin ? ` <span class="sub" style="color:#ff9800">(za mało danych, użyto ${win}d)</span>` : '';
+    document.getElementById('corrTitle').innerHTML = `Korelacja krocząca (${win} dni)${winNote}: <span class="sub">${active[0].id} ↔ ${active[1].id}</span>`;
     const corr = rollingCorr(a, b, win);
     Plotly.react('corrPlot', [
       { x: commonDates, y: corr, type: 'scatter', mode: 'lines', line: { color: '#4fc3f7', width: 2 }, name: `corr ${win}d` },
@@ -1915,12 +1946,16 @@ function renderStats(active) {
     const st = statSummary(conv.prices);
     const cls = st.chg >= 0 ? 'up' : 'down';
     const arrow = st.chg >= 0 ? '▲' : '▼';
+    const zCls = Math.abs(st.zLast) >= 2 ? (st.zLast > 0 ? 'down' : 'up') : '';
+    const zTag = Math.abs(st.zLast) >= 2 ? ` <b class="${zCls}">${st.zLast > 0 ? '⚠ przewartościowany' : '⚠ niedowartościowany'}</b>` : '';
     el.innerHTML += `
       <div class="stat">
         <div class="label">${p.name}</div>
         <div class="value">${st.last.toFixed(2)} <span style="font-size:11px;color:var(--muted)">${conv.unit}</span></div>
         <div class="sub ${cls}">${arrow} ${st.chg.toFixed(2)}% w okresie</div>
-        <div class="sub">min ${st.min.toFixed(2)} · max ${st.max.toFixed(2)} · zmienność ${st.annVol.toFixed(1)}%</div>
+        <div class="sub">min ${st.min.toFixed(2)} · max ${st.max.toFixed(2)}</div>
+        <div class="sub">zmienność ${st.annVol.toFixed(1)}% · Sharpe ${st.sharpe.toFixed(2)}</div>
+        <div class="sub">max DD ${st.maxDD.toFixed(1)}% · z-score ${st.zLast.toFixed(2)}${zTag}</div>
       </div>`;
   });
 }
