@@ -1,0 +1,13 @@
+{
+  "updated_at": "2026-08-09T13:00:04.643272+00:00",
+  "alerts": [
+    {
+      "rule_index": 9,
+      "rule_id": "pl_pb95_high",
+      "type": "pct_change",
+      "message": "PL_PB95_WOB zmiana 30d = +26.35% (próg 5.0%, 2026-08-03)",
+      "note": "Pb95 detal PL zmienil sie >5% w 30 dni",
+      "at": "2026-08-09T13:00:04.642647+00:00"
+    }
+  ]
+}
