@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-08T21:31:55.710428+00:00",
+  "generated_at": "2026-08-09T09:23:42.046182+00:00",
   "products": [
     {
       "id": "NG",
@@ -348,8 +348,8 @@
       "source": "orlen_scrape",
       "series": "PB95",
       "first_date": "2026-08-08",
-      "last_date": "2026-08-08",
-      "n_observations": 1
+      "last_date": "2026-08-09",
+      "n_observations": 2
     },
     {
       "id": "PL_ORLEN_PB98",
@@ -362,8 +362,8 @@
       "source": "orlen_scrape",
       "series": "PB98",
       "first_date": "2026-08-08",
-      "last_date": "2026-08-08",
-      "n_observations": 1
+      "last_date": "2026-08-09",
+      "n_observations": 2
     },
     {
       "id": "PL_ORLEN_ON",
@@ -376,8 +376,8 @@
       "source": "orlen_scrape",
       "series": "ON",
       "first_date": "2026-08-08",
-      "last_date": "2026-08-08",
-      "n_observations": 1
+      "last_date": "2026-08-09",
+      "n_observations": 2
     },
     {
       "id": "FR_PB95_WOB",
@@ -572,8 +572,8 @@
       "source": "yahoo",
       "series": "GBPUSD=X",
       "first_date": "2003-12-01",
-      "last_date": "2026-08-08",
-      "n_observations": 5899
+      "last_date": "2026-08-09",
+      "n_observations": 5900
     },
     {
       "id": "FX_USDJPY",
@@ -614,8 +614,8 @@
       "source": "ember",
       "series": "Poland",
       "first_date": "2015-01-01",
-      "last_date": "2026-08-07",
-      "n_observations": 4237
+      "last_date": "2026-08-08",
+      "n_observations": 4238
     },
     {
       "id": "DE_POWER",
@@ -628,8 +628,8 @@
       "source": "ember",
       "series": "Germany",
       "first_date": "2015-01-01",
-      "last_date": "2026-08-07",
-      "n_observations": 4237
+      "last_date": "2026-08-10",
+      "n_observations": 4240
     },
     {
       "id": "FR_POWER",
@@ -642,8 +642,8 @@
       "source": "ember",
       "series": "France",
       "first_date": "2015-01-01",
-      "last_date": "2026-08-07",
-      "n_observations": 4236
+      "last_date": "2026-08-08",
+      "n_observations": 4237
     },
     {
       "id": "ES_POWER",
@@ -656,8 +656,8 @@
       "source": "ember",
       "series": "Spain",
       "first_date": "2015-01-01",
-      "last_date": "2026-08-07",
-      "n_observations": 4237
+      "last_date": "2026-08-08",
+      "n_observations": 4238
     },
     {
       "id": "IT_POWER",
@@ -670,8 +670,22 @@
       "source": "ember",
       "series": "Italy",
       "first_date": "2015-01-01",
-      "last_date": "2026-08-06",
-      "n_observations": 4236
+      "last_date": "2026-08-08",
+      "n_observations": 4238
+    },
+    {
+      "id": "CZ_POWER",
+      "name": "Elektryka hurt Czechy",
+      "unit": "€/MWh",
+      "contract_size": 1,
+      "contract_unit": "MWh",
+      "category": "Elektryka",
+      "color": "#26a69a",
+      "source": "ember",
+      "series": "Czechia",
+      "first_date": "2015-01-01",
+      "last_date": "2026-08-08",
+      "n_observations": 4238
     },
     {
       "id": "SK_POWER",
@@ -684,8 +698,8 @@
       "source": "ember",
       "series": "Slovakia",
       "first_date": "2015-01-01",
-      "last_date": "2026-08-07",
-      "n_observations": 4230
+      "last_date": "2026-08-08",
+      "n_observations": 4231
     },
     {
       "id": "HU_POWER",
@@ -698,8 +712,8 @@
       "source": "ember",
       "series": "Hungary",
       "first_date": "2015-01-01",
-      "last_date": "2026-08-07",
-      "n_observations": 4230
+      "last_date": "2026-08-08",
+      "n_observations": 4231
     },
     {
       "id": "NL_POWER",
@@ -712,8 +726,8 @@
       "source": "ember",
       "series": "Netherlands",
       "first_date": "2015-01-01",
-      "last_date": "2026-08-07",
-      "n_observations": 4230
+      "last_date": "2026-08-08",
+      "n_observations": 4231
     },
     {
       "id": "GB_POWER",
@@ -727,7 +741,7 @@
       "series": "United Kingdom",
       "first_date": "2016-06-30",
       "last_date": "2026-08-06",
-      "n_observations": 3710
+      "n_observations": 3690
     },
     {
       "id": "COT_WTI_NET",
@@ -856,6 +870,62 @@
       "n_observations": 1052
     },
     {
+      "id": "PL_WHEAT_SKUP",
+      "name": "Pszenica skup PL (EU)",
+      "unit": "€/t",
+      "contract_size": 1,
+      "contract_unit": "t",
+      "category": "Lokalne PL",
+      "color": "#8d6e63",
+      "source": "agrifood_cereal",
+      "series": "Common wheat",
+      "first_date": "2015-11-16",
+      "last_date": "2021-07-05",
+      "n_observations": 295
+    },
+    {
+      "id": "PL_CORN_SKUP",
+      "name": "Kukurydza skup PL (EU)",
+      "unit": "€/t",
+      "contract_size": 1,
+      "contract_unit": "t",
+      "category": "Lokalne PL",
+      "color": "#fbc02d",
+      "source": "agrifood_cereal",
+      "series": "Feed maize",
+      "first_date": "2015-11-16",
+      "last_date": "2021-07-05",
+      "n_observations": 294
+    },
+    {
+      "id": "PL_RYE_SKUP",
+      "name": "Żyto skup PL (EU)",
+      "unit": "€/t",
+      "contract_size": 1,
+      "contract_unit": "t",
+      "category": "Lokalne PL",
+      "color": "#a1887f",
+      "source": "agrifood_cereal",
+      "series": "Rye",
+      "first_date": "2015-11-16",
+      "last_date": "2021-07-05",
+      "n_observations": 289
+    },
+    {
+      "id": "PL_BARLEY_SKUP",
+      "name": "Jęczmień skup PL (EU)",
+      "unit": "€/t",
+      "contract_size": 1,
+      "contract_unit": "t",
+      "category": "Lokalne PL",
+      "color": "#c0ca33",
+      "source": "agrifood_cereal",
+      "series": "Feed barley",
+      "first_date": "2015-11-16",
+      "last_date": "2021-07-05",
+      "n_observations": 294
+    },
+    {
       "id": "MATIF_WHEAT",
       "name": "Pszenica młynarska (MATIF Paris)",
       "unit": "€/t",
@@ -971,11 +1041,6 @@
   "failed": [
     "WHEAT_MW",
     "PL_ORLEN_EKOTERM",
-    "CZ_POWER",
-    "PL_WHEAT_SKUP",
-    "PL_CORN_SKUP",
-    "PL_RYE_SKUP",
-    "PL_BARLEY_SKUP",
     "MATIF_CORN",
     "MATIF_RAPESEED"
   ]
