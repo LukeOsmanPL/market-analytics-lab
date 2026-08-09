@@ -2,7 +2,7 @@ name: Codzienna aktualizacja danych
 
 on:
   schedule:
-    - cron: '0 7 * * *'
+    - cron: '0 7,19 * * *'  # 2x dziennie: 07:00 UTC (09:00 PL zima / 08:00 PL lato) i 19:00 UTC (21:00 PL zima / 20:00 PL lato)
   workflow_dispatch:
 
 permissions:
