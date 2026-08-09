@@ -1,5 +1,5 @@
 {
-  "_help": "Reguly alertow. Kazda regula ma unikalny 'id' (do dedup) i 'type'. Typy: product_above, product_below, product_zscore, spread_zscore, pct_change. Zmiany commituj przez GitHub web edit.",
+  "_help": "Reguly alertow. Kazda regula ma unikalny 'id' (do dedup) i 'type'. Typy: product_above, product_below, product_zscore, spread_zscore, pct_change, high_window (nowe max N dni), low_window (nowe min N dni), ma_cross (przeciecie SMA short/long, direction: golden|death|both). Zmiany commituj przez GitHub web edit.",
   "rules": [
     {
       "id": "wti_zscore_60d",
@@ -87,6 +87,38 @@
       "threshold": 5.0,
       "both_directions": true,
       "note": "Pb95 detal PL zmienil sie >5% w 30 dni"
+    },
+    {
+      "id": "wti_52w_high",
+      "type": "high_window",
+      "product": "WTI",
+      "window": 252,
+      "note": "WTI nowe 52-tyg maksimum - trend up"
+    },
+    {
+      "id": "wti_52w_low",
+      "type": "low_window",
+      "product": "WTI",
+      "window": 252,
+      "note": "WTI nowe 52-tyg minimum - trend down"
+    },
+    {
+      "id": "gold_ma_cross",
+      "type": "ma_cross",
+      "product": "GOLD",
+      "short": 50,
+      "long": 200,
+      "direction": "both",
+      "note": "GOLD golden/death cross SMA50 vs SMA200"
+    },
+    {
+      "id": "sp_wti_ma_cross",
+      "type": "ma_cross",
+      "product": "WTI",
+      "short": 20,
+      "long": 50,
+      "direction": "both",
+      "note": "WTI szybki cross SMA20 vs SMA50 (momentum)"
     }
   ]
 }
