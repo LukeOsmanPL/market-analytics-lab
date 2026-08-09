@@ -1,0 +1,92 @@
+{
+  "_help": "Reguly alertow. Kazda regula ma unikalny 'id' (do dedup) i 'type'. Typy: product_above, product_below, product_zscore, spread_zscore, pct_change. Zmiany commituj przez GitHub web edit.",
+  "rules": [
+    {
+      "id": "wti_zscore_60d",
+      "type": "product_zscore",
+      "product": "WTI",
+      "window": 60,
+      "threshold": 2.0,
+      "note": "WTI 60d z-score ekstremum - potencjalny reversal"
+    },
+    {
+      "id": "brent_zscore_60d",
+      "type": "product_zscore",
+      "product": "BRENT",
+      "window": 60,
+      "threshold": 2.0,
+      "note": "Brent 60d z-score ekstremum"
+    },
+    {
+      "id": "ng_zscore_60d",
+      "type": "product_zscore",
+      "product": "NG",
+      "window": 60,
+      "threshold": 2.0,
+      "note": "Henry Hub 60d z-score ekstremum"
+    },
+    {
+      "id": "gold_zscore_60d",
+      "type": "product_zscore",
+      "product": "GOLD",
+      "window": 60,
+      "threshold": 2.0,
+      "note": "Gold 60d z-score ekstremum"
+    },
+    {
+      "id": "corn_zscore_120d",
+      "type": "product_zscore",
+      "product": "CORN",
+      "window": 120,
+      "threshold": 2.0,
+      "note": "Corn 120d z-score - istotne dla sezonu"
+    },
+    {
+      "id": "wheat_zscore_120d",
+      "type": "product_zscore",
+      "product": "WHEAT",
+      "window": 120,
+      "threshold": 2.0,
+      "note": "Wheat 120d z-score"
+    },
+    {
+      "id": "spread_ng_wti",
+      "type": "spread_zscore",
+      "legs": [
+        {"pid": "NG", "side": 1, "qty": 1},
+        {"pid": "WTI", "side": -1, "qty": 1}
+      ],
+      "window": 252,
+      "threshold": 2.0,
+      "note": "Spread NG-WTI ekstremum roczne"
+    },
+    {
+      "id": "spread_wti_brent",
+      "type": "spread_zscore",
+      "legs": [
+        {"pid": "WTI", "side": 1, "qty": 1},
+        {"pid": "BRENT", "side": -1, "qty": 1}
+      ],
+      "window": 252,
+      "threshold": 2.0,
+      "note": "WTI-Brent spread - transatlantyckie"
+    },
+    {
+      "id": "cot_wti_extreme",
+      "type": "product_zscore",
+      "product": "COT_WTI_NET",
+      "window": 120,
+      "threshold": 2.0,
+      "note": "COT WTI Money Mgr netto - kontrariański sygnal"
+    },
+    {
+      "id": "pl_pb95_high",
+      "type": "pct_change",
+      "product": "PL_PB95_WOB",
+      "days": 30,
+      "threshold": 5.0,
+      "both_directions": true,
+      "note": "Pb95 detal PL zmienil sie >5% w 30 dni"
+    }
+  ]
+}
