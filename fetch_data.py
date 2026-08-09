@@ -19,6 +19,7 @@ import json
 import time
 import urllib.request
 import urllib.error
+import urllib.parse
 from pathlib import Path
 from datetime import datetime, timezone
 
@@ -41,6 +42,9 @@ START_DATE = "1995-01-01"  # 30 lat historii; nie wszystkie serie sięgają tak 
 # source:
 #   fred    - pobiera z api.stlouisfed.org
 #   yahoo   - pobiera przez yfinance
+#   stooq   - pobiera CSV ze stooq.com (dla tickerow ktorych Yahoo nie ma:
+#             MATIF Paris, MGEX Spring Wheat, itd)
+#   eurostat_elec - detal elektryki (Eurostat nrg_pc_204, polroczne EUR/kWh)
 # unit_scale:
 #   opcjonalny mnoznik do zastosowania na cenach (np. 0.01 dla ¢ -> $)
 #   uzywane zeby wszystkie zboza/kawa mialy jednolite jednostki $
@@ -103,7 +107,7 @@ PRODUCTS = [
          name="Pszenica HRW (Kansas)",    unit="$/bu",
          contract_size=5000, contract_unit="bu",
          category="Rolne", color="#a1887f"),
-    dict(id="WHEAT_MW", source="yahoo", series="MW=F", unit_scale=0.01,
+    dict(id="WHEAT_MW", source="stooq", series="mw.f", unit_scale=0.01,
          name="Pszenica Spring (MGEX)",   unit="$/bu",
          contract_size=5000, contract_unit="bu",
          category="Rolne", color="#4e342e"),
@@ -258,33 +262,80 @@ PRODUCTS = [
          name="Elektryka hurt UK",          unit="€/MWh",
          contract_size=1, contract_unit="MWh", category="Elektryka", color="#7e57c2"),
 
+    # Elektryka DETAL (gospodarstwa domowe) - Eurostat nrg_pc_204, band DC 2500-4999 kWh/rok,
+    # wszystkie podatki wliczone, EUR/kWh, dane polroczne (S1/S2, publikacja ~4mc po polroczu)
+    dict(id="PL_POWER_RETAIL", source="eurostat_elec", series="PL",
+         name="Elektryka detal Polska",     unit="€/kWh",
+         contract_size=1, contract_unit="kWh", category="Elektryka", color="#ffca28"),
+    dict(id="DE_POWER_RETAIL", source="eurostat_elec", series="DE",
+         name="Elektryka detal Niemcy",     unit="€/kWh",
+         contract_size=1, contract_unit="kWh", category="Elektryka", color="#ff9800"),
+    dict(id="FR_POWER_RETAIL", source="eurostat_elec", series="FR",
+         name="Elektryka detal Francja",    unit="€/kWh",
+         contract_size=1, contract_unit="kWh", category="Elektryka", color="#5c6bc0"),
+    dict(id="ES_POWER_RETAIL", source="eurostat_elec", series="ES",
+         name="Elektryka detal Hiszpania",  unit="€/kWh",
+         contract_size=1, contract_unit="kWh", category="Elektryka", color="#ec407a"),
+    dict(id="IT_POWER_RETAIL", source="eurostat_elec", series="IT",
+         name="Elektryka detal Włochy",     unit="€/kWh",
+         contract_size=1, contract_unit="kWh", category="Elektryka", color="#66bb6a"),
+    dict(id="CZ_POWER_RETAIL", source="eurostat_elec", series="CZ",
+         name="Elektryka detal Czechy",     unit="€/kWh",
+         contract_size=1, contract_unit="kWh", category="Elektryka", color="#26a69a"),
+    dict(id="NL_POWER_RETAIL", source="eurostat_elec", series="NL",
+         name="Elektryka detal Holandia",   unit="€/kWh",
+         contract_size=1, contract_unit="kWh", category="Elektryka", color="#ffb74d"),
+    dict(id="EU_POWER_RETAIL", source="eurostat_elec", series="EU27_2020",
+         name="Elektryka detal UE-27",      unit="€/kWh",
+         contract_size=1, contract_unit="kWh", category="Elektryka", color="#9575cd"),
+
     # CFTC COT - pozycja NETTO Money Managers (Long - Short) per market, tygodniowo
     # Klasyczny wskaźnik kontrariański - ekstremum netto sygnalizuje odwrócenie
-    dict(id="COT_WTI_NET",    source="cftc", series="CRUDE OIL, LIGHT SWEET - NEW YORK MERCANTILE EXCHANGE",
+    # CFTC COT - series_alt to alternatywne nazwy market (CFTC czasem zmienia formatowanie).
+    # Fetcher tworzy union z wszystkich alternatyw. Merge_history zabezpiecza stara historie.
+    dict(id="COT_WTI_NET",    source="cftc",
+         series="CRUDE OIL, LIGHT SWEET - NEW YORK MERCANTILE EXCHANGE",
+         series_alt=["WTI FINANCIAL CRUDE OIL - NEW YORK MERCANTILE EXCHANGE",
+                     "CRUDE OIL, LIGHT SWEET-WTI - ICE FUTURES EUROPE"],
          name="COT WTI - Money Mgr netto",  unit="kontrakty", contract_size=1, contract_unit="kontrakty",
          category="COT", color="#ff8a65"),
-    dict(id="COT_BRENT_NET",  source="cftc", series="BRENT CRUDE OIL LAST DAY - NEW YORK MERCANTILE EXCHANGE",
+    dict(id="COT_BRENT_NET",  source="cftc",
+         series="BRENT CRUDE OIL LAST DAY - NEW YORK MERCANTILE EXCHANGE",
+         series_alt=["BRENT LAST DAY - NEW YORK MERCANTILE EXCHANGE",
+                     "BRENT FINANCIAL FUTURES - NEW YORK MERCANTILE EXCHANGE"],
          name="COT Brent - Money Mgr netto",unit="kontrakty", contract_size=1, contract_unit="kontrakty",
          category="COT", color="#ba68c8"),
-    dict(id="COT_NG_NET",     source="cftc", series="NATURAL GAS - NEW YORK MERCANTILE EXCHANGE",
+    dict(id="COT_NG_NET",     source="cftc",
+         series="NATURAL GAS - NEW YORK MERCANTILE EXCHANGE",
+         series_alt=["HENRY HUB NATURAL GAS - NEW YORK MERCANTILE EXCHANGE",
+                     "NAT GAS ICE LD1 - NEW YORK MERCANTILE EXCHANGE",
+                     "NATURAL GAS HENRY HUB LAST DAY - NEW YORK MERCANTILE EXCHANGE"],
          name="COT NG - Money Mgr netto",   unit="kontrakty", contract_size=1, contract_unit="kontrakty",
          category="COT", color="#4fc3f7"),
-    dict(id="COT_GOLD_NET",   source="cftc", series="GOLD - COMMODITY EXCHANGE INC.",
+    dict(id="COT_GOLD_NET",   source="cftc",
+         series="GOLD - COMMODITY EXCHANGE INC.",
          name="COT Gold - Money Mgr netto", unit="kontrakty", contract_size=1, contract_unit="kontrakty",
          category="COT", color="#ffd54f"),
-    dict(id="COT_SILVER_NET", source="cftc", series="SILVER - COMMODITY EXCHANGE INC.",
+    dict(id="COT_SILVER_NET", source="cftc",
+         series="SILVER - COMMODITY EXCHANGE INC.",
          name="COT Silver - Money Mgr netto", unit="kontrakty", contract_size=1, contract_unit="kontrakty",
          category="COT", color="#b0bec5"),
-    dict(id="COT_COPPER_NET", source="cftc", series="COPPER-GRADE #1 - COMMODITY EXCHANGE INC.",
+    dict(id="COT_COPPER_NET", source="cftc",
+         series="COPPER-GRADE #1 - COMMODITY EXCHANGE INC.",
+         series_alt=["COPPER - COMMODITY EXCHANGE INC.",
+                     "COPPER-GRADE #1 - COMEX"],
          name="COT Copper - Money Mgr netto", unit="kontrakty", contract_size=1, contract_unit="kontrakty",
          category="COT", color="#d84315"),
-    dict(id="COT_CORN_NET",   source="cftc", series="CORN - CHICAGO BOARD OF TRADE",
+    dict(id="COT_CORN_NET",   source="cftc",
+         series="CORN - CHICAGO BOARD OF TRADE",
          name="COT Corn - Money Mgr netto", unit="kontrakty", contract_size=1, contract_unit="kontrakty",
          category="COT", color="#fbc02d"),
-    dict(id="COT_WHEAT_NET",  source="cftc", series="WHEAT-SRW - CHICAGO BOARD OF TRADE",
+    dict(id="COT_WHEAT_NET",  source="cftc",
+         series="WHEAT-SRW - CHICAGO BOARD OF TRADE",
          name="COT Wheat - Money Mgr netto",unit="kontrakty", contract_size=1, contract_unit="kontrakty",
          category="COT", color="#8d6e63"),
-    dict(id="COT_SOYBEAN_NET",source="cftc", series="SOYBEANS - CHICAGO BOARD OF TRADE",
+    dict(id="COT_SOYBEAN_NET",source="cftc",
+         series="SOYBEANS - CHICAGO BOARD OF TRADE",
          name="COT Soybean - Money Mgr netto", unit="kontrakty", contract_size=1, contract_unit="kontrakty",
          category="COT", color="#7cb342"),
 
@@ -307,13 +358,13 @@ PRODUCTS = [
          name="Pszenica młynarska (MATIF Paris)", unit="€/t",
          contract_size=50, contract_unit="t",
          category="Rolne", color="#ff7043"),
-    dict(id="MATIF_CORN",  source="yahoo", series="EMA.PA",
+    dict(id="MATIF_CORN",  source="stooq", series="ema.f",
          name="Kukurydza (MATIF Paris)",  unit="€/t",
          contract_size=50, contract_unit="t",
          category="Rolne", color="#ffab40"),
-    dict(id="MATIF_RAPESEED", source="yahoo", series="RS=F",
-         name="Rzepak (ICE Winnipeg)",    unit="CAD/t",
-         contract_size=20, contract_unit="t",
+    dict(id="MATIF_RAPESEED", source="stooq", series="rr.f",
+         name="Rzepak (MATIF Paris)",     unit="€/t",
+         contract_size=50, contract_unit="t",
          category="Rolne", color="#c0ca33"),
 
     # Europa - gaz i inne benchmarki europejskie
@@ -634,18 +685,43 @@ def _fetch_agrifood_cereal_pl():
     return _AGRIFOOD_CACHE
 
 
+"""EU Agri-Food Portal używa różnych formatów productName na przestrzeni lat:
+   - pełne nazwy: "Common wheat", "Feed maize"
+   - kody: "BLT", "MAI", "ORG", "SEG"
+   - kody złożone: "SEGPAN|PAN"
+Mapowanie ponizej pokrywa najczestsze warianty per produkt."""
+AGRIFOOD_ALIASES = {
+    "Common wheat":  ["common wheat", "soft wheat", "wheat", "blt", "blé tendre", "pszenica"],
+    "Feed maize":    ["feed maize", "maize", "corn", "mai", "kukurydza"],
+    "Rye":           ["rye", "seg", "seigle", "żyto", "zyto"],
+    "Feed barley":   ["feed barley", "barley", "org", "orge", "jęczmień", "jeczmien"],
+}
+
 def fetch_agrifood_cereal(product_name: str) -> list:
-    """Zwraca liste {date, value} dla podanego produktu."""
+    """Zwraca liste {date, value} dla podanego produktu.
+    Matching: 1) dokladny, 2) case-insensitive substring, 3) aliasy z AGRIFOOD_ALIASES.
+    Wynikowa lista jest posortowana po dacie i deduplikowana."""
     parsed = _fetch_agrifood_cereal_pl()
-    # Direct match
+    if not parsed:
+        return []
+    # 1) Direct match
     if product_name in parsed:
         return parsed[product_name]
-    # Case-insensitive fallback
-    pl = product_name.lower()
-    for k, v in parsed.items():
-        if k.lower() == pl or pl in k.lower():
-            return v
-    return []
+    # 2) Zbierz wszystkie klucze pasujace do aliasow (union po dacie)
+    aliases = [product_name.lower()] + [a.lower() for a in AGRIFOOD_ALIASES.get(product_name, [])]
+    matched_keys = []
+    for k in parsed.keys():
+        kl = k.lower()
+        # dopasuj gdy klucz zawiera alias LUB alias zawiera klucz (skrocone kody)
+        if any(a == kl or a in kl or kl in a for a in aliases):
+            matched_keys.append(k)
+    if not matched_keys:
+        return []
+    combined = {}
+    for k in matched_keys:
+        for o in parsed[k]:
+            combined[o["date"]] = o["value"]
+    return [{"date": d, "value": v} for d, v in sorted(combined.items())]
 
 
 _CFTC_CACHE = None
@@ -660,7 +736,16 @@ def _fetch_cftc_all():
         return _CFTC_CACHE
 
     import urllib.parse
-    markets = [p["series"] for p in PRODUCTS if p["source"] == "cftc"]
+    # Zbierz PRIMARY + ALT market names ze wszystkich produktow CFTC
+    markets = []
+    for p in PRODUCTS:
+        if p["source"] != "cftc": continue
+        markets.append(p["series"])
+        for alt in p.get("series_alt", []) or []:
+            markets.append(alt)
+    # dedup
+    seen_m = set()
+    markets = [m for m in markets if not (m in seen_m or seen_m.add(m))]
     if not markets:
         _CFTC_CACHE = {}
         return _CFTC_CACHE
@@ -718,9 +803,15 @@ def _fetch_cftc_all():
     return _CFTC_CACHE
 
 
-def fetch_cftc(market_name: str) -> list:
-    """Zwraca liste {date, value} dla podanego rynku."""
-    return _fetch_cftc_all().get(market_name, [])
+def fetch_cftc(market_name: str, alts=None) -> list:
+    """Zwraca liste {date, value} dla podanego rynku (union primary + alts po dacie).
+    Jesli sa alty, ostatnia wartosc per data wygrywa (kolejnosc: primary, potem alts)."""
+    cache = _fetch_cftc_all()
+    combined = {}
+    for name in [market_name] + list(alts or []):
+        for o in cache.get(name, []):
+            combined[o["date"]] = o["value"]
+    return [{"date": d, "value": v} for d, v in sorted(combined.items())]
 
 
 _EMBER_CACHE = None
@@ -873,6 +964,24 @@ def _scrape_orlen_current():
                         result[key] = v
                         break
                 except: pass
+
+    # Ekoterm (olej opalowy) czesto jest w OSOBNEJ tabeli - fallback szuka w calym HTML.
+    if 'ON_EKOTERM' not in result:
+        ekoterm_patterns = [
+            r'(?:ON\s*)?Ekoterm[^0-9]{1,60}?(\d[\d,\.]{1,6})\s*(?:PLN|z[łl])',
+            r'olej\s+opa[łl]owy[^0-9]{1,80}?(\d[\d,\.]{1,6})\s*(?:PLN|z[łl])',
+            r'Ekoterm\s+Plus[^0-9]{1,60}?(\d[\d,\.]{1,6})',
+        ]
+        for pat in ekoterm_patterns:
+            for m in re.finditer(pat, html, re.IGNORECASE):
+                try:
+                    v = float(m.group(1).replace(',', '.'))
+                    if 2.0 < v < 8.0:  # Ekoterm zwykle tanszy - bez akcyzy paliwowej
+                        result['ON_EKOTERM'] = v
+                        break
+                except: pass
+            if 'ON_EKOTERM' in result: break
+
     print(f"  [ORLEN] znalezione ceny: {result}", flush=True)
     _ORLEN_CACHE = result
     return result
@@ -890,6 +999,151 @@ def fetch_orlen_append(product_key: str, existing_obs: list) -> list:
     if today_val is not None:
         obs.append({'date': today, 'value': today_val})
         obs.sort(key=lambda o: o['date'])
+    return obs
+
+
+_EUROSTAT_ELEC_CACHE = None
+
+def _fetch_eurostat_elec_all():
+    """Pobiera detaliczne ceny elektryki (gospodarstwa domowe) z Eurostat nrg_pc_204
+    dla wszystkich krajow z PRODUCTS[eurostat_elec] w jednym API call.
+    Band DC 2500-4999 kWh/rok, wszystkie podatki wliczone (TAX_INC), EUR/kWh.
+    Dane pol-roczne (S1/S2) - konwertuje do daty (S1=01-01, S2=07-01).
+    Zwraca slownik {geo_code: [{date, value}]}.
+    """
+    global _EUROSTAT_ELEC_CACHE
+    if _EUROSTAT_ELEC_CACHE is not None:
+        return _EUROSTAT_ELEC_CACHE
+
+    geos = [p["series"] for p in PRODUCTS if p["source"] == "eurostat_elec"]
+    if not geos:
+        _EUROSTAT_ELEC_CACHE = {}
+        return _EUROSTAT_ELEC_CACHE
+
+    params_list = [
+        ("format", "JSON"),
+        ("lang", "EN"),
+        ("product", "6000"),          # 6000 = Electricity
+        ("nrg_cons", "KWH2500-4999"),  # band DC (przecietne gospodarstwo)
+        ("unit", "KWH"),               # EUR/kWh
+        ("tax", "I_TAX"),              # all taxes included
+        ("currency", "EUR"),
+    ]
+    for g in geos:
+        params_list.append(("geo", g))
+    query = urllib.parse.urlencode(params_list)
+    url = f"https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/nrg_pc_204?{query}"
+
+    print(f"  [EUROSTAT_ELEC] pobieram detal elektryki dla {len(geos)} krajow ...", flush=True)
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "energy-analytics/1.0"})
+        with urllib.request.urlopen(req, timeout=90) as r:
+            data = json.load(r)
+    except Exception as e:
+        print(f"  [EUROSTAT_ELEC] BLAD: {e}", flush=True)
+        _EUROSTAT_ELEC_CACHE = {}
+        return _EUROSTAT_ELEC_CACHE
+
+    # SDMX-JSON: mapowanie plaskich indeksow na wymiary
+    dim_ids = data.get("id", [])   # np ["freq","product","nrg_cons","unit","tax","currency","geo","time"]
+    dim_sizes = data.get("size", [])
+    dims = data.get("dimension", {})
+    values = data.get("value", {})
+    if not dim_ids or not values:
+        print(f"  [EUROSTAT_ELEC] pusta odpowiedz", flush=True)
+        _EUROSTAT_ELEC_CACHE = {}
+        return _EUROSTAT_ELEC_CACHE
+
+    # Rozkoduj indeksy per wymiar
+    dim_index = {}  # dim_id -> [category_id per pozycja]
+    for did in dim_ids:
+        cat = dims.get(did, {}).get("category", {})
+        idx_map = cat.get("index", {})  # cat_id -> pozycja
+        # odwroc: pozycja -> cat_id
+        pos_to_id = [None] * len(idx_map)
+        for cid, pos in idx_map.items():
+            pos_to_id[pos] = cid
+        dim_index[did] = pos_to_id
+
+    def unflatten(flat_idx):
+        # zwraca dict {dim_id: cat_id} z plaskiego indeksu SDMX
+        out = {}
+        for i in range(len(dim_ids) - 1, -1, -1):
+            sz = dim_sizes[i]
+            out[dim_ids[i]] = dim_index[dim_ids[i]][flat_idx % sz]
+            flat_idx //= sz
+        return out
+
+    def period_to_date(t):
+        # np "2024-S1" -> "2024-01-01"; "2024-S2" -> "2024-07-01"
+        t = str(t)
+        if "-S1" in t: return t[:4] + "-01-01"
+        if "-S2" in t: return t[:4] + "-07-01"
+        if len(t) == 4 and t.isdigit(): return t + "-01-01"
+        return None
+
+    result = {}
+    for flat_key, v in values.items():
+        try:
+            fk = int(flat_key)
+            fv = float(v)
+        except (ValueError, TypeError):
+            continue
+        coord = unflatten(fk)
+        geo = coord.get("geo")
+        period = coord.get("time")
+        date_str = period_to_date(period)
+        if not geo or not date_str: continue
+        result.setdefault(geo, []).append({"date": date_str, "value": round(fv, 5)})
+
+    # sortuj/dedup
+    for g in list(result.keys()):
+        seen = {}
+        for o in result[g]:
+            seen[o["date"]] = o["value"]
+        result[g] = [{"date": d, "value": v} for d, v in sorted(seen.items())]
+        print(f"  [EUROSTAT_ELEC] {g}: {len(result[g])} punktow", flush=True)
+
+    _EUROSTAT_ELEC_CACHE = result
+    return _EUROSTAT_ELEC_CACHE
+
+
+def fetch_eurostat_elec(geo_code: str) -> list:
+    return _fetch_eurostat_elec_all().get(geo_code, [])
+
+
+def fetch_stooq(symbol: str, unit_scale: float = 1.0) -> list:
+    """Pobiera dzienne dane ze Stooq (CSV). Uzywane dla tickerow ktorych Yahoo nie ma
+    (MATIF EMA.F, CA.F; MGEX MW.F; itd).
+    Zwraca liste {date, value} sortowana rosnaco po dacie.
+    """
+    import urllib.request
+    sym = symbol.lower()
+    url = f"https://stooq.com/q/d/l/?s={urllib.parse.quote(sym)}&i=d"
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "energy-analytics/1.0"})
+        with urllib.request.urlopen(req, timeout=90) as r:
+            raw = r.read().decode("utf-8", errors="replace")
+    except Exception as e:
+        print(f"  [STOOQ {symbol}] BLAD pobrania: {e}", flush=True)
+        return []
+    if not raw or "Date" not in raw.split("\n", 1)[0]:
+        print(f"  [STOOQ {symbol}] pusta odpowiedz lub blad formatu", flush=True)
+        return []
+    obs = []
+    import csv, io
+    reader = csv.DictReader(io.StringIO(raw))
+    for row in reader:
+        date_str = (row.get("Date") or "").strip()
+        close_str = (row.get("Close") or "").strip()
+        if not date_str or not close_str: continue
+        try:
+            v = float(close_str) * unit_scale
+        except ValueError:
+            continue
+        if date_str < START_DATE: continue
+        obs.append({"date": date_str, "value": round(v, 4)})
+    obs.sort(key=lambda o: o["date"])
     return obs
 
 
@@ -967,6 +1221,8 @@ def main():
                 obs = fetch_fred(p["series"])
             elif p["source"] == "yahoo":
                 obs = fetch_yahoo(p["series"], scale)
+            elif p["source"] == "stooq":
+                obs = fetch_stooq(p["series"], scale)
             elif p["source"] == "wob":
                 obs = fetch_wob(p["series"])
             elif p["source"] == "orlen_scrape":
@@ -974,8 +1230,10 @@ def main():
                 obs = fetch_orlen_append(p["series"], existing.get(pid, []))
             elif p["source"] == "ember":
                 obs = fetch_ember(p["series"])
+            elif p["source"] == "eurostat_elec":
+                obs = fetch_eurostat_elec(p["series"])
             elif p["source"] == "cftc":
-                obs = fetch_cftc(p["series"])
+                obs = fetch_cftc(p["series"], p.get("series_alt"))
             elif p["source"] == "agrifood_cereal":
                 obs = fetch_agrifood_cereal(p["series"])
             else:
