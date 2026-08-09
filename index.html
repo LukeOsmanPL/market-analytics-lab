@@ -1,1345 +1,2402 @@
-#!/usr/bin/env python3
-"""
-Pobiera dzienne ceny commodities z:
-  - FRED (Federal Reserve St. Louis) - energia
-  - Yahoo Finance (przez pakiet yfinance) - metale, zboza, tropikalne
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Market Analytics Lab</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<style>
+  :root {
+    --bg: #0f1419; --panel: #1a2029; --panel-2: #232b36; --border: #2d3746;
+    --text: #e6edf3; --muted: #8b96a5; --accent: #4fc3f7; --accent-2: #ffb74d;
+    --ok: #66bb6a; --bad: #ef5350;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 14px; }
+  header { background: var(--panel); padding: 14px 20px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+  header h1 { margin: 0; font-size: 18px; font-weight: 600; }
+  header .badge { color: var(--muted); font-size: 12px; }
+  main { display: grid; grid-template-columns: 340px 1fr; min-height: calc(100vh - 55px); }
+  aside { background: var(--panel); border-right: 1px solid var(--border); padding: 16px; overflow-y: auto; max-height: calc(100vh - 55px); }
+  .content { padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 12px; }
+  h3 { margin: 0 0 10px 0; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+  .chart-title { font-size: 15px; font-weight: 600; margin: 0 0 10px 0; padding-bottom: 8px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .chart-title .sub { font-weight: 400; color: var(--muted); font-size: 12px; margin-left: 8px; }
+  .chart-title .title-text { flex: 1; overflow: hidden; text-overflow: ellipsis; }
+  .export-btn { background: var(--panel-2); color: var(--muted); border: 1px solid var(--border);
+    padding: 4px 10px; border-radius: 6px; font-size: 11px; cursor: pointer; font-family: inherit; }
+  .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .help-btn { background: var(--panel-2); color: var(--accent); border: 1px solid var(--accent);
+    padding: 6px 12px; border-radius: 6px; font-size: 13px; cursor: pointer; font-family: inherit; font-weight: 600; }
+  .help-btn:hover { background: var(--accent); color: var(--bg); }
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100;
+    justify-content: center; align-items: flex-start; padding: 20px; overflow-y: auto; }
+  .modal-overlay.active { display: flex; }
+  .modal { background: var(--panel); max-width: 900px; width: 100%; border-radius: 10px; padding: 24px;
+    max-height: 90vh; overflow-y: auto; border: 1px solid var(--border); }
+  .modal h2 { margin-top: 0; color: var(--accent); font-size: 22px; }
+  .modal h3 { color: var(--accent-2); font-size: 15px; margin-top: 20px; margin-bottom: 8px; text-transform: none; letter-spacing: 0; border: none; padding: 0; }
+  .modal h4 { color: var(--text); font-size: 13px; margin-top: 14px; margin-bottom: 6px; }
+  .modal p, .modal li { font-size: 13px; line-height: 1.55; color: var(--text); }
+  .modal code { background: var(--panel-2); padding: 1px 6px; border-radius: 3px; font-size: 12px; }
+  .modal .close-btn { float: right; background: var(--panel-2); color: var(--muted); border: 1px solid var(--border);
+    padding: 4px 12px; border-radius: 6px; cursor: pointer; font-size: 14px; font-family: inherit; }
+  .modal .close-btn:hover { color: var(--bad); border-color: var(--bad); }
+  .modal table { width: 100%; border-collapse: collapse; font-size: 12px; margin: 8px 0; }
+  .modal th { text-align: left; padding: 6px; border-bottom: 1px solid var(--border); color: var(--muted); font-weight: 600; }
+  .modal td { padding: 6px; border-bottom: 1px solid rgba(45,55,70,0.5); }
+  .modal .tag { background: var(--panel-2); padding: 2px 6px; border-radius: 3px; font-size: 11px; color: var(--muted); }
+  .cat-header { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--muted); padding: 8px 4px 4px; font-weight: 700; border-top: 1px dotted var(--border); margin-top: 4px; }
+  .cat-header:first-of-type { border-top: none; margin-top: 0; }
+  .products label { display: flex; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+  .products label:hover { background: var(--panel-2); }
+  .products input { accent-color: var(--accent); }
+  .swatch { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+  .range-buttons, .mode-buttons { display: flex; flex-wrap: wrap; gap: 4px; }
+  .range-buttons button, .mode-buttons button { background: var(--panel-2); color: var(--text);
+    border: 1px solid var(--border); padding: 6px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; font-family: inherit; }
+  .range-buttons button:hover, .mode-buttons button:hover { border-color: var(--accent); }
+  .range-buttons button.active, .mode-buttons button.active { background: var(--accent); color: #0f1419; border-color: var(--accent); font-weight: 600; }
+  .toggle { display: flex; align-items: center; gap: 8px; margin: 8px 0; font-size: 13px; }
+  select, input[type=number], input[type=date] { background: var(--panel-2); color: var(--text);
+    border: 1px solid var(--border); border-radius: 6px; padding: 5px 8px; font-family: inherit; font-size: 13px; }
+  input[type=date]::-webkit-calendar-picker-indicator { filter: invert(1); opacity: 0.6; }
+  .row { display: flex; gap: 8px; align-items: center; margin: 6px 0; }
+  .row label { flex: 1; font-size: 13px; color: var(--muted); }
+  .date-range { display: flex; gap: 6px; align-items: center; margin-top: 8px; }
+  .date-range input[type=date] { flex: 1; padding: 4px 6px; font-size: 12px; }
+  .leg-row { display: grid; grid-template-columns: 1fr 66px 60px; gap: 6px; align-items: center;
+    padding: 8px; margin: 6px 0; background: var(--panel-2); border-radius: 6px; border-left: 3px solid var(--accent); font-size: 12px; }
+  .leg-name { display: flex; align-items: center; gap: 6px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .side-toggle { display: flex; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; }
+  .side-toggle button { flex: 1; background: var(--bg); color: var(--muted);
+    border: none; padding: 3px 0; cursor: pointer; font-family: inherit; font-size: 11px; font-weight: 700; }
+  .side-toggle button.on-long { background: var(--ok); color: #fff; }
+  .side-toggle button.on-short { background: var(--bad); color: #fff; }
+  .leg-row input[type=number] { width: 100%; padding: 3px 5px; font-size: 12px; text-align: center; }
+  .leg-row-v2 { display: grid; grid-template-columns: 1fr 60px 50px 24px; gap: 4px; align-items: center;
+    padding: 8px; margin: 6px 0; background: var(--panel-2); border-radius: 6px; border-left: 3px solid var(--accent); font-size: 12px; }
+  .leg-row-v2 select { width: 100%; font-size: 11px; padding: 3px 4px; }
+  .leg-row-v2 input[type=number] { width: 100%; padding: 3px 4px; font-size: 12px; text-align: center; }
+  .leg-row-v2 .remove-leg { background: none; border: 1px solid var(--border); color: var(--muted);
+    font-size: 14px; padding: 2px 6px; border-radius: 4px; cursor: pointer; }
+  .leg-row-v2 .remove-leg:hover { border-color: var(--bad); color: var(--bad); }
+  .leg-row-v2 .leg-info { grid-column: 1 / -1; padding-top: 4px; margin-top: 2px;
+    border-top: 1px solid var(--border); font-size: 11px; color: var(--muted); line-height: 1.5; }
+  .leg-row-v2 .leg-filter-row { grid-column: 1 / -1; padding-top: 4px; font-size: 11px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+  .leg-row-v2 .leg-filter-row select { flex: 1; }
+  .add-leg-btn { width: 100%; background: var(--panel-2); color: var(--accent);
+    border: 1px dashed var(--accent); padding: 8px; border-radius: 6px;
+    font-size: 13px; cursor: pointer; margin-top: 6px; font-family: inherit; }
+  .add-leg-btn:hover { background: var(--panel); }
+  .leg-info { grid-column: 1 / -1; padding-top: 6px; margin-top: 4px;
+    border-top: 1px solid var(--border); font-size: 11px; color: var(--muted); line-height: 1.5; }
+  .leg-info .price-line { color: var(--text); }
+  .money-long { color: var(--bad); font-weight: 700; }
+  .money-short { color: var(--ok); font-weight: 700; }
+  .position-summary { margin-top: 10px; padding: 10px; background: var(--bg);
+    border: 1px solid var(--border); border-radius: 6px; font-size: 12px; }
+  .position-summary .line { display: flex; justify-content: space-between; padding: 3px 0; }
+  .position-summary .line.total { border-top: 1px solid var(--border); margin-top: 4px; padding-top: 6px; font-weight: 700; }
+  .plot { width: 100%; height: 880px; }
+  .plot-small { width: 100%; height: 400px; }
+  @media (max-height: 900px) { .plot { height: min(85vh, 880px); min-height: 500px; } }
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+  .stat { background: var(--panel-2); padding: 10px; border-radius: 6px; border: 1px solid var(--border); }
+  .stat .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  .stat .value { font-size: 18px; font-weight: 600; margin-top: 3px; }
+  .stat .sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .up { color: var(--ok); } .down { color: var(--bad); }
+  .mode-panel { display: none; }
+  .mode-panel.active { display: block; }
+  .hint { color: var(--muted); font-size: 11px; margin-top: 8px; line-height: 1.4; }
+  .empty { padding: 40px; text-align: center; color: var(--muted); font-size: 13px; }
+  section.divider { padding: 10px 0; border-top: 1px solid var(--border); margin-top: 10px; }
+  .sub-mode { display: flex; gap: 4px; margin: 8px 0; }
+  .sub-mode button { flex: 1; background: var(--panel-2); color: var(--text);
+    border: 1px solid var(--border); padding: 6px 8px; border-radius: 6px; cursor: pointer; font-size: 12px; font-family: inherit; }
+  .sub-mode button.active { background: var(--accent-2); color: #0f1419; border-color: var(--accent-2); font-weight: 600; }
+  #loading, #loadError { text-align: center; padding: 60px 20px; color: var(--muted); }
+  #loadError { color: var(--bad); }
+  #loadError pre { background: var(--panel-2); padding: 12px; border-radius: 6px; color: var(--text); text-align: left; font-size: 12px; overflow-x: auto; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } aside { max-height: none; border-right: none; border-bottom: 1px solid var(--border); } }
+</style>
+</head>
+<body>
 
-Wymaga zmiennych srodowiskowych:
-  FRED_KEY - klucz API FRED
-  EIA_KEY  - klucz API EIA (obecnie nieuzywany, w rezerwie)
+<header>
+  <div>
+    <h1>Market Analytics Lab</h1>
+    <div class="badge" id="dataFreshness">ładuję dane…</div>
+  </div>
+  <div style="display:flex; gap:10px; align-items:center">
+    <button class="help-btn" onclick="document.getElementById('manualModal').classList.add('active')">? Manual</button>
+    <div class="badge">v2.9 · projekt i realizacja: Łukasz Osman</div>
+  </div>
+</header>
 
-Wynik:
-  data/prices.json - wszystkie serie w jednym pliku
-  data/meta.json   - metadane
-"""
+<div class="modal-overlay" id="manualModal" onclick="if(event.target===this) this.classList.remove('active')">
+  <div class="modal">
+    <button class="close-btn" onclick="document.getElementById('manualModal').classList.remove('active')">× zamknij</button>
+    <h2>Manual — Market Analytics Lab</h2>
+    <p>Aplikacja do analizy cen surowców (energia, metale, rolne), walutowych, elektryki, pozycji funduszy hedgingowych (COT). Dane historyczne 10-30 lat, aktualizowane 2× dziennie.</p>
 
-import os
-import sys
-import json
-import time
-import urllib.request
-import urllib.error
-import urllib.parse
-from pathlib import Path
-from datetime import datetime, timezone
+    <h3>🎯 Tryby analizy</h3>
 
-ROOT = Path(__file__).resolve().parent
-DATA_DIR = ROOT / "data"
-DATA_DIR.mkdir(exist_ok=True)
+    <h4>Dashboard</h4>
+    <p>Skan wszystkich produktów. 10 paneli: top wzrosty/spadki (1d, 7d, 30d, 12m) i największe odchylenia od 5-letniej średniej. Nie wymaga selekcji produktów - automatycznie skanuje wszystko. Widok "co się dzieje dziś" - zacznij od tego rano.</p>
 
-FRED_KEY = os.environ.get("FRED_KEY", "").strip()
-EIA_KEY = os.environ.get("EIA_KEY", "").strip()
+    <h4>Nakładka (do 10 produktów)</h4>
+    <p>Klasyczny wykres liniowy z wielu produktów na jednym wykresie. Opcje:</p>
+    <ul>
+      <li><b>Skala procentowa</b> — znormalizowanie wszystkich linii od 0% w pierwszym punkcie widocznego okna. Kluczowe przy porównaniu produktów o różnej skali.</li>
+      <li><b>Druga oś Y</b> — druga oś Y dla drugiego produktu (przy różnych jednostkach).</li>
+      <li><b>Korelacja</b> pod wykresem — <b>dla 2 produktów</b>: krocząca (line) z wyborem okna 20/30/60/90/120/252 dni; <b>dla 3+</b>: macierz Pearson NxN (heatmap, cały widoczny okres).</li>
+      <li><b>Statystyki na dole</b> — min/max/zmienność ann., <b>Sharpe</b> (annRet/annVol, bez rf), <b>max drawdown</b> (peak-to-trough w oknie), <b>z-score</b> ostatniej ceny (|z|≥2 podświetla).</li>
+      <li><b>Wskaźniki techniczne</b> (dla 1 produktu, bez % mode):
+        <ul>
+          <li><b>SMA 50 &amp; 200</b> — dwie średnie ruchome jako przerywane; wizualizacja golden/death cross (koreluje z alertem <code>ma_cross</code>).</li>
+          <li><b>Bollinger Bands 20d ±2σ</b> — kanał wypełniony delikatnym niebieskim; dotknięcie krawędzi = ekstremum krótkoterminowe.</li>
+          <li><b>RSI 14</b> — osobny wykres pod głównym; strefa &gt;70 wykupienie, &lt;30 wyprzedanie, 50 linia neutralna.</li>
+        </ul>
+      </li>
+    </ul>
 
-if not FRED_KEY:
-    print("BLAD: Ustaw zmienna srodowiskowa FRED_KEY", file=sys.stderr)
-    sys.exit(1)
+    <h4>Sezonowa (do 10 produktów)</h4>
+    <p>Wzorzec sezonowy - jak produkt zwykle się zachowuje w cyklu rocznym. Dla 1 produktu: średnia N-letnia + koperta min/max + bieżący rok jako przerywana. Dla wielu: nakładka średnich per produkt.</p>
+    <ul>
+      <li><b>Okno średniej</b> — 3/5/10/15/20/25/30 lat (zależnie od dostępności danych).</li>
+      <li><b>Metoda uśredniania</b>: <code>średnia</code> / <code>mediana</code> (odporna na skrajności jak 2022) / <code>trimmed 20%</code>.</li>
+      <li><b>Skala %</b> — od 1 stycznia każdego roku (domyślnie), <b>automatycznie przelicza od początku widocznego zakresu po zoom-ie myszką</b>. Dwuklik = powrót.</li>
+      <li><b>Filtr ENSO</b> — pokaż tylko lata El Niño / La Niña / neutralne, albo <b>spread La Niña − El Niño</b> (klasyczna analiza agro).</li>
+    </ul>
 
-START_DATE = "1995-01-01"  # 30 lat historii; nie wszystkie serie sięgają tak daleko - fetch zwraca co jest dostępne
+    <h4>Spread (2-10 nóg)</h4>
+    <p>Buduj dowolny wielo-nogowy spread. Każda noga niezależna - może być ten sam produkt wiele razy z różnymi filtrami. <b>Preset</b> (dropdown na górze panelu) załaduje jednym kliknięciem klasyczne konstrukcje: Crack 3:2:1, WTI−Brent, NG−WTI, US−MATIF wheat, Corn−Wheat, Soybean−Corn, Gold−Silver, Clean Spark DE, PL−DE power, COT WTI−COT Brent.</p>
+    <p>Klasyki tradera:</p>
+    <ul>
+      <li><b>Crack spread</b> (rafineria): <code>+3×WTI −2×RBOB −1×HEAT</code> — marża krakingu ropy na paliwa.</li>
+      <li><b>Crush spread</b> (soja): <code>+2×SOYMEAL +1×SOYOIL −1×SOYBEAN</code> — marża tłoczenia soi.</li>
+      <li><b>US vs EU wheat</b>: <code>+1×WHEAT −1×MATIF_WHEAT</code>.</li>
+      <li><b>ENSO spread</b>: <code>+1×CORN[La Niña] −1×CORN[El Niño]</code> — czy La Niña zwykle daje wyższe ceny kukurydzy niż El Niño.</li>
+    </ul>
+    <p>Widok <b>P&amp;L</b> pokazuje wartość pozycji w dolarach + z-score (±2σ = ekstremum) + max drawdown. Widok <b>Sezonowy</b> - sezonowy wzorzec zbudowanego spreadu.</p>
 
-# ---------------------------------------------------------------------------
-# Produkty
-#
-# source:
-#   fred    - pobiera z api.stlouisfed.org
-#   yahoo   - pobiera przez yfinance
-#   stooq   - pobiera CSV ze stooq.com (dla tickerow ktorych Yahoo nie ma:
-#             MATIF Paris, MGEX Spring Wheat, itd)
-#   eurostat_elec - detal elektryki (Eurostat nrg_pc_204, polroczne EUR/kWh)
-# unit_scale:
-#   opcjonalny mnoznik do zastosowania na cenach (np. 0.01 dla ¢ -> $)
-#   uzywane zeby wszystkie zboza/kawa mialy jednolite jednostki $
-# ---------------------------------------------------------------------------
-PRODUCTS = [
-    # Energia (FRED) - potwierdzone dzialaja
-    dict(id="NG",    source="fred", series="DHHNGSP",
-         name="Henry Hub (gaz US)",       unit="$/MMBtu",
-         contract_size=10000, contract_unit="MMBtu",
-         category="Energia", color="#4fc3f7"),
-    dict(id="WTI",   source="fred", series="DCOILWTICO",
-         name="WTI Crude (ropa US)",      unit="$/bbl",
-         contract_size=1000,  contract_unit="bbl",
-         category="Energia", color="#ff8a65"),
-    dict(id="BRENT", source="fred", series="DCOILBRENTEU",
-         name="Brent Crude (ropa)",       unit="$/bbl",
-         contract_size=1000,  contract_unit="bbl",
-         category="Energia", color="#ba68c8"),
-    dict(id="HEAT",  source="fred", series="DHOILNYH",
-         name="Heating Oil / ULSD (NY)",  unit="$/gal",
-         contract_size=42000, contract_unit="gal",
-         category="Energia", color="#ff5722"),
-    dict(id="RBOB",  source="fred", series="DGASUSGULF",
-         name="Benzyna (US Gulf spot)",   unit="$/gal",
-         contract_size=42000, contract_unit="gal",
-         category="Energia", color="#ffb74d"),
-    dict(id="GAS_RETAIL_US", source="fred", series="GASREGW",
-         name="Benzyna detal USA (avg)",  unit="$/gal",
-         contract_size=1, contract_unit="gal",
-         category="Energia", color="#ffa000"),
-    # Inventories & storage - wskazniki fundamentalne (leading indicators dla cen)
-    dict(id="NG_STORAGE_US", source="fred", series="WNGSTUS",
-         name="Zapasy gazu US (48 stanów)", unit="Bcf",
-         contract_size=1, contract_unit="Bcf",
-         category="Energia", color="#0288d1"),
-    dict(id="CRUDE_STORAGE_US", source="fred", series="WCESTUS",
-         name="Zapasy ropy US (komercyjne)", unit="tys. bbl",
-         contract_size=1, contract_unit="tys. bbl",
-         category="Energia", color="#ef5350"),
+    <h4>Ratio (2 produkty)</h4>
+    <p>Stosunek A/B w czasie ze średnią. Klasycznie: <code>GOLD/SILVER ratio</code> (wysokie = ryzyko na rynku), <code>WTI/BRENT ratio</code>, <code>CORN/SOYBEAN ratio</code>.</p>
 
-    # Metale (Yahoo Finance)
-    dict(id="GOLD",     source="yahoo", series="GC=F",
-         name="Zloto (COMEX)",            unit="$/oz",
-         contract_size=100,   contract_unit="oz",
-         category="Metale", color="#ffd54f"),
-    dict(id="SILVER",   source="yahoo", series="SI=F",
-         name="Srebro (COMEX)",           unit="$/oz",
-         contract_size=5000,  contract_unit="oz",
-         category="Metale", color="#b0bec5"),
-    dict(id="COPPER",   source="yahoo", series="HG=F",
-         name="Miedz (COMEX)",            unit="$/lb",
-         contract_size=25000, contract_unit="lb",
-         category="Metale", color="#d84315"),
-    dict(id="PLATINUM", source="yahoo", series="PL=F",
-         name="Platyna (NYMEX)",          unit="$/oz",
-         contract_size=50,    contract_unit="oz",
-         category="Metale", color="#78909c"),
-    dict(id="PALLADIUM", source="yahoo", series="PA=F",
-         name="Pallad (NYMEX)",           unit="$/oz",
-         contract_size=100,   contract_unit="oz",
-         category="Metale", color="#8d6e63"),
+    <h3>💱 Konwersja jednostek</h3>
+    <p>Select "Jednostka docelowa" w panelu bocznym. Konwertuje wszystkie widoczne produkty na wybraną jednostkę używając <b>time-aligned FX</b> (kurs walut z tej samej daty co cena, nie dzisiejszy).</p>
+    <ul>
+      <li>Ropa <code>$/bbl</code> → <code>$/gal</code> (÷42), <code>$/L</code> (÷159)</li>
+      <li>Benzyna <code>$/gal</code> → <code>$/L</code> (÷3.79)</li>
+      <li>Waluty: USD ↔ EUR ↔ PLN (przez kursy Yahoo)</li>
+      <li>Zboża <code>$/bu</code> → <code>$/t</code>: kukurydza 56 lb/bu (÷25.4 kg), pszenica/soja 60 lb/bu (÷27.2 kg)</li>
+    </ul>
 
-    # Zboza (Yahoo Finance) - Yahoo daje ceny w centach; przeliczamy na dolary
-    dict(id="CORN",    source="yahoo", series="ZC=F", unit_scale=0.01,
-         name="Kukurydza (CBOT Chicago)", unit="$/bu",
-         contract_size=5000, contract_unit="bu",
-         category="Rolne", color="#fbc02d"),
-    dict(id="WHEAT",   source="yahoo", series="ZW=F", unit_scale=0.01,
-         name="Pszenica SRW (CBOT)",      unit="$/bu",
-         contract_size=5000, contract_unit="bu",
-         category="Rolne", color="#8d6e63"),
-    dict(id="WHEAT_KC", source="yahoo", series="KE=F", unit_scale=0.01,
-         name="Pszenica HRW (Kansas)",    unit="$/bu",
-         contract_size=5000, contract_unit="bu",
-         category="Rolne", color="#a1887f"),
-    dict(id="WHEAT_MW", source="stooq", series="mw.f", unit_scale=0.01,
-         name="Pszenica Spring (MGEX)",   unit="$/bu",
-         contract_size=5000, contract_unit="bu",
-         category="Rolne", color="#4e342e"),
-    dict(id="SOYBEAN", source="yahoo", series="ZS=F", unit_scale=0.01,
-         name="Soja (CBOT)",              unit="$/bu",
-         contract_size=5000, contract_unit="bu",
-         category="Rolne", color="#7cb342"),
-    dict(id="SOYMEAL", source="yahoo", series="ZM=F",
-         name="Mączka sojowa (CBOT)",     unit="$/ton",
-         contract_size=100, contract_unit="short tons",
-         category="Rolne", color="#689f38"),
-    dict(id="SOYOIL",  source="yahoo", series="ZL=F", unit_scale=0.01,
-         name="Olej sojowy (CBOT)",       unit="$/lb",
-         contract_size=60000, contract_unit="lb",
-         category="Rolne", color="#f9a825"),
+    <h3>📦 Specyfikacja kontraktów</h3>
+    <p>Wartość kontraktu w trybie Spread = <code>contract_size × price × qty</code>. Standardowe rozmiary CME/ICE:</p>
+    <table>
+      <thead><tr><th>Produkt</th><th>Symbol</th><th>Kontrakt</th><th>Giełda</th></tr></thead>
+      <tbody>
+        <tr><td>WTI Crude Oil</td><td>CL</td><td>1 000 baryłek (bbl)</td><td>NYMEX</td></tr>
+        <tr><td>Brent Crude Oil</td><td>BZ</td><td>1 000 baryłek</td><td>ICE</td></tr>
+        <tr><td>Henry Hub Natural Gas</td><td>NG</td><td>10 000 MMBtu</td><td>NYMEX</td></tr>
+        <tr><td>Heating Oil (ULSD)</td><td>HO</td><td>42 000 galonów</td><td>NYMEX</td></tr>
+        <tr><td>RBOB Gasoline</td><td>RB</td><td>42 000 galonów</td><td>NYMEX</td></tr>
+        <tr><td>TTF Natural Gas EU</td><td>TFM</td><td>1 000 MWh (miesięczny)</td><td>ICE Endex</td></tr>
+        <tr><td>Gold</td><td>GC</td><td>100 uncji trojańskich</td><td>COMEX</td></tr>
+        <tr><td>Silver</td><td>SI</td><td>5 000 uncji trojańskich</td><td>COMEX</td></tr>
+        <tr><td>Copper</td><td>HG</td><td>25 000 lb</td><td>COMEX</td></tr>
+        <tr><td>Platinum</td><td>PL</td><td>50 uncji trojańskich</td><td>NYMEX</td></tr>
+        <tr><td>Corn</td><td>ZC</td><td>5 000 bushel (~127 t)</td><td>CBOT Chicago</td></tr>
+        <tr><td>Wheat SRW</td><td>ZW</td><td>5 000 bu (~136 t)</td><td>CBOT Chicago</td></tr>
+        <tr><td>Wheat HRW</td><td>KE</td><td>5 000 bu (~136 t)</td><td>Kansas City (CBOT)</td></tr>
+        <tr><td>Soybean</td><td>ZS</td><td>5 000 bu (~136 t)</td><td>CBOT Chicago</td></tr>
+        <tr><td>Soybean Meal</td><td>ZM</td><td>100 short tons (~91 t)</td><td>CBOT Chicago</td></tr>
+        <tr><td>Soybean Oil</td><td>ZL</td><td>60 000 lb (~27 t)</td><td>CBOT Chicago</td></tr>
+        <tr><td>Coffee Arabica</td><td>KC</td><td>37 500 lb (~17 t)</td><td>ICE US</td></tr>
+        <tr><td>Cocoa</td><td>CC</td><td>10 metric tons</td><td>ICE US</td></tr>
+        <tr><td>Sugar #11</td><td>SB</td><td>112 000 lb (~50 t)</td><td>ICE US</td></tr>
+      </tbody>
+    </table>
 
-    # Polska: retail (detal) z EU Weekly Oil Bulletin - historia tygodniowa od 2005
-    # Klucze uzywaja kodow ISO alpha-2 wg struktury pliku WOB (PL_, DE_, EU_, ...)
-    dict(id="PL_PB95_WOB", source="wob", series="PL|Euro-Super 95",
-         name="Pb95 detal PL (EU WOB)",   unit="€/1000L",
-         contract_size=1, contract_unit="L",
-         category="Lokalne PL", color="#4db6ac"),
-    dict(id="PL_ON_WOB",   source="wob", series="PL|Automotive Gas Oil",
-         name="ON detal PL (EU WOB)",     unit="€/1000L",
-         contract_size=1, contract_unit="L",
-         category="Lokalne PL", color="#26a69a"),
-    dict(id="PL_LPG_WOB",  source="wob", series="PL|LPG",
-         name="LPG detal PL (EU WOB)",    unit="€/1000L",
-         contract_size=1, contract_unit="L",
-         category="Lokalne PL", color="#80cbc4"),
-    dict(id="PL_HEAT_WOB", source="wob", series="PL|Heating Gas Oil",
-         name="Olej opałowy PL (EU WOB)", unit="€/1000L",
-         contract_size=1, contract_unit="L",
-         category="Lokalne PL", color="#00897b"),
-    # Odniesienie EU-27 i Eurozone
-    dict(id="EU_PB95_WOB", source="wob", series="EU|Euro-Super 95",
-         name="Pb95 detal UE-27 (WOB)",   unit="€/1000L",
-         contract_size=1, contract_unit="L",
-         category="Europa", color="#9575cd"),
-    dict(id="EU_ON_WOB",   source="wob", series="EU|Automotive Gas Oil",
-         name="ON detal UE-27 (WOB)",     unit="€/1000L",
-         contract_size=1, contract_unit="L",
-         category="Europa", color="#7e57c2"),
-    dict(id="DE_PB95_WOB", source="wob", series="DE|Euro-Super 95",
-         name="Pb95 detal Niemcy (WOB)",  unit="€/1000L",
-         contract_size=1, contract_unit="L",
-         category="Europa", color="#b39ddb"),
-    dict(id="DE_ON_WOB",   source="wob", series="DE|Automotive Gas Oil",
-         name="ON detal Niemcy (WOB)",    unit="€/1000L",
-         contract_size=1, contract_unit="L",
-         category="Europa", color="#9575cd"),
+    <h3>🌊 ENSO - El Niño / La Niña</h3>
+    <p><b>El Niño Southern Oscillation</b> - cykliczne ocieplenie/oziębienie centralnego Pacyfiku. Wpływa na globalną pogodę i produkcję rolną. <b>El Niño</b> typowo: susze w Australii/Azji, powodzie w Ameryce Południowej. <b>La Niña</b> odwrotnie: susze w USA/południe (kluczowe dla zbóż), powodzie w Australii/Azji.</p>
+    <p>Klasyfikacja w aplikacji (z NOAA ONI) 2014-2026:</p>
+    <ul>
+      <li>☀️ <b>El Niño</b>: 2015, 2019, 2023, 2024</li>
+      <li>❄️ <b>La Niña</b>: 2016, 2017, 2020, 2021, 2022, 2025</li>
+      <li>⚪ <b>Neutralne</b>: 2014, 2018, 2026</li>
+    </ul>
 
-    # Polska: hurt Orlen (append-only, scraping z cenypaliw.fyi - historia narasta od dzis)
-    dict(id="PL_ORLEN_PB95", source="orlen_scrape", series="PB95",
-         name="Orlen Pb95 hurt",          unit="zł/L",
-         contract_size=1, contract_unit="L",
-         category="Lokalne PL", color="#ff8f00"),
-    dict(id="PL_ORLEN_PB98", source="orlen_scrape", series="PB98",
-         name="Orlen Pb98 hurt",          unit="zł/L",
-         contract_size=1, contract_unit="L",
-         category="Lokalne PL", color="#ff6f00"),
-    dict(id="PL_ORLEN_ON",   source="orlen_scrape", series="ON",
-         name="Orlen ON hurt",            unit="zł/L",
-         contract_size=1, contract_unit="L",
-         category="Lokalne PL", color="#ef6c00"),
-    dict(id="PL_ORLEN_EKOTERM", source="orlen_scrape", series="ON_EKOTERM",
-         name="Orlen ON Ekoterm hurt",    unit="zł/L",
-         contract_size=1, contract_unit="L",
-         category="Lokalne PL", color="#e65100"),
+    <h3>📊 CFTC COT - Commitments of Traders</h3>
+    <p>Cotygodniowe raporty CFTC (US regulator futures) o pozycjach dużych graczy. Kategorie: Money Managers (fundusze hedgingowe), Commercials (producenci/hedgerzy), Non-Reportable (mali).</p>
+    <p><b>W aplikacji</b>: COT_XXX_NET = pozycja NETTO Money Managers = Long − Short. Klasyczny <b>wskaźnik kontrariański</b>:</p>
+    <ul>
+      <li>Rekordowo <b>dodatnia</b> pozycja → wszyscy są long → często blisko szczytu ceny</li>
+      <li>Rekordowo <b>ujemna</b> (short) → wszyscy są krótko → często blisko dołka</li>
+      <li><b>Divergence</b>: cena rośnie a pozycja netto spada = ostrzeżenie o odwróceniu</li>
+    </ul>
 
-    # Dodatkowe kraje EU (WOB) - do porownan miedzynarodowych
-    dict(id="FR_PB95_WOB", source="wob", series="FR|Euro-Super 95",
-         name="Pb95 detal Francja (WOB)", unit="€/1000L",
-         contract_size=1, contract_unit="L", category="Europa", color="#5c6bc0"),
-    dict(id="FR_ON_WOB",   source="wob", series="FR|Automotive Gas Oil",
-         name="ON detal Francja (WOB)",   unit="€/1000L",
-         contract_size=1, contract_unit="L", category="Europa", color="#3f51b5"),
-    dict(id="ES_PB95_WOB", source="wob", series="ES|Euro-Super 95",
-         name="Pb95 detal Hiszpania (WOB)", unit="€/1000L",
-         contract_size=1, contract_unit="L", category="Europa", color="#ec407a"),
-    dict(id="ES_ON_WOB",   source="wob", series="ES|Automotive Gas Oil",
-         name="ON detal Hiszpania (WOB)", unit="€/1000L",
-         contract_size=1, contract_unit="L", category="Europa", color="#d81b60"),
-    dict(id="IT_PB95_WOB", source="wob", series="IT|Euro-Super 95",
-         name="Pb95 detal Włochy (WOB)",  unit="€/1000L",
-         contract_size=1, contract_unit="L", category="Europa", color="#66bb6a"),
-    dict(id="IT_ON_WOB",   source="wob", series="IT|Automotive Gas Oil",
-         name="ON detal Włochy (WOB)",    unit="€/1000L",
-         contract_size=1, contract_unit="L", category="Europa", color="#43a047"),
-    dict(id="CZ_PB95_WOB", source="wob", series="CZ|Euro-Super 95",
-         name="Pb95 detal Czechy (WOB)",  unit="€/1000L",
-         contract_size=1, contract_unit="L", category="Europa", color="#26a69a"),
-    dict(id="CZ_ON_WOB",   source="wob", series="CZ|Automotive Gas Oil",
-         name="ON detal Czechy (WOB)",    unit="€/1000L",
-         contract_size=1, contract_unit="L", category="Europa", color="#00897b"),
-    dict(id="HU_PB95_WOB", source="wob", series="HU|Euro-Super 95",
-         name="Pb95 detal Węgry (WOB)",   unit="€/1000L",
-         contract_size=1, contract_unit="L", category="Europa", color="#ff7043"),
-    dict(id="HU_ON_WOB",   source="wob", series="HU|Automotive Gas Oil",
-         name="ON detal Węgry (WOB)",     unit="€/1000L",
-         contract_size=1, contract_unit="L", category="Europa", color="#f4511e"),
+    <h3>📅 Wydarzenia historyczne</h3>
+    <p>~24 wydarzenia (inwazja Ukrainy, sabotaż Nord Stream, decyzje OPEC, WTI negative w kwietniu 2020, cła Trumpa, itp.) - pionowe linie z ikonką na wykresach. Zawsze widoczna lista pod głównym wykresem "Wydarzenia w tym oknie". Toggle "Pokaż wydarzenia" w sidebar.</p>
 
-    # Kursy walutowe (do konwersji miedzy jednostkami w rożnych walutach)
-    dict(id="FX_EURUSD", source="yahoo", series="EURUSD=X",
-         name="EUR/USD (kurs)", unit="USD/EUR",
-         contract_size=1, contract_unit="EUR", category="Waluty", color="#42a5f5"),
-    dict(id="FX_EURPLN", source="yahoo", series="EURPLN=X",
-         name="EUR/PLN (kurs)", unit="PLN/EUR",
-         contract_size=1, contract_unit="EUR", category="Waluty", color="#7e57c2"),
-    dict(id="FX_USDPLN", source="yahoo", series="PLN=X",
-         name="USD/PLN (kurs)", unit="PLN/USD",
-         contract_size=1, contract_unit="USD", category="Waluty", color="#26a69a"),
-    dict(id="FX_GBPUSD", source="yahoo", series="GBPUSD=X",
-         name="GBP/USD (kurs)", unit="USD/GBP",
-         contract_size=1, contract_unit="GBP", category="Waluty", color="#5c6bc0"),
-    dict(id="FX_USDJPY", source="yahoo", series="JPY=X",
-         name="USD/JPY (kurs)", unit="JPY/USD",
-         contract_size=1, contract_unit="USD", category="Waluty", color="#ec407a"),
-    dict(id="FX_USDCHF", source="yahoo", series="CHF=X",
-         name="USD/CHF (kurs)", unit="CHF/USD",
-         contract_size=1, contract_unit="USD", category="Waluty", color="#ef5350"),
+    <h3>📥 Eksport CSV</h3>
+    <p>Przycisk <code>📥 CSV</code> w prawym górnym rogu głównego wykresu. Pobiera aktualnie widoczne dane jako plik CSV do dalszej analizy w Excelu.</p>
 
-    # Elektryka hurt (day-ahead) - dzienne, Ember Energy (CSV, bez rejestracji)
-    dict(id="PL_POWER", source="ember", series="Poland",
-         name="Elektryka hurt Polska",      unit="€/MWh",
-         contract_size=1, contract_unit="MWh", category="Elektryka", color="#ffca28"),
-    dict(id="DE_POWER", source="ember", series="Germany",
-         name="Elektryka hurt Niemcy",      unit="€/MWh",
-         contract_size=1, contract_unit="MWh", category="Elektryka", color="#ff9800"),
-    dict(id="FR_POWER", source="ember", series="France",
-         name="Elektryka hurt Francja",     unit="€/MWh",
-         contract_size=1, contract_unit="MWh", category="Elektryka", color="#5c6bc0"),
-    dict(id="ES_POWER", source="ember", series="Spain",
-         name="Elektryka hurt Hiszpania",   unit="€/MWh",
-         contract_size=1, contract_unit="MWh", category="Elektryka", color="#ec407a"),
-    dict(id="IT_POWER", source="ember", series="Italy",
-         name="Elektryka hurt Włochy",      unit="€/MWh",
-         contract_size=1, contract_unit="MWh", category="Elektryka", color="#66bb6a"),
-    dict(id="CZ_POWER", source="ember", series="Czechia",
-         name="Elektryka hurt Czechy",      unit="€/MWh",
-         contract_size=1, contract_unit="MWh", category="Elektryka", color="#26a69a"),
-    dict(id="SK_POWER", source="ember", series="Slovakia",
-         name="Elektryka hurt Słowacja",    unit="€/MWh",
-         contract_size=1, contract_unit="MWh", category="Elektryka", color="#42a5f5"),
-    dict(id="HU_POWER", source="ember", series="Hungary",
-         name="Elektryka hurt Węgry",       unit="€/MWh",
-         contract_size=1, contract_unit="MWh", category="Elektryka", color="#ff7043"),
-    dict(id="NL_POWER", source="ember", series="Netherlands",
-         name="Elektryka hurt Holandia",    unit="€/MWh",
-         contract_size=1, contract_unit="MWh", category="Elektryka", color="#ffb74d"),
-    dict(id="GB_POWER", source="ember", series="United Kingdom",
-         name="Elektryka hurt UK",          unit="€/MWh",
-         contract_size=1, contract_unit="MWh", category="Elektryka", color="#7e57c2"),
+    <h3>🗂️ Kategorie produktów</h3>
+    <p><b>Energia</b>: WTI, Brent, Henry Hub, Heating Oil, RBOB, US Gulf Gasoline, US Retail Gasoline, TTF, węgiel AU, LNG JP, <b>NG storage US (Bcf, tygodniowo)</b>, <b>Crude storage US (tys. bbl, tygodniowo)</b>.<br>
+    <b>Metale</b>: Gold, Silver, Copper, Platinum, <b>Palladium</b> (wszystkie z COMEX/NYMEX).<br>
+    <b>Rolne</b>: 3 pszenice US (SRW, HRW, Spring), kukurydza, soja (bean/meal/oil), kawa, kakao, cukier, <b>bawełna, sok pomarańczowy, bydło żywe, trzoda chlewna</b>, MATIF Paris (pszenica, kukurydza, rzepak).<br>
+    <b>Lokalne PL</b>: retail Pb95/ON/LPG/Olej opałowy (z EU WOB od 2005), hurt Orlen (Pb95/Pb98/ON/Ekoterm - narastające od uruchomienia), skup zbóż (Common wheat / Feed maize / Rye / Feed barley z aliasami).<br>
+    <b>Europa</b>: retail paliw 5 krajów UE + UE-27, <b>EUA (CO2, EU ETS)</b> — uprawnienia do emisji, kluczowe dla marż elektrowni.<br>
+    <b>Elektryka</b>: day-ahead <b>hurt</b> dla 10 krajów UE (PL/DE/FR/ES/IT/CZ/SK/HU/NL/GB), <b>detal (Eurostat, półroczne)</b> dla 7 krajów + UE-27.<br>
+    <b>Waluty</b>: EUR/USD, EUR/PLN, USD/PLN, GBP/USD, USD/JPY, USD/CHF (kursy z Yahoo).<br>
+    <b>COT</b>: pozycje Money Managers dla 9 rynków (WTI, Brent, NG, Gold, Silver, Copper, Corn, Wheat, Soybean).</p>
 
-    # Elektryka DETAL (gospodarstwa domowe) - Eurostat nrg_pc_204, band DC 2500-4999 kWh/rok,
-    # wszystkie podatki wliczone, EUR/kWh, dane polroczne (S1/S2, publikacja ~4mc po polroczu)
-    dict(id="PL_POWER_RETAIL", source="eurostat_elec", series="PL",
-         name="Elektryka detal Polska",     unit="€/kWh",
-         contract_size=1, contract_unit="kWh", category="Elektryka", color="#ffca28"),
-    dict(id="DE_POWER_RETAIL", source="eurostat_elec", series="DE",
-         name="Elektryka detal Niemcy",     unit="€/kWh",
-         contract_size=1, contract_unit="kWh", category="Elektryka", color="#ff9800"),
-    dict(id="FR_POWER_RETAIL", source="eurostat_elec", series="FR",
-         name="Elektryka detal Francja",    unit="€/kWh",
-         contract_size=1, contract_unit="kWh", category="Elektryka", color="#5c6bc0"),
-    dict(id="ES_POWER_RETAIL", source="eurostat_elec", series="ES",
-         name="Elektryka detal Hiszpania",  unit="€/kWh",
-         contract_size=1, contract_unit="kWh", category="Elektryka", color="#ec407a"),
-    dict(id="IT_POWER_RETAIL", source="eurostat_elec", series="IT",
-         name="Elektryka detal Włochy",     unit="€/kWh",
-         contract_size=1, contract_unit="kWh", category="Elektryka", color="#66bb6a"),
-    dict(id="CZ_POWER_RETAIL", source="eurostat_elec", series="CZ",
-         name="Elektryka detal Czechy",     unit="€/kWh",
-         contract_size=1, contract_unit="kWh", category="Elektryka", color="#26a69a"),
-    dict(id="NL_POWER_RETAIL", source="eurostat_elec", series="NL",
-         name="Elektryka detal Holandia",   unit="€/kWh",
-         contract_size=1, contract_unit="kWh", category="Elektryka", color="#ffb74d"),
-    dict(id="EU_POWER_RETAIL", source="eurostat_elec", series="EU27_2020",
-         name="Elektryka detal UE-27",      unit="€/kWh",
-         contract_size=1, contract_unit="kWh", category="Elektryka", color="#9575cd"),
+    <h3>🔌 Źródła danych (wszystkie darmowe)</h3>
+    <ul>
+      <li><b>FRED</b> (Federal Reserve St. Louis) — energia, walutowe historyczne</li>
+      <li><b>EIA</b> (US Energy Information Admin) — energia, backup</li>
+      <li><b>Yahoo Finance</b> — futures metali/zbóż/FX, TTF</li>
+      <li><b>Stooq</b> — futures MATIF Paris (kukurydza, rzepak), MGEX Spring Wheat</li>
+      <li><b>EU Weekly Oil Bulletin</b> — cotygodniowe retail paliw w EU od 2005</li>
+      <li><b>Ember Energy</b> — day-ahead elektryka <b>hurt</b> dla EU (CC-BY-4.0)</li>
+      <li><b>Eurostat nrg_pc_204</b> — półroczne detal elektryki (gospodarstwa domowe, band DC 2500-4999 kWh/rok, EUR/kWh z podatkami)</li>
+      <li><b>CFTC</b> — cotygodniowe COT reports (Socrata API, alternatywne nazwy rynków dla nowych kontraktów)</li>
+      <li><b>cenypaliw.fyi</b> — scraping cen hurtowych Orlenu (append-only od uruchomienia)</li>
+      <li><b>EU Agri-Food Data Portal</b> — ceny skupu zbóż (aliasy kodów SEG/BLT/MAI/ORG)</li>
+    </ul>
 
-    # CFTC COT - pozycja NETTO Money Managers (Long - Short) per market, tygodniowo
-    # Klasyczny wskaźnik kontrariański - ekstremum netto sygnalizuje odwrócenie
-    # CFTC COT - series_alt to alternatywne nazwy market (CFTC czasem zmienia formatowanie).
-    # Fetcher tworzy union z wszystkich alternatyw. Merge_history zabezpiecza stara historie.
-    dict(id="COT_WTI_NET",    source="cftc",
-         series="CRUDE OIL, LIGHT SWEET - NEW YORK MERCANTILE EXCHANGE",
-         series_alt=["WTI FINANCIAL CRUDE OIL - NEW YORK MERCANTILE EXCHANGE",
-                     "CRUDE OIL, LIGHT SWEET-WTI - ICE FUTURES EUROPE"],
-         name="COT WTI - Money Mgr netto",  unit="kontrakty", contract_size=1, contract_unit="kontrakty",
-         category="COT", color="#ff8a65"),
-    dict(id="COT_BRENT_NET",  source="cftc",
-         series="BRENT CRUDE OIL LAST DAY - NEW YORK MERCANTILE EXCHANGE",
-         series_alt=["BRENT LAST DAY - NEW YORK MERCANTILE EXCHANGE",
-                     "BRENT FINANCIAL FUTURES - NEW YORK MERCANTILE EXCHANGE"],
-         name="COT Brent - Money Mgr netto",unit="kontrakty", contract_size=1, contract_unit="kontrakty",
-         category="COT", color="#ba68c8"),
-    dict(id="COT_NG_NET",     source="cftc",
-         series="NATURAL GAS - NEW YORK MERCANTILE EXCHANGE",
-         series_alt=["HENRY HUB NATURAL GAS - NEW YORK MERCANTILE EXCHANGE",
-                     "NAT GAS ICE LD1 - NEW YORK MERCANTILE EXCHANGE",
-                     "NATURAL GAS HENRY HUB LAST DAY - NEW YORK MERCANTILE EXCHANGE"],
-         name="COT NG - Money Mgr netto",   unit="kontrakty", contract_size=1, contract_unit="kontrakty",
-         category="COT", color="#4fc3f7"),
-    dict(id="COT_GOLD_NET",   source="cftc",
-         series="GOLD - COMMODITY EXCHANGE INC.",
-         name="COT Gold - Money Mgr netto", unit="kontrakty", contract_size=1, contract_unit="kontrakty",
-         category="COT", color="#ffd54f"),
-    dict(id="COT_SILVER_NET", source="cftc",
-         series="SILVER - COMMODITY EXCHANGE INC.",
-         name="COT Silver - Money Mgr netto", unit="kontrakty", contract_size=1, contract_unit="kontrakty",
-         category="COT", color="#b0bec5"),
-    dict(id="COT_COPPER_NET", source="cftc",
-         series="COPPER-GRADE #1 - COMMODITY EXCHANGE INC.",
-         series_alt=["COPPER - COMMODITY EXCHANGE INC.",
-                     "COPPER-GRADE #1 - COMEX"],
-         name="COT Copper - Money Mgr netto", unit="kontrakty", contract_size=1, contract_unit="kontrakty",
-         category="COT", color="#d84315"),
-    dict(id="COT_CORN_NET",   source="cftc",
-         series="CORN - CHICAGO BOARD OF TRADE",
-         name="COT Corn - Money Mgr netto", unit="kontrakty", contract_size=1, contract_unit="kontrakty",
-         category="COT", color="#fbc02d"),
-    dict(id="COT_WHEAT_NET",  source="cftc",
-         series="WHEAT-SRW - CHICAGO BOARD OF TRADE",
-         name="COT Wheat - Money Mgr netto",unit="kontrakty", contract_size=1, contract_unit="kontrakty",
-         category="COT", color="#8d6e63"),
-    dict(id="COT_SOYBEAN_NET",source="cftc",
-         series="SOYBEANS - CHICAGO BOARD OF TRADE",
-         name="COT Soybean - Money Mgr netto", unit="kontrakty", contract_size=1, contract_unit="kontrakty",
-         category="COT", color="#7cb342"),
+    <h3>🚨 System alertów</h3>
+    <p>Osobny cron 30 min po głównym fetchu sprawdza reguły z <code>data/alerts_config.json</code>. Log w <code>data/alerts_log.json</code>, opcjonalnie email SMTP (Gmail App Password w GitHub Secrets: <code>SMTP_USER</code>, <code>SMTP_PASS</code>, <code>ALERT_EMAIL_TO</code>). Dedup: ta sama reguła nie strzela mailem 2× w 3 dni.</p>
+    <p><b>Typy reguł:</b></p>
+    <ul>
+      <li><code>product_above</code> / <code>product_below</code> — próg absolutny na cenę.</li>
+      <li><code>product_zscore</code> — |z| ≥ <code>threshold</code> w oknie <code>window</code> dni (klasyczny sygnał mean-reversion).</li>
+      <li><code>spread_zscore</code> — j.w. dla wielo-nogowego spreadu z listą <code>legs</code>: <code>[{pid,side:+1|-1,qty}]</code>.</li>
+      <li><code>pct_change</code> — |zmiana %| ≥ <code>threshold</code> w <code>days</code> dni; <code>both_directions:true</code> dla obu kierunków.</li>
+      <li><code>high_window</code> / <code>low_window</code> — nowe max/min z ostatnich <code>window</code> dni (52-tyg = 252).</li>
+      <li><code>ma_cross</code> — przecięcie SMA <code>short</code> / <code>long</code> (klasyk 50/200 = golden/death cross). <code>direction</code>: <code>golden</code> / <code>death</code> / <code>both</code>.</li>
+    </ul>
 
-    # Polska: ceny skupu zbóż - EU Agri-Food Data Portal (tygodniowe/miesieczne)
-    dict(id="PL_WHEAT_SKUP",  source="agrifood_cereal", series="Common wheat",
-         name="Pszenica skup PL (EU)", unit="€/t",
-         contract_size=1, contract_unit="t", category="Lokalne PL", color="#8d6e63"),
-    dict(id="PL_CORN_SKUP",   source="agrifood_cereal", series="Feed maize",
-         name="Kukurydza skup PL (EU)", unit="€/t",
-         contract_size=1, contract_unit="t", category="Lokalne PL", color="#fbc02d"),
-    dict(id="PL_RYE_SKUP",    source="agrifood_cereal", series="Rye",
-         name="Żyto skup PL (EU)", unit="€/t",
-         contract_size=1, contract_unit="t", category="Lokalne PL", color="#a1887f"),
-    dict(id="PL_BARLEY_SKUP", source="agrifood_cereal", series="Feed barley",
-         name="Jęczmień skup PL (EU)", unit="€/t",
-         contract_size=1, contract_unit="t", category="Lokalne PL", color="#c0ca33"),
+    <h3>💡 Tips i tricks</h3>
+    <ul>
+      <li><b>Zoom myszką</b> na każdym wykresie - zaznacz obszar, dwuklik cofa</li>
+      <li>W <b>Sezonowej z %</b> zoom automatycznie przelicza bazę - zaznacz marzec-lipiec = % od 1 marca</li>
+      <li><b>Custom</b> zakres czasowy = date picker start/koniec</li>
+      <li>Historia narasta - <b>dane nie znikają</b> nawet gdy fetch zawiedzie (ochrona historii od v2.7)</li>
+      <li>Aktualizacja automatyczna 2× dziennie (07:00 i 19:00 UTC = 09:00 i 21:00 PL)</li>
+    </ul>
 
-    # MATIF Paryz (Euronext) - best-effort, Yahoo bywa kaprysny dla EU futures
-    dict(id="MATIF_WHEAT", source="yahoo", series="EBM.PA",
-         name="Pszenica młynarska (MATIF Paris)", unit="€/t",
-         contract_size=50, contract_unit="t",
-         category="Rolne", color="#ff7043"),
-    dict(id="MATIF_CORN",  source="stooq", series="ema.f",
-         name="Kukurydza (MATIF Paris)",  unit="€/t",
-         contract_size=50, contract_unit="t",
-         category="Rolne", color="#ffab40"),
-    dict(id="MATIF_RAPESEED", source="stooq", series="rr.f",
-         name="Rzepak (MATIF Paris)",     unit="€/t",
-         contract_size=50, contract_unit="t",
-         category="Rolne", color="#c0ca33"),
+    <p style="color:var(--muted); font-size:11px; margin-top:24px; text-align:center">
+      Market Analytics Lab v2.9 · projekt i realizacja: Łukasz Osman<br>
+      Repo: <a href="https://github.com/LukeOsmanPL/market-analytics-lab" target="_blank" style="color:var(--accent)">github.com/LukeOsmanPL/market-analytics-lab</a>
+    </p>
+  </div>
+</div>
 
-    # Europa - gaz i inne benchmarki europejskie
-    dict(id="TTF",   source="yahoo", series="TTF=F",
-         name="TTF (gaz EU, Amsterdam)",  unit="€/MWh",
-         contract_size=1000, contract_unit="MWh",
-         category="Europa", color="#66bb6a"),
-    # EUA - EU Emission Allowances (uprawnienia do emisji CO2, ICE Amsterdam)
-    # Kluczowe dla marz elektrowni gazowych/weglowych - clean spark/dark spread
-    dict(id="EUA",   source="stooq", series="co2.f",
-         name="EUA (CO2, EU ETS)",       unit="€/t",
-         contract_size=1000, contract_unit="t CO2",
-         category="Europa", color="#78909c"),
-    dict(id="EU_NG_MO", source="fred", series="PNGASEUUSDM",
-         name="Gaz EU (WB, miesieczny)", unit="$/MMBtu",
-         contract_size=1, contract_unit="MMBtu",
-         category="Europa", color="#81c784"),
-    dict(id="COAL_AU", source="fred", series="PCOALAUUSDM",
-         name="Wegiel Australia (WB, miesieczny)", unit="$/mt",
-         contract_size=1, contract_unit="mt",
-         category="Energia", color="#455a64"),
-    dict(id="LNG_JP",  source="fred", series="PNGASJPUSDM",
-         name="LNG Japonia (WB, miesieczny)", unit="$/MMBtu",
-         contract_size=1, contract_unit="MMBtu",
-         category="Energia", color="#e57373"),
+<div id="loading">
+  <p>Wczytuję dane z <code>data/prices.json</code>…</p>
+</div>
 
-    # Tropikalne (Yahoo Finance)
-    dict(id="COFFEE",  source="yahoo", series="KC=F", unit_scale=0.01,
-         name="Kawa Arabica (ICE)",       unit="$/lb",
-         contract_size=37500, contract_unit="lb",
-         category="Rolne", color="#6d4c41"),
-    dict(id="COCOA",   source="yahoo", series="CC=F",
-         name="Kakao (ICE)",              unit="$/mt",
-         contract_size=10,   contract_unit="mt",
-         category="Rolne", color="#5d4037"),
-    dict(id="SUGAR",   source="yahoo", series="SB=F", unit_scale=0.01,
-         name="Cukier (ICE 11)",          unit="$/lb",
-         contract_size=112000, contract_unit="lb",
-         category="Rolne", color="#f8bbd0"),
-    dict(id="COTTON",  source="yahoo", series="CT=F", unit_scale=0.01,
-         name="Bawelna (ICE)",            unit="$/lb",
-         contract_size=50000, contract_unit="lb",
-         category="Rolne", color="#f5f5dc"),
-    dict(id="OJ",      source="yahoo", series="OJ=F", unit_scale=0.01,
-         name="Sok pomaranczowy (ICE)",   unit="$/lb",
-         contract_size=15000, contract_unit="lb",
-         category="Rolne", color="#ff9800"),
-    # Zywiec (Yahoo, CME)
-    dict(id="LIVE_CATTLE", source="yahoo", series="LE=F", unit_scale=0.01,
-         name="Bydlo zywe (CME)",         unit="$/lb",
-         contract_size=40000, contract_unit="lb",
-         category="Rolne", color="#8d6e63"),
-    dict(id="LEAN_HOGS",   source="yahoo", series="HE=F", unit_scale=0.01,
-         name="Trzoda chlewna (CME)",     unit="$/lb",
-         contract_size=40000, contract_unit="lb",
-         category="Rolne", color="#e91e63"),
-]
+<div id="loadError" style="display:none">
+  <h3 style="color:var(--bad)">Nie mogłem wczytać danych</h3>
+  <p>Prawdopodobnie plik <code>data/prices.json</code> nie istnieje jeszcze. Uruchom workflow w Actions.</p>
+  <pre id="errorDetail"></pre>
+</div>
 
+<main id="app" style="display:none">
+  <aside>
+    <h3>Produkty</h3>
+    <div class="products" id="products"></div>
+    <div class="hint" id="selectHint"></div>
 
-def fetch_fred(series_id: str) -> list:
-    """Zwraca liste {date, value} dla serii FRED."""
-    url = (
-        "https://api.stlouisfed.org/fred/series/observations"
-        f"?series_id={series_id}&api_key={FRED_KEY}&file_type=json"
-        f"&observation_start={START_DATE}"
-    )
-    req = urllib.request.Request(url, headers={"User-Agent": "energy-analytics/1.0"})
-    with urllib.request.urlopen(req, timeout=60) as r:
-        data = json.load(r)
-    obs = []
-    for o in data.get("observations", []):
-        v = o.get("value", "")
-        if v and v != ".":
-            try:
-                obs.append({"date": o["date"], "value": float(v)})
-            except ValueError:
-                pass
-    return obs
+    <section class="divider">
+      <h3>Zakres czasu</h3>
+      <div class="range-buttons" id="ranges">
+        <button data-r="1W">1T</button>
+        <button data-r="1M">1M</button>
+        <button data-r="6M">6M</button>
+        <button data-r="1Y" class="active">1R</button>
+        <button data-r="2Y">2L</button>
+        <button data-r="3Y">3L</button>
+        <button data-r="5Y">5L</button>
+        <button data-r="10Y">10L</button>
+        <button data-r="MAX">MAX</button>
+        <button data-r="CUSTOM">Custom</button>
+      </div>
+      <div class="date-range" id="dateRange" style="display:none">
+        <input type="date" id="dateFrom">
+        <span style="color:var(--muted)">→</span>
+        <input type="date" id="dateTo">
+      </div>
+      <div class="hint">Tip: na wykresie zaznacz obszar myszką żeby przybliżyć. Dwuklik cofa.</div>
+    </section>
 
+    <section class="divider">
+      <div class="toggle"><input type="checkbox" id="showEvents" checked><label for="showEvents"><b>Pokaż wydarzenia</b> na wykresach</label></div>
+      <div class="hint">Historyczne wydarzenia (inwazja Ukrainy, sabotaż Nord Stream, decyzje OPEC, itd.).</div>
+      <div class="row" style="margin-top:10px"><label>Jednostka docelowa</label>
+        <select id="unitOverride">
+          <option value="native" selected>oryginalna (per produkt)</option>
+          <optgroup label="Paliwa - USD">
+            <option value="USD/gal">$ / gal</option>
+            <option value="USD/L">$ / L</option>
+          </optgroup>
+          <optgroup label="Paliwa - EUR">
+            <option value="EUR/L">€ / L</option>
+            <option value="EUR/1000L">€ / 1000 L</option>
+          </optgroup>
+          <optgroup label="Paliwa - PLN">
+            <option value="PLN/L">zł / L</option>
+            <option value="PLN/1000L">zł / 1000 L</option>
+          </optgroup>
+          <optgroup label="Zboża/metale (masa)">
+            <option value="USD/mt">$ / tona</option>
+            <option value="EUR/mt">€ / tona</option>
+            <option value="PLN/mt">zł / tona</option>
+          </optgroup>
+        </select>
+      </div>
+      <div class="hint">Konwertuje ceny na wybraną jednostkę z użyciem aktualnych kursów walutowych (EUR/USD/PLN). Np. WTI ($/bbl) → zł/L do porównania z Orlen hurt. Kukurydza CBOT ($/bu) → €/mt do porównania z MATIF Paris. Bushel: kukurydza 25.4 kg, pszenica/soja 27.2 kg.</div>
+    </section>
 
-WOB_URL = ("https://energy.ec.europa.eu/document/download/"
-           "906e60ca-8b6a-44e7-8589-652854d2fd3f_en"
-           "?filename=Weekly_Oil_Bulletin_Prices_History_maticni_4web.xlsx")
-_WOB_CACHE = None  # cache pobranego XLSX - jeden download na cala petle produktow
+    <section class="divider">
+      <h3>Tryb analizy</h3>
+      <div class="mode-buttons" id="modes">
+        <button data-m="dashboard">Dashboard</button>
+        <button data-m="standard" class="active">Nakładka</button>
+        <button data-m="seasonal">Sezonowa</button>
+        <button data-m="spread">Spread</button>
+        <button data-m="ratio">Ratio</button>
+      </div>
+    </section>
 
-def _download_wob_xlsx():
-    """Downloaduje WOB XLSX raz i cache'uje surowe bajty."""
-    global _WOB_CACHE
-    if _WOB_CACHE is not None:
-        return _WOB_CACHE
-    print(f"  [WOB] pobieram XLSX z ec.europa.eu ...", flush=True)
-    req = urllib.request.Request(WOB_URL, headers={"User-Agent": "Mozilla/5.0 (energy-analytics)"})
-    with urllib.request.urlopen(req, timeout=120) as r:
-        _WOB_CACHE = r.read()
-    print(f"  [WOB] pobrano {len(_WOB_CACHE)/1024/1024:.1f} MB", flush=True)
-    return _WOB_CACHE
+    <section class="divider" id="stdCtrl">
+      <div class="toggle"><input type="checkbox" id="pctToggle"><label for="pctToggle">Skala procentowa (od początku okna)</label></div>
+      <div class="toggle"><input type="checkbox" id="dualAxis" checked><label for="dualAxis">Druga oś Y</label></div>
+      <div class="toggle"><input type="checkbox" id="showSMA"><label for="showSMA">SMA 50 &amp; 200 (dla 1 produktu)</label></div>
+      <div class="toggle"><input type="checkbox" id="showBB"><label for="showBB">Bollinger Bands 20d ±2σ</label></div>
+      <div class="toggle"><input type="checkbox" id="showRSI"><label for="showRSI">RSI 14 (osobny wykres pod głównym)</label></div>
+      <div class="hint">Włącz % kiedy porównujesz produkty o różnej skali. Wskaźniki techniczne działają dla pojedynczego produktu (lub pierwszego z zaznaczonych).</div>
+    </section>
 
+    <section class="divider" id="seasonalCtrl" style="display:none">
+      <div class="row"><label>Okno średniej</label>
+        <select id="seasonWindow">
+          <option value="3">3 lata</option>
+          <option value="5" selected>5 lat</option>
+          <option value="10">10 lat</option>
+          <option value="15">15 lat</option>
+          <option value="20">20 lat</option>
+          <option value="25">25 lat</option>
+          <option value="30">30 lat</option>
+        </select>
+      </div>
+      <div class="row"><label>Metoda uśredniania</label>
+        <select id="seasonAvg">
+          <option value="mean" selected>średnia arytm.</option>
+          <option value="median">mediana (odporna)</option>
+          <option value="trimmed">średnia obcięta 20%</option>
+        </select>
+      </div>
+      <div class="toggle"><input type="checkbox" id="seasonPct"><label for="seasonPct">Skala % (od początku widocznego zakresu)</label></div>
+      <div class="hint" style="margin-top:2px">Domyślnie liczy od 1 stycznia. Kiedy zaznaczysz myszką fragment wykresu (np. marzec-lipiec), % przelicza się automatycznie od pierwszego dnia widocznego. Dwuklik cofa do 1 stycznia.</div>
+      <div class="toggle"><input type="checkbox" id="showMinMax" checked><label for="showMinMax">Koperta min/max</label></div>
+      <div class="toggle"><input type="checkbox" id="showYears"><label for="showYears">Pokaż wszystkie lata</label></div>
+      <div class="row"><label>Filtr ENSO</label>
+        <select id="ensoFilter">
+          <option value="all" selected>Wszystkie lata</option>
+          <option value="el_nino">☀️ Tylko El Niño</option>
+          <option value="la_nina">❄️ Tylko La Niña</option>
+          <option value="neutral">⚪ Tylko neutralne</option>
+          <option value="spread">Spread La Niña − El Niño</option>
+        </select>
+      </div>
+      <div class="hint">ENSO wpływa mocno na produkty rolne (susze/powodzie w kluczowych regionach). Filtr uwzględnia tylko lata danej fazy w liczeniu średniej. Spread pokazuje typową różnicę cen La Niña vs El Niño per dzień roku.</div>
+    </section>
 
-_WOB_PARSED = None
+    <section class="divider" id="spreadCtrl" style="display:none">
+      <h3>Widok</h3>
+      <div class="sub-mode" id="spreadView">
+        <button data-sv="pnl" class="active">P&amp;L pozycji</button>
+        <button data-sv="seasonal">Sezonowy</button>
+      </div>
 
-def _parse_wob_workbook():
-    """Parsuje XLSX WOB (wielopoziomowe naglowki: kraj + produkt).
-    Zwraca slownik: {(country, product): [(date_iso, price), ...]}.
-    Wynik cache'owany globalnie - pobierany raz na uruchomienie skryptu.
-    """
-    global _WOB_PARSED
-    if _WOB_PARSED is not None:
-        return _WOB_PARSED
+      <div id="spreadPnlCtrl">
+        <div class="toggle" id="dollarModeWrap" style="margin-top:8px">
+          <input type="checkbox" id="dollarMode" checked>
+          <label for="dollarMode">Wartość w $ (rozmiary kontraktów)</label>
+        </div>
+        <div class="toggle">
+          <input type="checkbox" id="spreadPnlPct">
+          <label for="spreadPnlPct">Skala % (P&amp;L / zaangażowanie)</label>
+        </div>
+      </div>
 
-    import openpyxl
-    from io import BytesIO
-    from datetime import datetime as _dt
+      <div id="spreadSeasonalCtrl" style="display:none">
+        <div class="row"><label>Okno średniej</label>
+          <select id="spreadSeasonWindow">
+            <option value="3">3 lata</option>
+            <option value="5" selected>5 lat</option>
+            <option value="10">10 lat</option>
+            <option value="15">15 lat</option>
+            <option value="20">20 lat</option>
+            <option value="25">25 lat</option>
+            <option value="30">30 lat</option>
+          </select>
+        </div>
+        <div class="row"><label>Metoda uśredniania</label>
+          <select id="spreadSeasonAvg">
+            <option value="mean" selected>średnia arytm.</option>
+            <option value="median">mediana</option>
+            <option value="trimmed">średnia obcięta 20%</option>
+          </select>
+        </div>
+        <div class="toggle"><input type="checkbox" id="spreadSeasonPct"><label for="spreadSeasonPct">Skala % (od 1 stycznia)</label></div>
+        <div class="toggle"><input type="checkbox" id="spreadShowMinMax" checked><label for="spreadShowMinMax">Koperta min/max</label></div>
+        <div class="toggle"><input type="checkbox" id="spreadShowYears"><label for="spreadShowYears">Wszystkie lata</label></div>
+      </div>
 
-    raw = _download_wob_xlsx()
-    wb = openpyxl.load_workbook(BytesIO(raw), read_only=False, data_only=True)
-    print(f"  [WOB] arkusze: {wb.sheetnames}", flush=True)
+      <h3 style="margin-top:14px">Nogi spreadu</h3>
+      <div class="row" style="margin-bottom:8px">
+        <label style="min-width:auto">Preset</label>
+        <select id="spreadPreset" style="flex:1">
+          <option value="">— wybierz preset —</option>
+          <option value="crack_321">Crack 3:2:1 (rafineria: 3WTI −2RBOB −1HEAT)</option>
+          <option value="wti_brent">WTI − Brent (transatlantyk)</option>
+          <option value="ng_wti">NG − WTI (gaz vs ropa)</option>
+          <option value="us_eu_wheat">US − MATIF wheat (transatlantyk zbóż)</option>
+          <option value="corn_wheat">Corn − Wheat (ratio agro)</option>
+          <option value="soy_corn">Soybean − Corn (rotation)</option>
+          <option value="gold_silver">Gold − Silver (metal ratio)</option>
+          <option value="clean_spark_de">Clean Spark DE (elektryka − 2×TTF − EUA)</option>
+          <option value="pl_de_power">PL − DE power (arb hurt)</option>
+          <option value="cot_wti_brent">COT WTI − COT Brent (spread pozycji)</option>
+        </select>
+      </div>
+      <div id="spreadLegsList"></div>
+      <button id="addLegBtn" class="add-leg-btn">+ Dodaj nogę</button>
+      <div id="positionSummary" class="position-summary"></div>
+    </section>
+  </aside>
 
-    if 'Prices with taxes' not in wb.sheetnames:
-        print(f"  [WOB] BLAD: brak arkusza 'Prices with taxes'", flush=True)
-        _WOB_PARSED = {}
-        return _WOB_PARSED
-    ws = wb['Prices with taxes']
+  <div class="content">
+    <div class="card">
+      <div class="chart-title">
+        <span class="title-text" id="mainTitle">—</span>
+        <button class="export-btn" onclick="exportPlotCSV('mainPlot', 'chart')">📥 CSV</button>
+      </div>
+      <div id="mainPlot" class="plot"></div>
+      <div id="rsiPlot" class="plot-small" style="display:none; margin-top:8px"></div>
+      <div id="eventsList"></div>
+    </div>
+    <div class="card mode-panel" id="panel-dashboard">
+      <div id="dashboardContent"></div>
+    </div>
 
-    # Merged cells: rozprowadz wartosc top-left po calym merge
-    merged_values = {}
-    for mrange in ws.merged_cells.ranges:
-        top = ws.cell(row=mrange.min_row, column=mrange.min_col).value
-        for r in range(mrange.min_row, mrange.max_row + 1):
-            for c in range(mrange.min_col, mrange.max_col + 1):
-                merged_values[(r, c)] = top
+    <div class="card mode-panel active" id="panel-standard">
+      <div class="chart-title" id="corrTitle">Korelacja krocząca (60 dni)</div>
+      <div class="row" style="margin-bottom:6px" id="corrWindowRow">
+        <label style="min-width:auto">Okno korelacji</label>
+        <select id="corrWindow" style="max-width:120px">
+          <option value="20">20 dni</option>
+          <option value="30">30 dni</option>
+          <option value="60" selected>60 dni</option>
+          <option value="90">90 dni</option>
+          <option value="120">120 dni</option>
+          <option value="252">252 dni (1Y)</option>
+        </select>
+        <button class="export-btn" onclick="exportPlotCSV('corrPlot', 'correlation')" style="margin-left:8px">📥 CSV</button>
+      </div>
+      <div id="corrPlot" class="plot-small"></div>
+    </div>
+    <div class="card mode-panel" id="panel-seasonal">
+      <div class="chart-title">Statystyki sezonowe</div>
+      <div id="seasonalStats"></div>
+    </div>
+    <div class="card mode-panel" id="panel-spread">
+      <div id="spreadDetail"></div>
+    </div>
+    <div class="card mode-panel" id="panel-ratio">
+      <div class="chart-title" id="ratioTitle">Statystyki ratio</div>
+      <div id="ratioStats"></div>
+    </div>
+    <div class="card">
+      <div class="chart-title">Statystyki dla widocznego okresu</div>
+      <div class="stats-grid" id="stats"></div>
+    </div>
+  </div>
+</main>
 
-    def cell(r, c):
-        v = merged_values.get((r, c))
-        if v is not None: return v
-        return ws.cell(row=r, column=c).value
+<script>
+/* ============ ładowanie danych ============ */
+let PRODUCTS = [], PMAP = {}, CATS = [];
+let DATA = {};
+let FULL_DATES = [];
+let MIN_DATE, MAX_DATE;
+let EVENTS = [];
+let ENSO = {}; // { "2015": "el_nino", "2020": "la_nina", ... }
+const ENSO_ICONS  = { el_nino: '☀️', la_nina: '❄️', neutral: '⚪' };
+const ENSO_LABELS = { el_nino: 'El Niño', la_nina: 'La Niña', neutral: 'Neutralny' };
+const ENSO_COLORS = { el_nino: '#ef5350', la_nina: '#4fc3f7', neutral: '#8b96a5' };
+function ensoOf(year) { return ENSO[String(year)] || 'neutral'; }
 
-    print(f"  [WOB] wymiary: {ws.max_row} wierszy x {ws.max_column} kolumn", flush=True)
+let ALERTS_LOG = [];
 
-    # Struktura WOB:
-    #   R2 = nazwa produktu po francusku (np. 'Euro-super 95', 'Gas oil automob')
-    #   R4+ = dane: kol 1 = data, kol 2 = 'EU_' marker, kol 3-8 = 6 produktow EU,
-    #             kol 9 = 'EUR_' marker, kol 10-15 = 6 produktow EUR, itd.
-    #   Kazdy kraj: 1 kolumna markera + 6 kolumn produktow.
+async function loadData() {
+  try {
+    const [pricesRes, metaRes, eventsRes, ensoRes, alertsRes] = await Promise.all([
+      fetch('data/prices.json'), fetch('data/meta.json'),
+      fetch('data/events.json').catch(() => ({ ok: false })),
+      fetch('data/enso.json').catch(() => ({ ok: false })),
+      fetch('data/alerts_log.json').catch(() => ({ ok: false })),
+    ]);
+    if (!pricesRes.ok) throw new Error(`prices.json: ${pricesRes.status}`);
+    if (!metaRes.ok)  throw new Error(`meta.json: ${metaRes.status}`);
+    const prices = await pricesRes.json();
+    const meta   = await metaRes.json();
+    if (eventsRes.ok) {
+      try { EVENTS = (await eventsRes.json()).events || []; } catch(_) { EVENTS = []; }
+    }
+    if (ensoRes.ok) {
+      try { ENSO = (await ensoRes.json()).years || {}; } catch(_) { ENSO = {}; }
+    }
+    if (alertsRes.ok) {
+      try { ALERTS_LOG = (await alertsRes.json()).alerts || []; } catch(_) { ALERTS_LOG = []; }
+    }
 
-    # Kanonizacja nazw produktow (po francusku w R2 -> nazwy angielskie)
-    def normalize_product(s):
-        if not s: return None
-        s = str(s).strip().lower()
-        if 'euro-super 95' in s or 'euro super 95' in s: return 'Euro-Super 95'
-        if 'gas oil automob' in s or 'diesel' in s:      return 'Automotive Gas Oil'
-        if 'gas oil de cha' in s or 'heating' in s:      return 'Heating Gas Oil'
-        if 'gpl' in s or 'lpg' in s:                     return 'LPG'
-        if 'fuel oil -schw' in s.replace(' ', ''):       return 'Residual Fuel Oil (low S)'
-        if 'fuel oil - sch' in s or 'fuel oil -sch' in s: return 'Residual Fuel Oil (high S)'
-        return None
+    PRODUCTS = meta.products.map(p => ({
+      id: p.id, name: p.name, unit: p.unit, color: p.color,
+      contractSize: p.contract_size, contractUnit: p.contract_unit,
+      contractDesc: (p.contract_size === 1) ? 'spot (nie futures)' :
+                    `${p.contract_size.toLocaleString('en-US')} ${p.contract_unit}`,
+      cat: p.category,
+    }));
+    PMAP = Object.fromEntries(PRODUCTS.map(p => [p.id, p]));
+    CATS = Array.from(new Set(PRODUCTS.map(p => p.cat)));
 
-    # Mapa kolumn produktow z R2
-    product_by_col = {}
-    for c in range(2, ws.max_column + 1):
-        v = cell(2, c)
-        prod = normalize_product(v)
-        if prod:
-            product_by_col[c] = prod
+    const allDates = new Set();
+    for (const p of PRODUCTS) {
+      const obs = prices.products[p.id] || [];
+      DATA[p.id] = { dates: obs.map(o => o.date), prices: obs.map(o => o.value) };
+      obs.forEach(o => allDates.add(o.date));
+    }
+    FULL_DATES = Array.from(allDates).sort();
+    MIN_DATE = FULL_DATES[0];
+    MAX_DATE = FULL_DATES[FULL_DATES.length - 1];
 
-    print(f"  [WOB] kolumn z produktami: {len(product_by_col)}", flush=True)
+    const gen = new Date(prices.generated_at || meta.generated_at);
+    document.getElementById('dataFreshness').textContent =
+      `dane z ${gen.toLocaleString('pl-PL', {dateStyle: 'medium', timeStyle: 'short'})} · ${PRODUCTS.length} produktów`;
 
-    # Znajdz pierwszy wiersz z danymi (data + kod kraju typu 'EU_', 'PL_', 'DE_')
-    first_data_row = None
-    for r in range(3, 10):
-        v1 = cell(r, 1)
-        if hasattr(v1, 'strftime'):
-            first_data_row = r
-            break
-        if isinstance(v1, str):
-            try:
-                _dt.strptime(v1[:10], '%Y-%m-%d')
-                first_data_row = r
-                break
-            except: pass
-    if first_data_row is None:
-        first_data_row = 4
-    print(f"  [WOB] pierwsze dane w wierszu {first_data_row}", flush=True)
-
-    # Wykryj kolumny markerow krajow z pierwszego wiersza danych (wartosci konczace sie na '_')
-    country_by_col = {}  # col -> country_code (bez '_')
-    for c in range(1, ws.max_column + 1):
-        v = cell(first_data_row, c)
-        if isinstance(v, str) and v.endswith('_') and 1 <= len(v) <= 5:
-            country_by_col[c] = v.rstrip('_')
-
-    print(f"  [WOB] wykryte kolumny markerow krajow: {len(country_by_col)}", flush=True)
-    print(f"  [WOB] kody krajow: {sorted(set(country_by_col.values()))}", flush=True)
-
-    # Dla kazdej kolumny produktu znajdz najblizszy poprzedzajacy marker kraju
-    sorted_country_cols = sorted(country_by_col.keys())
-    col_to_cp = {}  # col -> (country_code, product_name)
-    for prod_col, product_name in product_by_col.items():
-        # znajdz country marker column najblizszy z lewej (<= prod_col)
-        cc_code = None
-        for cc in sorted_country_cols:
-            if cc <= prod_col:
-                cc_code = country_by_col[cc]
-            else:
-                break
-        if cc_code:
-            col_to_cp[prod_col] = (cc_code, product_name)
-
-    print(f"  [WOB] zmapowanych par kraj+produkt: {len(col_to_cp)}", flush=True)
-    seen_countries = set(cp[0] for cp in col_to_cp.values())
-    print(f"  [WOB] kraje w mapie: {sorted(seen_countries)}", flush=True)
-
-    # Skanuj wiersze danych
-    results = {}
-    n_scanned = 0
-    n_valid = 0
-    for r in range(first_data_row, ws.max_row + 1):
-        n_scanned += 1
-        date_val = cell(r, 1)
-        date_str = None
-        if hasattr(date_val, 'strftime'):
-            date_str = date_val.strftime('%Y-%m-%d')
-        elif isinstance(date_val, str):
-            try:
-                date_str = _dt.strptime(date_val[:10], '%Y-%m-%d').strftime('%Y-%m-%d')
-            except: pass
-        if not date_str:
-            continue
-        for col, (country, product) in col_to_cp.items():
-            val = cell(r, col)
-            if isinstance(val, (int, float)) and 0 < val < 100000:
-                results.setdefault((country, product), []).append((date_str, float(val)))
-                n_valid += 1
-
-    print(f"  [WOB] przeskanowano {n_scanned} wierszy danych, {n_valid} valid values", flush=True)
-    # Pokaz kilka przykladow zeby zwalidowac
-    for k in [('PL', 'Euro-Super 95'), ('PL', 'Automotive Gas Oil'), ('PL', 'LPG'), ('EU', 'Euro-Super 95'), ('DE', 'Euro-Super 95')]:
-        vals = results.get(k, [])
-        if vals:
-            print(f"  [WOB] check {k[0]}|{k[1]}: {len(vals)} obs, ostatnia {vals[-1]}", flush=True)
-        else:
-            print(f"  [WOB] check {k[0]}|{k[1]}: BRAK", flush=True)
-
-    _WOB_PARSED = results
-    return results
-
-
-def fetch_wob(series_key: str) -> list:
-    """Zwraca liste {date, value} dla klucza 'Country|Product'."""
-    parsed = _parse_wob_workbook()
-    if '|' not in series_key:
-        return []
-    country, product = series_key.split('|', 1)
-    obs_tuples = parsed.get((country, product), [])
-    if not obs_tuples:
-        # sprobuj bez case-sensitivity - moze mapping niestandardowy
-        for (c, p), vals in parsed.items():
-            if c.lower() == country.lower() and p.lower() == product.lower():
-                obs_tuples = vals
-                break
-    # Deduplikacja po dacie, sortowanie
-    seen = {}
-    for d, v in obs_tuples:
-        seen[d] = v
-    obs = [{"date": d, "value": v} for d, v in sorted(seen.items())]
-    return obs
-
-
-_AGRIFOOD_CACHE = None
-
-def _fetch_agrifood_cereal_pl():
-    """Pobiera tygodniowe ceny cereal z EU Agri-Food Data Portal dla Polski.
-    Realne pola z API: productName, beginDate DD/MM/YYYY, price "€143,89".
-    """
-    global _AGRIFOOD_CACHE
-    if _AGRIFOOD_CACHE is not None:
-        return _AGRIFOOD_CACHE
-    from datetime import datetime as _dt3
-
-    url = "https://api.tech.ec.europa.eu/agrifood/api/cereal/prices?memberStateCodes=PL&limit=10000"
-    print(f"  [AGRIFOOD] pobieram ceny zbóż PL z EU Agri Portal ...", flush=True)
-    try:
-        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (energy-analytics)", "Accept": "application/json"})
-        with urllib.request.urlopen(req, timeout=60) as r:
-            data = json.load(r)
-    except Exception as e:
-        print(f"  [AGRIFOOD] BLAD: {e}", flush=True)
-        _AGRIFOOD_CACHE = {}
-        return _AGRIFOOD_CACHE
-
-    items = data if isinstance(data, list) else (data.get('items') if isinstance(data, dict) else [])
-    if not items:
-        print(f"  [AGRIFOOD] brak items w odpowiedzi", flush=True)
-        _AGRIFOOD_CACHE = {}
-        return _AGRIFOOD_CACHE
-    print(f"  [AGRIFOOD] wpisow: {len(items)}", flush=True)
-
-    def parse_price(s):
-        # "€143,89" -> 143.89; "143.89" -> 143.89; "1 234,56" -> 1234.56
-        if s is None: return None
-        s = str(s).replace('€', '').replace('EUR', '').replace(' ', '').replace('\xa0', '').strip()
-        # jesli jest zarowno kropka jak przecinek: kropka to tysiace, przecinek to dziesietne
-        if ',' in s and '.' in s:
-            s = s.replace('.', '').replace(',', '.')
-        else:
-            s = s.replace(',', '.')
-        try: return float(s)
-        except ValueError: return None
-
-    def parse_date(s):
-        if not s: return None
-        s = str(s).strip()
-        for fmt in ('%d/%m/%Y', '%Y-%m-%d', '%d.%m.%Y', '%d-%m-%Y'):
-            try: return _dt3.strptime(s[:10], fmt).strftime('%Y-%m-%d')
-            except: pass
-        return None
-
-    result = {}
-    n_ok = 0
-    unique_products = set()
-    for row in items:
-        if not isinstance(row, dict): continue
-        product = row.get('productName') or row.get('product') or row.get('name')
-        if not product: continue
-        unique_products.add(product)
-        date_str = parse_date(row.get('beginDate') or row.get('endDate') or row.get('date') or row.get('referencePeriod'))
-        if not date_str: continue
-        price = parse_price(row.get('price'))
-        if price is None or price <= 0: continue
-        result.setdefault(product, []).append({'date': date_str, 'value': price})
-        n_ok += 1
-
-    for prod in list(result.keys()):
-        seen = {}
-        for o in result[prod]:
-            seen[o['date']] = o['value']
-        result[prod] = [{'date': d, 'value': v} for d, v in sorted(seen.items())]
-
-    print(f"  [AGRIFOOD] wczytano {n_ok} valid wierszy", flush=True)
-    print(f"  [AGRIFOOD] unikalne productName ({len(unique_products)}): {sorted(unique_products)}", flush=True)
-    _AGRIFOOD_CACHE = result
-    return _AGRIFOOD_CACHE
-
-
-"""EU Agri-Food Portal używa różnych formatów productName na przestrzeni lat:
-   - pełne nazwy: "Common wheat", "Feed maize"
-   - kody: "BLT", "MAI", "ORG", "SEG"
-   - kody złożone: "SEGPAN|PAN"
-Mapowanie ponizej pokrywa najczestsze warianty per produkt."""
-AGRIFOOD_ALIASES = {
-    "Common wheat":  ["common wheat", "soft wheat", "wheat", "blt", "blé tendre", "pszenica"],
-    "Feed maize":    ["feed maize", "maize", "corn", "mai", "kukurydza"],
-    "Rye":           ["rye", "seg", "seigle", "żyto", "zyto"],
-    "Feed barley":   ["feed barley", "barley", "org", "orge", "jęczmień", "jeczmien"],
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('app').style.display = 'grid';
+    init();
+  } catch (e) {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('loadError').style.display = 'block';
+    document.getElementById('errorDetail').textContent = e.message + '\n\n' + (e.stack || '');
+  }
 }
 
-def fetch_agrifood_cereal(product_name: str) -> list:
-    """Zwraca liste {date, value} dla podanego produktu.
-    Matching: 1) dokladny, 2) case-insensitive substring, 3) aliasy z AGRIFOOD_ALIASES.
-    Wynikowa lista jest posortowana po dacie i deduplikowana."""
-    parsed = _fetch_agrifood_cereal_pl()
-    if not parsed:
-        return []
-    # 1) Direct match
-    if product_name in parsed:
-        return parsed[product_name]
-    # 2) Zbierz wszystkie klucze pasujace do aliasow (union po dacie)
-    aliases = [product_name.lower()] + [a.lower() for a in AGRIFOOD_ALIASES.get(product_name, [])]
-    matched_keys = []
-    for k in parsed.keys():
-        kl = k.lower()
-        # dopasuj gdy klucz zawiera alias LUB alias zawiera klucz (skrocone kody)
-        if any(a == kl or a in kl or kl in a for a in aliases):
-            matched_keys.append(k)
-    if not matched_keys:
-        return []
-    combined = {}
-    for k in matched_keys:
-        for o in parsed[k]:
-            combined[o["date"]] = o["value"]
-    return [{"date": d, "value": v} for d, v in sorted(combined.items())]
+/* ============ state ============ */
+const state = {
+  selected: [],
+  range: '1Y',
+  customFrom: null, customTo: null,
+  mode: 'standard',
+  pct: false, dual: true,
+  corrWindow: 60,   // rolling correlation window (dni)
+  showSMA: false, showBB: false, showRSI: false,   // wskazniki techniczne
+  // seasonal
+  seasonWindow: 5, showMinMax: true, showYears: false,
+  seasonPct: false, seasonAvg: 'mean',
+  seasonPctBaseDoy: 0,  // dzien roku od ktorego liczyc % (0 = 1 stycznia; ustawiane przez zoom)
+  // spread P&L
+  // spreadLegs: LISTA nog (nie dict) - obsluguje wielokrotne uzycie tego samego produktu
+  // Kazda noga: {id, pid, side: +1|-1, qty, ensoFilter: 'all'|'la_nina'|'el_nino'|'neutral'}
+  spreadLegs: [], dollarMode: true, spreadPnlPct: false,
+  spreadView: 'pnl',
+  _nextLegId: 1,
+  // spread seasonal
+  spreadSeasonWindow: 5, spreadShowMinMax: true, spreadShowYears: false,
+  spreadSeasonPct: false, spreadSeasonAvg: 'mean',
+  // wydarzenia
+  showEvents: true,
+  // ENSO
+  ensoFilter: 'all',
+  // konwersja jednostek
+  unitOverride: 'native',
+};
 
+// ============ UNIWERSALNA KONWERSJA JEDNOSTEK + WALUT ============
+// Kazda cena ma (waluta, wymiar fizyczny). Konwersja: FX(z→do) * (native/target) w wymiarze.
+const UNIT_INFO = {
+  '$/MMBtu':   { cur: 'USD', kind: 'energy_mmbtu', factor: 1 },
+  '$/bbl':     { cur: 'USD', kind: 'volume', liters: 158.987 },
+  '$/gal':     { cur: 'USD', kind: 'volume', liters: 3.7854 },
+  '$/L':       { cur: 'USD', kind: 'volume', liters: 1 },
+  '$/oz':      { cur: 'USD', kind: 'mass',   kg: 0.0311035 },  // troy oz
+  '$/lb':      { cur: 'USD', kind: 'mass',   kg: 0.453592 },
+  '$/bu':      { cur: 'USD', kind: 'bushel' },  // per-product
+  '$/ton':     { cur: 'USD', kind: 'mass',   kg: 907.185 },   // short ton US
+  '$/mt':      { cur: 'USD', kind: 'mass',   kg: 1000 },
+  '€/MWh':     { cur: 'EUR', kind: 'energy_mwh', factor: 1 },
+  '€/1000L':   { cur: 'EUR', kind: 'volume', liters: 1000 },
+  '€/L':       { cur: 'EUR', kind: 'volume', liters: 1 },
+  '€/t':       { cur: 'EUR', kind: 'mass',   kg: 1000 },
+  'zł/L':      { cur: 'PLN', kind: 'volume', liters: 1 },
+  'zł/1000L':  { cur: 'PLN', kind: 'volume', liters: 1000 },
+  'zł/t':      { cur: 'PLN', kind: 'mass',   kg: 1000 },
+  'CAD/t':     { cur: 'CAD', kind: 'mass',   kg: 1000 },
+};
+const BUSHEL_KG = {
+  CORN: 25.4012, WHEAT: 27.2155, WHEAT_KC: 27.2155, WHEAT_MW: 27.2155, SOYBEAN: 27.2155,
+};
 
-_CFTC_CACHE = None
+// Pobierz aktualny kurs walutowy z zaladowanych danych FX
+function fxLatest(pid) {
+  const d = DATA[pid];
+  return (d && d.prices && d.prices.length) ? d.prices[d.prices.length - 1] : null;
+}
+// Kurs na konkretna date (nearest available - back-fill dla weekendow/swiat)
+function fxAtDate(pid, dateStr) {
+  const d = DATA[pid];
+  if (!d || !d.dates || !d.dates.length) return null;
+  // Binary search dla najblizszej daty <= target
+  let lo = 0, hi = d.dates.length - 1, found = -1;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    if (d.dates[mid] <= dateStr) { found = mid; lo = mid + 1; }
+    else hi = mid - 1;
+  }
+  if (found >= 0) return d.prices[found];
+  // Data przed pierwsza obserwacja FX - uzyj najwczesniejszej
+  return d.prices[0];
+}
+const FX_ROUTES = {
+  'EUR-USD': ['FX_EURUSD', false], 'USD-EUR': ['FX_EURUSD', true],
+  'USD-PLN': ['FX_USDPLN', false], 'PLN-USD': ['FX_USDPLN', true],
+  'EUR-PLN': ['FX_EURPLN', false], 'PLN-EUR': ['FX_EURPLN', true],
+  'GBP-USD': ['FX_GBPUSD', false], 'USD-GBP': ['FX_GBPUSD', true],
+  'USD-JPY': ['FX_USDJPY', false], 'JPY-USD': ['FX_USDJPY', true],
+  'USD-CHF': ['FX_USDCHF', false], 'CHF-USD': ['FX_USDCHF', true],
+};
+function fxRate(from, to, atDate) {
+  if (from === to) return 1;
+  const key = from + '-' + to;
+  const r = FX_ROUTES[key];
+  const rateOne = (pid, inv, date) => {
+    const v = date ? fxAtDate(pid, date) : fxLatest(pid);
+    return v ? (inv ? 1/v : v) : null;
+  };
+  if (r) return rateOne(r[0], r[1], atDate);
+  // Multi-hop przez USD
+  const midToUsd = fxRate(from, 'USD', atDate);
+  const usdToTgt = fxRate('USD', to, atDate);
+  if (midToUsd && usdToTgt) return midToUsd * usdToTgt;
+  return null;
+}
 
-def _fetch_cftc_all():
-    """Pobiera dane CFTC COT dla wszystkich zdefiniowanych rynkow COT_* w jednym API call.
-    Zwraca slownik {market_name: [{date, value=long-short}]}.
-    Wskaznik: Managed Money Net = long_all - short_all (klasyczny miernik kontrariański).
-    """
-    global _CFTC_CACHE
-    if _CFTC_CACHE is not None:
-        return _CFTC_CACHE
+// Konwersja pojedynczej wartosci
+function convertValue(value, nativeUnit, productId, target) {
+  if (!target || target === 'native') return { v: value, unit: nativeUnit };
+  const src = UNIT_INFO[nativeUnit];
+  if (!src) return { v: value, unit: nativeUnit };
+  const [tgtCur, tgtSub] = target.split('/');
+  const fx = fxRate(src.cur, tgtCur);
+  if (fx === null) return { v: value, unit: nativeUnit };
+  // Wymiar fizyczny
+  let dimFactor = null;
+  if (tgtSub === 'gal' || tgtSub === 'L' || tgtSub === '1000L') {
+    if (src.kind !== 'volume') return { v: value, unit: nativeUnit };
+    const tgtL = { gal: 3.7854, L: 1, '1000L': 1000 }[tgtSub];
+    dimFactor = src.liters / tgtL;
+  } else if (tgtSub === 'mt' || tgtSub === 't') {
+    let srcKg;
+    if (src.kind === 'bushel') { srcKg = BUSHEL_KG[productId]; if (!srcKg) return { v: value, unit: nativeUnit }; }
+    else if (src.kind === 'mass') srcKg = src.kg;
+    else return { v: value, unit: nativeUnit };
+    dimFactor = srcKg / 1000;
+  } else if (tgtSub === 'MWh') {
+    if (src.kind !== 'energy_mwh') return { v: value, unit: nativeUnit };
+    dimFactor = 1;
+  } else {
+    return { v: value, unit: nativeUnit };
+  }
+  const symbolMap = { USD: '$', EUR: '€', PLN: 'zł', GBP: '£', JPY: '¥', CHF: 'Fr', CAD: 'C$' };
+  const unitLabel = (symbolMap[tgtCur] || tgtCur) + '/' + tgtSub;
+  return { v: value * fx * dimFactor, unit: unitLabel };
+}
 
-    import urllib.parse
-    # Zbierz PRIMARY + ALT market names ze wszystkich produktow CFTC
-    markets = []
-    for p in PRODUCTS:
-        if p["source"] != "cftc": continue
-        markets.append(p["series"])
-        for alt in p.get("series_alt", []) or []:
-            markets.append(alt)
-    # dedup
-    seen_m = set()
-    markets = [m for m in markets if not (m in seen_m or seen_m.add(m))]
-    if not markets:
-        _CFTC_CACHE = {}
-        return _CFTC_CACHE
+// Konwersja serii z time-aligned FX (kazdy punkt uzywa kursu FX z jego wlasnej daty)
+function convertSeries(dates, prices, fromUnit, productId) {
+  // Backward compat: jesli ktos wywola convertSeries(prices, fromUnit, pid) - stara sygnatura
+  if (typeof fromUnit === 'undefined' && Array.isArray(dates)) {
+    // Wykryj stara sygnature: dates=prices, prices=fromUnit
+    console.warn('convertSeries called with old signature');
+    return { prices: dates, unit: prices };
+  }
+  const target = state.unitOverride;
+  if (!target || target === 'native') return { prices, unit: fromUnit };
+  const src = UNIT_INFO[fromUnit];
+  if (!src) return { prices, unit: fromUnit };
+  const [tgtCur, tgtSub] = target.split('/');
 
-    # Zbuduj klauzule WHERE z listy rynkow (escapuj apostrofy w SoQL)
-    market_list = ",".join("'" + m.replace("'", "''") + "'" for m in markets)
-    where = f"market_and_exchange_names in ({market_list})"
-    params = urllib.parse.urlencode({
-        "$select": "market_and_exchange_names,report_date_as_yyyy_mm_dd,m_money_positions_long_all,m_money_positions_short_all",
-        "$where": where,
-        "$order": "report_date_as_yyyy_mm_dd",
-        "$limit": "50000",
-    })
-    url = "https://publicreporting.cftc.gov/resource/72hh-3qpy.json?" + params
+  // Wymiar fizyczny - staly czynnik
+  let dimFactor = null;
+  if (tgtSub === 'gal' || tgtSub === 'L' || tgtSub === '1000L') {
+    if (src.kind !== 'volume') return { prices, unit: fromUnit };
+    const tgtL = { gal: 3.7854, L: 1, '1000L': 1000 }[tgtSub];
+    dimFactor = src.liters / tgtL;
+  } else if (tgtSub === 'mt' || tgtSub === 't') {
+    let srcKg;
+    if (src.kind === 'bushel') { srcKg = BUSHEL_KG[productId]; if (!srcKg) return { prices, unit: fromUnit }; }
+    else if (src.kind === 'mass') srcKg = src.kg;
+    else return { prices, unit: fromUnit };
+    dimFactor = srcKg / 1000;
+  } else if (tgtSub === 'MWh') {
+    if (src.kind !== 'energy_mwh') return { prices, unit: fromUnit };
+    dimFactor = 1;
+  } else {
+    return { prices, unit: fromUnit };
+  }
 
-    print(f"  [CFTC] pobieram COT dla {len(markets)} rynkow ...", flush=True)
-    try:
-        req = urllib.request.Request(url, headers={"User-Agent": "energy-analytics/1.0"})
-        with urllib.request.urlopen(req, timeout=90) as r:
-            rows = json.load(r)
-        print(f"  [CFTC] pobrano {len(rows)} wierszy", flush=True)
-    except Exception as e:
-        print(f"  [CFTC] BLAD: {e}", flush=True)
-        _CFTC_CACHE = {}
-        return _CFTC_CACHE
+  const symbolMap = { USD: '$', EUR: '€', PLN: 'zł', GBP: '£', JPY: '¥', CHF: 'Fr', CAD: 'C$' };
+  const unitLabel = (symbolMap[tgtCur] || tgtCur) + '/' + tgtSub;
 
-    result = {}
-    counts_per_market = {}
-    for row in rows:
-        market = row.get("market_and_exchange_names", "").strip()
-        raw_date = row.get("report_date_as_yyyy_mm_dd", "") or ""
-        date_str = raw_date[:10] if raw_date else ""
-        try:
-            long_p = float(row.get("m_money_positions_long_all") or 0)
-            short_p = float(row.get("m_money_positions_short_all") or 0)
-        except (ValueError, TypeError):
-            continue
-        if not market or not date_str:
-            continue
-        net = long_p - short_p
-        result.setdefault(market, []).append({"date": date_str, "value": net})
-        counts_per_market[market] = counts_per_market.get(market, 0) + 1
+  // Time-aligned FX: dla kazdej daty pobierz kurs z tej daty
+  const sameCur = src.cur === tgtCur;
+  if (sameCur) {
+    // Nie potrzeba konwersji walutowej - tylko dimFactor
+    return { prices: prices.map(p => p * dimFactor), unit: unitLabel };
+  }
+  const newPrices = new Array(prices.length);
+  let firstFx = null;
+  for (let i = 0; i < prices.length; i++) {
+    const fx = fxRate(src.cur, tgtCur, dates[i]);
+    if (fx === null) { return { prices, unit: fromUnit }; }  // konwersja nieudana
+    if (firstFx === null) firstFx = fx;
+    newPrices[i] = prices[i] * fx * dimFactor;
+  }
+  return { prices: newPrices, unit: unitLabel };
+}
 
-    # Sortuj i deduplikuj per market
-    for market in list(result.keys()):
-        seen = {}
-        for o in result[market]:
-            seen[o["date"]] = o["value"]
-        result[market] = [{"date": d, "value": v} for d, v in sorted(seen.items())]
+const SELECT_RULES = {
+  dashboard:{ min: 0, max: 99, kind: 'multi',  label: 'Dashboard skanuje wszystkie produkty automatycznie.' },
+  standard: { min: 1, max: 10, kind: 'multi',  label: 'Wybierz 1-10 produktów.' },
+  seasonal: { min: 1, max: 10, kind: 'multi',  label: 'Wybierz 1-10 produktów. Jeden: pełne detale. Wiele: nakładka średnich sezonowych.' },
+  spread:   { min: 2, max: 10, kind: 'multi',  label: 'Wybierz 2-10 produktów (nogi spreadu).' },
+  ratio:    { min: 2, max: 2, kind: 'pair',   label: 'Wybierz DOKŁADNIE 2 produkty.' },
+};
 
-    for m, c in counts_per_market.items():
-        print(f"  [CFTC] {m[:50]}...: {c} wierszy", flush=True)
+/* ============ formatery ============ */
+const fmtNum = (v, dec = 2) => Number(v).toLocaleString('en-US', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+const fmtMoneyAbs = (v) => '$' + Math.abs(v).toLocaleString('en-US', { maximumFractionDigits: 0 });
+const fmtMoneySigned = (v) => (v >= 0 ? '+' : '−') + '$' + Math.abs(v).toLocaleString('en-US', { maximumFractionDigits: 0 });
+const fmtPct = (v) => (v >= 0 ? '+' : '') + fmtNum(v, 2) + '%';
 
-    _CFTC_CACHE = result
-    return _CFTC_CACHE
+/* ============ statystyki: średnia / mediana / trimmed mean ============ */
+function smoothSeries(arr, halfWindow) {
+  // ruchoma srednia z pominieciem null. Wygladza szumy DOY-per-DOY spowodowane
+  // roznymi dniami tygodnia i swietami w roznych latach.
+  const out = new Array(arr.length);
+  for (let i = 0; i < arr.length; i++) {
+    const start = Math.max(0, i - halfWindow);
+    const end = Math.min(arr.length, i + halfWindow + 1);
+    const vals = [];
+    for (let j = start; j < end; j++) if (arr[j] != null) vals.push(arr[j]);
+    out[i] = vals.length ? vals.reduce((s,x)=>s+x,0) / vals.length : null;
+  }
+  return out;
+}
 
+function computeAvg(values, method) {
+  const n = values.length;
+  if (!n) return null;
+  if (method === 'median') {
+    const s = [...values].sort((a,b) => a-b);
+    const m = Math.floor(s.length/2);
+    return s.length % 2 ? s[m] : (s[m-1] + s[m]) / 2;
+  }
+  if (method === 'trimmed') {
+    // usuwamy 10% z gory i 10% z dolu
+    const s = [...values].sort((a,b) => a-b);
+    const cut = Math.floor(s.length * 0.1);
+    const kept = s.slice(cut, s.length - cut);
+    if (!kept.length) return values.reduce((sum,x)=>sum+x,0) / n;
+    return kept.reduce((sum,x)=>sum+x,0) / kept.length;
+  }
+  return values.reduce((sum,x)=>sum+x,0) / n;
+}
 
-def fetch_cftc(market_name: str, alts=None) -> list:
-    """Zwraca liste {date, value} dla podanego rynku (union primary + alts po dacie).
-    Jesli sa alty, ostatnia wartosc per data wygrywa (kolejnosc: primary, potem alts)."""
-    cache = _fetch_cftc_all()
-    combined = {}
-    for name in [market_name] + list(alts or []):
-        for o in cache.get(name, []):
-            combined[o["date"]] = o["value"]
-    return [{"date": d, "value": v} for d, v in sorted(combined.items())]
+/* ============ selekcja ============ */
+function handleSelect(pid, wantChecked) {
+  const rule = SELECT_RULES[state.mode];
+  const already = state.selected.includes(pid);
+  if (rule.kind === 'single') state.selected = [pid];
+  else if (rule.kind === 'pair') {
+    if (wantChecked && !already) { state.selected.push(pid); if (state.selected.length > 2) state.selected.shift(); }
+    else if (!wantChecked && already) state.selected = state.selected.filter(x => x !== pid);
+  } else {
+    if (wantChecked && !already) state.selected.push(pid);
+    if (!wantChecked && already) state.selected = state.selected.filter(x => x !== pid);
+    if (state.selected.length > rule.max) state.selected.shift();
+  }
+  syncLegs(); refreshCheckboxes(); renderLegs(); render();
+}
+function refreshCheckboxes() {
+  const rule = SELECT_RULES[state.mode];
+  PRODUCTS.forEach(p => {
+    const el = document.getElementById('p_' + p.id);
+    if (!el) return;
+    el.checked = state.selected.includes(p.id);
+    el.type = rule.kind === 'single' ? 'radio' : 'checkbox';
+  });
+  document.getElementById('selectHint').textContent = rule.label;
+}
+// === NOWY MODEL SPREADU: lista nog z niezaleznymi produktami i filtrami ===
+function addSpreadLeg(pid) {
+  const chosen = pid || (PRODUCTS[0] && PRODUCTS[0].id);
+  state.spreadLegs.push({
+    id: 'leg_' + (state._nextLegId++),
+    pid: chosen,
+    side: state.spreadLegs.length % 2 === 0 ? 1 : -1,
+    qty: 1,
+    ensoFilter: 'all',
+  });
+}
+function removeSpreadLeg(legId) {
+  state.spreadLegs = state.spreadLegs.filter(l => l.id !== legId);
+}
+function updateSpreadLeg(legId, updates) {
+  const leg = state.spreadLegs.find(l => l.id === legId);
+  if (leg) Object.assign(leg, updates);
+}
+function initSpreadLegsFromSelected() {
+  // Wywolane przy pierwszym wejsciu w tryb Spread jesli brak jest nog
+  if (state.spreadLegs.length > 0) return;
+  const pids = state.selected.length >= 2 ? state.selected.slice(0, 2) : PRODUCTS.slice(0, 2).map(p => p.id);
+  pids.forEach(pid => addSpreadLeg(pid));
+}
+function buildProductOptionsHtml(selectedPid) {
+  let html = '';
+  CATS.forEach(cat => {
+    const items = PRODUCTS.filter(p => p.cat === cat);
+    if (!items.length) return;
+    html += `<optgroup label="${cat}">`;
+    items.forEach(p => {
+      html += `<option value="${p.id}" ${p.id === selectedPid ? 'selected' : ''}>${p.name}</option>`;
+    });
+    html += `</optgroup>`;
+  });
+  return html;
+}
+function renderSpreadLegs() {
+  const box = document.getElementById('spreadLegsList');
+  const summaryBox = document.getElementById('positionSummary');
+  if (!box) return;
+  box.innerHTML = '';
+  let totalOut = 0, totalIn = 0, grossExposure = 0;
+  const showEnso = state.spreadView === 'seasonal';
+  state.spreadLegs.forEach(leg => {
+    const p = PMAP[leg.pid];
+    if (!p) return;
+    const prices = (DATA[leg.pid] || {}).prices || [];
+    const price = prices.length ? prices[prices.length - 1] : 0;
+    const notional = p.contractSize * leg.qty * price;
+    if (leg.side === 1) totalOut += notional; else totalIn += notional;
+    grossExposure += notional;
+    const isLong = leg.side === 1;
+    const moneyCls = isLong ? 'money-long' : 'money-short';
+    const moneyLabel = isLong ? 'LONG · płacisz' : 'SHORT · dostajesz';
+    const row = document.createElement('div');
+    row.className = 'leg-row-v2';
+    row.innerHTML = `
+      <select class="leg-product" data-legid="${leg.id}">${buildProductOptionsHtml(leg.pid)}</select>
+      <div class="side-toggle">
+        <button data-legid="${leg.id}" data-side="1" class="${leg.side === 1 ? 'on-long' : ''}">L</button>
+        <button data-legid="${leg.id}" data-side="-1" class="${leg.side === -1 ? 'on-short' : ''}">S</button>
+      </div>
+      <input type="number" min="1" max="99" step="1" value="${leg.qty}" data-legid="${leg.id}" class="qty-input">
+      <button class="remove-leg" data-legid="${leg.id}" title="usuń nogę">×</button>
+      <div class="leg-info">
+        <span class="swatch" style="background:${p.color}"></span> <b>${p.id}</b> · ${price ? fmtNum(price) : '—'} ${p.unit} · kontr. ${p.contractDesc}<br>
+        ${leg.qty} × ${p.contractSize.toLocaleString('en-US')} × ${fmtNum(price)} = <span class="${moneyCls}">${fmtMoneyAbs(notional)}</span> · ${moneyLabel}
+      </div>
+      ${showEnso ? `
+        <div class="leg-filter-row">
+          Filtr ENSO: <select class="leg-enso" data-legid="${leg.id}">
+            <option value="all"      ${leg.ensoFilter==='all'?'selected':''}>wszystkie lata</option>
+            <option value="la_nina"  ${leg.ensoFilter==='la_nina'?'selected':''}>❄️ tylko La Niña</option>
+            <option value="el_nino"  ${leg.ensoFilter==='el_nino'?'selected':''}>☀️ tylko El Niño</option>
+            <option value="neutral"  ${leg.ensoFilter==='neutral'?'selected':''}>⚪ tylko neutralne</option>
+          </select>
+        </div>` : ''}
+    `;
+    box.appendChild(row);
+  });
+  const net = totalIn - totalOut;
+  summaryBox.innerHTML = `
+    <div class="line"><span>Suma LONG (płacisz):</span><span class="money-long">${fmtMoneyAbs(totalOut)}</span></div>
+    <div class="line"><span>Suma SHORT (dostajesz):</span><span class="money-short">${fmtMoneyAbs(totalIn)}</span></div>
+    <div class="line total"><span>Netto na start:</span><span class="${net >= 0 ? 'money-short' : 'money-long'}">${net >= 0 ? '+' : '−'}${fmtMoneyAbs(net)}</span></div>
+    <div class="line" style="color:var(--muted); font-size:11px"><span>Zaangażowanie brutto:</span><span>${fmtMoneyAbs(grossExposure)}</span></div>`;
+  box.querySelectorAll('.leg-product').forEach(sel => {
+    sel.addEventListener('change', e => { updateSpreadLeg(e.target.dataset.legid, { pid: e.target.value }); renderSpreadLegs(); render(); });
+  });
+  box.querySelectorAll('.side-toggle button').forEach(b => {
+    b.addEventListener('click', () => { updateSpreadLeg(b.dataset.legid, { side: +b.dataset.side }); renderSpreadLegs(); render(); });
+  });
+  box.querySelectorAll('.qty-input').forEach(inp => {
+    inp.addEventListener('change', () => { updateSpreadLeg(inp.dataset.legid, { qty: Math.max(1, +inp.value || 1) }); renderSpreadLegs(); render(); });
+  });
+  box.querySelectorAll('.remove-leg').forEach(b => {
+    b.addEventListener('click', () => { removeSpreadLeg(b.dataset.legid); renderSpreadLegs(); render(); });
+  });
+  box.querySelectorAll('.leg-enso').forEach(sel => {
+    sel.addEventListener('change', e => { updateSpreadLeg(e.target.dataset.legid, { ensoFilter: e.target.value }); render(); });
+  });
+}
 
+// Backward-compat stubs (bezpieczne no-op dla obcych trybow)
+function syncLegs() {}
+function renderLegs() { renderSpreadLegs(); }
 
-_EMBER_CACHE = None
-EMBER_URL = "https://files.ember-energy.org/public-downloads/price/outputs/european_wholesale_electricity_price_data_daily.csv"
+/* ============ init ============ */
+function init() {
+  state.selected = PRODUCTS.slice(0, 2).map(p => p.id);
 
-def _parse_ember():
-    """Parsuje CSV z Ember Energy (day-ahead ceny hurtowe elektryki w Europie).
-    Zwraca slownik: {country_name: [{date, value}, ...]}."""
-    global _EMBER_CACHE
-    if _EMBER_CACHE is not None:
-        return _EMBER_CACHE
-    print(f"  [EMBER] pobieram CSV z Ember Energy ...", flush=True)
-    try:
-        req = urllib.request.Request(EMBER_URL, headers={"User-Agent": "Mozilla/5.0 (energy-analytics)"})
-        with urllib.request.urlopen(req, timeout=60) as r:
-            raw = r.read().decode('utf-8', errors='replace')
-        print(f"  [EMBER] pobrano {len(raw)/1024:.1f} KB", flush=True)
-    except Exception as e:
-        print(f"  [EMBER] BLAD: {e}", flush=True)
-        _EMBER_CACHE = {}
-        return _EMBER_CACHE
+  const productsEl = document.getElementById('products');
+  CATS.forEach(cat => {
+    const items = PRODUCTS.filter(p => p.cat === cat);
+    if (!items.length) return;
+    const hdr = document.createElement('div');
+    hdr.className = 'cat-header';
+    hdr.textContent = cat;
+    productsEl.appendChild(hdr);
+    items.forEach(p => {
+      const id = 'p_' + p.id;
+      const wrap = document.createElement('label');
+      wrap.innerHTML = `
+        <input type="checkbox" id="${id}" ${state.selected.includes(p.id) ? 'checked' : ''}>
+        <span class="swatch" style="background:${p.color}"></span>
+        <span>${p.name}</span>`;
+      productsEl.appendChild(wrap);
+      wrap.querySelector('input').addEventListener('change', e => handleSelect(p.id, e.target.checked));
+    });
+  });
 
-    lines = raw.strip().split('\n')
-    if len(lines) < 2:
-        _EMBER_CACHE = {}
-        return _EMBER_CACHE
+  document.querySelectorAll('#ranges button').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('#ranges button').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      state.range = b.dataset.r;
+      const dr = document.getElementById('dateRange');
+      if (state.range === 'CUSTOM') {
+        dr.style.display = 'flex';
+        const from = document.getElementById('dateFrom');
+        const to = document.getElementById('dateTo');
+        from.min = MIN_DATE; from.max = MAX_DATE;
+        to.min = MIN_DATE; to.max = MAX_DATE;
+        if (!state.customFrom) state.customFrom = FULL_DATES[Math.max(0, FULL_DATES.length - 365)];
+        if (!state.customTo)   state.customTo   = MAX_DATE;
+        from.value = state.customFrom;
+        to.value = state.customTo;
+      } else { dr.style.display = 'none'; }
+      render();
+    });
+  });
+  document.getElementById('dateFrom').addEventListener('change', e => { state.customFrom = e.target.value; render(); });
+  document.getElementById('dateTo').addEventListener('change',   e => { state.customTo   = e.target.value; render(); });
 
-    # Auto-detekcja kolumn z naglowka
-    header = [h.strip().strip('"') for h in lines[0].split(',')]
-    print(f"  [EMBER] header: {header}", flush=True)
-    col_country = col_date = col_price = None
-    for i, h in enumerate(header):
-        hl = h.lower()
-        if col_country is None and ('country' in hl and 'iso' not in hl and 'code' not in hl):
-            col_country = i
-        if col_date is None and 'date' in hl:
-            col_date = i
-        if col_price is None and ('price' in hl or 'eur' in hl):
-            col_price = i
+  document.querySelectorAll('#modes button').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('#modes button').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      state.mode = b.dataset.m;
+      state.seasonPctBaseDoy = 0;  // reset zoom-rebase przy zmianie trybu
+      const rule = SELECT_RULES[state.mode];
+      if (rule.kind === 'single' && state.selected.length > 1) state.selected = state.selected.slice(0, 1);
+      if (rule.kind === 'pair' && state.selected.length > 2)   state.selected = state.selected.slice(0, 2);
+      if (state.selected.length < rule.min) {
+        const missing = PRODUCTS.map(p => p.id).filter(id => !state.selected.includes(id));
+        while (state.selected.length < rule.min && missing.length) state.selected.push(missing.shift());
+      }
+      refreshCheckboxes();
+      // Jesli wchodzimy w Spread i nie ma nog - zainicjuj z zaznaczonych produktow
+      if (state.mode === 'spread') initSpreadLegsFromSelected();
+      renderSpreadLegs();
+      document.querySelectorAll('.mode-panel').forEach(x => x.classList.remove('active'));
+      document.getElementById('panel-' + state.mode).classList.add('active');
+      ['stdCtrl','seasonalCtrl','spreadCtrl'].forEach(id => document.getElementById(id).style.display = 'none');
+      if (state.mode === 'standard') document.getElementById('stdCtrl').style.display = 'block';
+      if (state.mode === 'seasonal') document.getElementById('seasonalCtrl').style.display = 'block';
+      if (state.mode === 'spread')   document.getElementById('spreadCtrl').style.display = 'block';
+      render();
+    });
+  });
 
-    if col_country is None or col_date is None or col_price is None:
-        print(f"  [EMBER] BLAD: nie znaleziono kolumn (country={col_country}, date={col_date}, price={col_price})", flush=True)
-        _EMBER_CACHE = {}
-        return _EMBER_CACHE
+  document.querySelectorAll('#spreadView button').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('#spreadView button').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      state.spreadView = b.dataset.sv;
+      document.getElementById('spreadSeasonalCtrl').style.display = state.spreadView === 'seasonal' ? 'block' : 'none';
+      document.getElementById('spreadPnlCtrl').style.display = state.spreadView === 'pnl' ? 'block' : 'none';
+      renderSpreadLegs(); // przerysuj legs zeby pokazac/ukryc filtry ENSO
+      render();
+    });
+  });
 
-    print(f"  [EMBER] kolumny: country={col_country}, date={col_date}, price={col_price}", flush=True)
+  // listenery kontrolek
+  const bind = (id, key, coerce = (e) => e.target.checked) => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('change', e => { state[key] = coerce(e); render(); });
+  };
+  bind('pctToggle', 'pct');
+  bind('dualAxis', 'dual');
+  bind('corrWindow', 'corrWindow', e => +e.target.value);
+  bind('showSMA', 'showSMA');
+  bind('showBB',  'showBB');
+  bind('showRSI', 'showRSI');
+  bind('seasonWindow', 'seasonWindow', e => +e.target.value);
+  bind('showMinMax', 'showMinMax');
+  bind('showYears', 'showYears');
+  bind('seasonPct', 'seasonPct');
+  bind('seasonAvg', 'seasonAvg', e => e.target.value);
+  bind('dollarMode', 'dollarMode');
+  bind('spreadPnlPct', 'spreadPnlPct');
+  bind('spreadSeasonWindow', 'spreadSeasonWindow', e => +e.target.value);
+  bind('spreadShowMinMax', 'spreadShowMinMax');
+  bind('spreadShowYears', 'spreadShowYears');
+  bind('spreadSeasonPct', 'spreadSeasonPct');
+  bind('spreadSeasonAvg', 'spreadSeasonAvg', e => e.target.value);
+  bind('showEvents', 'showEvents');
+  bind('ensoFilter', 'ensoFilter', e => e.target.value);
+  bind('unitOverride', 'unitOverride', e => e.target.value);
 
-    results = {}
-    n_ok = 0
-    for line in lines[1:]:
-        parts = [p.strip().strip('"') for p in line.split(',')]
-        if len(parts) <= max(col_country, col_date, col_price):
-            continue
-        country = parts[col_country]
-        date_s = parts[col_date][:10]
-        try:
-            price = float(parts[col_price])
-        except ValueError:
-            continue
-        # Waliduj date
-        try:
-            datetime.strptime(date_s, '%Y-%m-%d')
-        except ValueError:
-            continue
-        results.setdefault(country, []).append({'date': date_s, 'value': price})
-        n_ok += 1
+  document.getElementById('addLegBtn').addEventListener('click', () => {
+    addSpreadLeg(); renderSpreadLegs(); render();
+  });
 
-    # Sortuj per country
-    for country in results:
-        results[country].sort(key=lambda o: o['date'])
-
-    print(f"  [EMBER] wczytano {n_ok} obserwacji, {len(results)} krajow", flush=True)
-    for c in ['Poland', 'Germany', 'France']:
-        v = results.get(c, [])
-        if v:
-            print(f"  [EMBER] {c}: {len(v)} obs, ostatnia {v[-1]}", flush=True)
-        else:
-            print(f"  [EMBER] {c}: BRAK", flush=True)
-
-    _EMBER_CACHE = results
-    return results
-
-
-def fetch_ember(country: str) -> list:
-    """Zwraca liste {date, value} dla podanego kraju."""
-    return _parse_ember().get(country, [])
-
-
-_ORLEN_CACHE = None
-
-def _scrape_orlen_current():
-    """Scrapuje aktualne hurtowe ceny Orlen z cenypaliw.fyi. Zwraca dict {klucz: cena_pln_per_L}."""
-    global _ORLEN_CACHE
-    if _ORLEN_CACHE is not None:
-        return _ORLEN_CACHE
-    import re
-    url = "https://cenypaliw.fyi/"
-    print(f"  [ORLEN] scraping {url} ...", flush=True)
-    try:
-        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (energy-analytics)"})
-        with urllib.request.urlopen(req, timeout=30) as r:
-            html = r.read().decode('utf-8', errors='replace')
-        print(f"  [ORLEN] pobrano {len(html)/1024:.1f} KB HTML", flush=True)
-    except Exception as e:
-        print(f"  [ORLEN] BLAD pobierania: {e}", flush=True)
-        _ORLEN_CACHE = {}
-        return _ORLEN_CACHE
-
-    # Najpierw wyodrebnij sekcje z tabela hurtowych cen (zeby nie chwytac retail)
-    # Format tabeli: "PB 95: 5.33 PLN/litr" (netto) - hurt Orlen
-    result = {}
-    # Znajdz obszar tabeli hurtowych
-    section_m = re.search(
-        r'(?:Tabela\s+hurtowych\s+cen\s+paliw|hurtowe\s+ceny\s+paliw)(.{0,5000})',
-        html, re.DOTALL | re.IGNORECASE
-    )
-    section = section_m.group(1) if section_m else html
-    print(f"  [ORLEN] szukam w sekcji {len(section)} znakow (znaleziona sekcja hurt: {bool(section_m)})", flush=True)
-
-    # Patterny: kazdy produkt szuka nazwy + separatora + ceny + jednostki
-    # Sekcja hurt uzywa formatu "PB 95: 5.33 PLN/litr netto"
-    patterns = {
-        'PB95': [
-            r'PB\s*95[^0-9]{1,30}?(\d[\d,\.]{1,6})\s*PLN',
-            r'PB\s*95[^0-9]{1,30}?(\d[\d,\.]{1,6})\s*z[łl]',
-        ],
-        'PB98': [
-            r'PB\s*98[^0-9]{1,30}?(\d[\d,\.]{1,6})\s*PLN',
-            r'PB\s*98[^0-9]{1,30}?(\d[\d,\.]{1,6})\s*z[łl]',
-        ],
-        'ON': [
-            # ON ale nie ON Ekoterm - negative lookahead
-            r'(?<![a-zA-Z])ON(?!\s*Ekoterm)\s*(?:\(Diesel\))?[^0-9]{1,30}?(\d[\d,\.]{1,6})\s*PLN',
-            r'(?<![a-zA-Z])ON(?!\s*Ekoterm)\s*(?:\(Diesel\))?[^0-9]{1,30}?(\d[\d,\.]{1,6})\s*z[łl]',
-        ],
-        'ON_EKOTERM': [
-            r'ON\s*Ekoterm[^0-9]{1,30}?(\d[\d,\.]{1,6})\s*PLN',
-            r'Ekoterm[^0-9]{1,30}?(\d[\d,\.]{1,6})\s*PLN',
-            r'ON\s*Ekoterm[^0-9]{1,30}?(\d[\d,\.]{1,6})\s*z[łl]',
-        ],
+  // Presety spreadow
+  const SPREAD_PRESETS = {
+    crack_321:      [['WTI', 3, 1], ['RBOB', -2, 1], ['HEAT', -1, 1]],
+    wti_brent:      [['WTI', 1, 1], ['BRENT', -1, 1]],
+    ng_wti:         [['NG', 1, 1],  ['WTI', -1, 1]],
+    us_eu_wheat:    [['WHEAT', 1, 1], ['MATIF_WHEAT', -1, 1]],
+    corn_wheat:     [['CORN', 1, 1], ['WHEAT', -1, 1]],
+    soy_corn:       [['SOYBEAN', 1, 1], ['CORN', -1, 1]],
+    gold_silver:    [['GOLD', 1, 1], ['SILVER', -1, 1]],
+    clean_spark_de: [['DE_POWER', 1, 1], ['TTF', -2, 1], ['EUA', -1, 1]],
+    pl_de_power:    [['PL_POWER', 1, 1], ['DE_POWER', -1, 1]],
+    cot_wti_brent:  [['COT_WTI_NET', 1, 1], ['COT_BRENT_NET', -1, 1]],
+  };
+  const presetSel = document.getElementById('spreadPreset');
+  if (presetSel) presetSel.addEventListener('change', e => {
+    const key = e.target.value; if (!key) return;
+    const legs = SPREAD_PRESETS[key]; if (!legs) return;
+    // sprawdz czy wszystkie produkty istnieja w PRODUCTS
+    const missing = legs.filter(([pid]) => !PRODUCTS.find(p => p.id === pid));
+    if (missing.length) {
+      alert(`Preset "${key}" wymaga produktów, których nie ma: ${missing.map(m=>m[0]).join(', ')}`);
+      e.target.value = ''; return;
     }
-    for key, pats in patterns.items():
-        for pat in pats:
-            m = re.search(pat, section, re.IGNORECASE)
-            if m:
-                try:
-                    v = float(m.group(1).replace(',', '.'))
-                    # Hurt Orlen sensowny zakres: 3-9 zl/l (retail wychodzi wyzej)
-                    if 3.0 < v < 9.0:
-                        result[key] = v
-                        break
-                except: pass
+    state.spreadLegs = [];
+    state._nextLegId = 1;
+    legs.forEach(([pid, side, qty]) => {
+      state.spreadLegs.push({ id: 'leg_' + (state._nextLegId++), pid, side, qty, ensoFilter: 'all' });
+    });
+    renderSpreadLegs(); render();
+    e.target.value = ''; // reset dropdown zeby dalo sie znowu wybrac ten sam preset
+  });
 
-    # Ekoterm (olej opalowy) czesto jest w OSOBNEJ tabeli - fallback szuka w calym HTML.
-    if 'ON_EKOTERM' not in result:
-        ekoterm_patterns = [
-            r'(?:ON\s*)?Ekoterm[^0-9]{1,60}?(\d[\d,\.]{1,6})\s*(?:PLN|z[łl])',
-            r'olej\s+opa[łl]owy[^0-9]{1,80}?(\d[\d,\.]{1,6})\s*(?:PLN|z[łl])',
-            r'Ekoterm\s+Plus[^0-9]{1,60}?(\d[\d,\.]{1,6})',
-        ]
-        for pat in ekoterm_patterns:
-            for m in re.finditer(pat, html, re.IGNORECASE):
-                try:
-                    v = float(m.group(1).replace(',', '.'))
-                    if 2.0 < v < 8.0:  # Ekoterm zwykle tanszy - bez akcyzy paliwowej
-                        result['ON_EKOTERM'] = v
-                        break
-                except: pass
-            if 'ON_EKOTERM' in result: break
+  // Bind zoom event na mainPlot - w Sezonowej z pct auto-rebase % od poczatku widocznego zakresu
+  const bindZoom = () => {
+    const el = document.getElementById('mainPlot');
+    if (!el || el._zoomBound) return;
+    el._zoomBound = true;
+    if (typeof el.on === 'function') {
+      el.on('plotly_relayout', (ed) => {
+        if (state.mode !== 'seasonal' || !state.seasonPct) return;
+        let newBase = null;
+        if (('xaxis.autorange' in ed) && ed['xaxis.autorange']) {
+          newBase = 0;
+        } else if (ed['xaxis.range[0]']) {
+          const sd = new Date(ed['xaxis.range[0]']);
+          if (!isNaN(sd.getTime())) {
+            newBase = Math.max(0, Math.min(365, Math.floor((sd - new Date(sd.getFullYear(), 0, 1)) / 86400000)));
+          }
+        }
+        if (newBase !== null && newBase !== state.seasonPctBaseDoy) {
+          state.seasonPctBaseDoy = newBase;
+          render();
+        }
+      });
+    }
+  };
+  // Retry, bo mainPlot moze byc jeszcze niezainicjalizowany
+  setTimeout(bindZoom, 500);
+  setTimeout(bindZoom, 2000);
 
-    print(f"  [ORLEN] znalezione ceny: {result}", flush=True)
-    _ORLEN_CACHE = result
-    return result
+  refreshCheckboxes(); renderSpreadLegs(); render();
+  window.addEventListener('resize', () => {
+    ['mainPlot','corrPlot','zscorePlot'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el && el.data) Plotly.Plots.resize(el);
+    });
+  });
+}
 
+/* ============ helpers ============ */
+function findNearestIndex(dateStr) {
+  let lo = 0, hi = FULL_DATES.length - 1;
+  while (lo < hi) { const mid = (lo + hi) >> 1; if (FULL_DATES[mid] < dateStr) lo = mid + 1; else hi = mid; }
+  return lo;
+}
+function windowIndexes() {
+  const N = FULL_DATES.length;
+  if (state.range === 'CUSTOM') {
+    const fromIdx = state.customFrom ? findNearestIndex(state.customFrom) : 0;
+    const toIdx = state.customTo ? Math.min(N, findNearestIndex(state.customTo) + 1) : N;
+    return [Math.max(0, fromIdx), Math.max(fromIdx + 1, toIdx)];
+  }
+  const map = { '1W': 7, '1M': 30, '6M': 180, '1Y': 365, '2Y': 730, '3Y': 1095, '5Y': 1825, '10Y': 3650, 'MAX': 999999 };
+  const days = map[state.range] || 365;
+  return [Math.max(0, N - days), N];
+}
+function sliceByDates(pid, fromDate, toDate) {
+  const d = DATA[pid];
+  if (!d) return { dates: [], prices: [] };
+  const out = { dates: [], prices: [] };
+  for (let i = 0; i < d.dates.length; i++) {
+    if (d.dates[i] >= fromDate && d.dates[i] <= toDate) { out.dates.push(d.dates[i]); out.prices.push(d.prices[i]); }
+  }
+  return out;
+}
+function slice(pid) {
+  const [from, to] = windowIndexes();
+  const fromDate = FULL_DATES[Math.max(0, from)] || MIN_DATE;
+  const toDate = FULL_DATES[Math.min(FULL_DATES.length - 1, to - 1)] || MAX_DATE;
+  return sliceByDates(pid, fromDate, toDate);
+}
+function pctNormalize(prices) { const base = prices[0]; return prices.map(p => ((p / base) - 1) * 100); }
+function rollingCorr(a, b, win) {
+  const out = new Array(a.length).fill(null);
+  for (let i = win - 1; i < a.length; i++) {
+    const A = a.slice(i - win + 1, i + 1); const B = b.slice(i - win + 1, i + 1);
+    const mA = A.reduce((s,x)=>s+x,0)/win; const mB = B.reduce((s,x)=>s+x,0)/win;
+    let num = 0, dA = 0, dB = 0;
+    for (let j = 0; j < win; j++) { const xa = A[j] - mA, xb = B[j] - mB; num += xa*xb; dA += xa*xa; dB += xb*xb; }
+    out[i] = num / Math.sqrt(dA * dB);
+  }
+  return out;
+}
+function rollingSMA(prices, win) {
+  const out = new Array(prices.length).fill(null);
+  if (prices.length < win) return out;
+  let sum = 0;
+  for (let i = 0; i < prices.length; i++) {
+    sum += prices[i];
+    if (i >= win) sum -= prices[i - win];
+    if (i >= win - 1) out[i] = sum / win;
+  }
+  return out;
+}
+function bollingerBands(prices, win = 20, k = 2) {
+  const sma = rollingSMA(prices, win);
+  const upper = new Array(prices.length).fill(null);
+  const lower = new Array(prices.length).fill(null);
+  for (let i = win - 1; i < prices.length; i++) {
+    const seg = prices.slice(i - win + 1, i + 1);
+    const m = sma[i];
+    const varSum = seg.reduce((s, x) => s + (x - m) ** 2, 0) / win;
+    const sd = Math.sqrt(varSum);
+    upper[i] = m + k * sd;
+    lower[i] = m - k * sd;
+  }
+  return { sma, upper, lower };
+}
+function rsi14(prices, win = 14) {
+  const out = new Array(prices.length).fill(null);
+  if (prices.length < win + 1) return out;
+  let gains = 0, losses = 0;
+  for (let i = 1; i <= win; i++) {
+    const d = prices[i] - prices[i - 1];
+    if (d >= 0) gains += d; else losses -= d;
+  }
+  let avgG = gains / win, avgL = losses / win;
+  out[win] = avgL === 0 ? 100 : 100 - 100 / (1 + avgG / avgL);
+  for (let i = win + 1; i < prices.length; i++) {
+    const d = prices[i] - prices[i - 1];
+    const g = d > 0 ? d : 0, l = d < 0 ? -d : 0;
+    avgG = (avgG * (win - 1) + g) / win;
+    avgL = (avgL * (win - 1) + l) / win;
+    out[i] = avgL === 0 ? 100 : 100 - 100 / (1 + avgG / avgL);
+  }
+  return out;
+}
 
-def fetch_orlen_append(product_key: str, existing_obs: list) -> list:
-    """Dopisuje/nadpisuje dzisiejsza cene do istniejacej historii Orlen.
-    Nadpisuje jesli data juz jest (na wypadek gdyby wczesniejszy run zapisal zla wartosc).
-    """
-    from datetime import datetime as _dt2, timezone as _tz2
-    today = _dt2.now(_tz2.utc).strftime('%Y-%m-%d')
-    prices = _scrape_orlen_current()
-    today_val = prices.get(product_key)
-    obs = [o for o in (existing_obs or []) if o.get('date') != today]  # usun dzisiejsza jesli byla
-    if today_val is not None:
-        obs.append({'date': today, 'value': today_val})
-        obs.sort(key=lambda o: o['date'])
-    return obs
+function statSummary(prices) {
+  const n = prices.length;
+  if (n < 2) return { mean: prices[0]||0, min: prices[0]||0, max: prices[0]||0, last: prices[0]||0,
+                       chg: 0, annVol: 0, maxDD: 0, sharpe: 0, zLast: 0 };
+  const mean = prices.reduce((s,x)=>s+x,0)/n;
+  const min = Math.min(...prices), max = Math.max(...prices);
+  const first = prices[0], last = prices[n-1];
+  const chg = ((last - first) / first) * 100;
+  const rets = []; for (let i = 1; i < n; i++) rets.push(Math.log(prices[i]/prices[i-1]));
+  const meanR = rets.reduce((s,x)=>s+x,0)/rets.length;
+  const varR = rets.reduce((s,x)=>s+(x-meanR)**2,0)/rets.length;
+  const annVol = Math.sqrt(varR * 252) * 100;
+  // Sharpe-like (bez rf): sredni zwrot roczny / zmiennosc roczna
+  const annRet = meanR * 252 * 100;
+  const sharpe = annVol > 1e-9 ? annRet / annVol : 0;
+  // Max drawdown na cenach (peak-to-trough w oknie)
+  let peak = prices[0], maxDD = 0;
+  for (let i = 0; i < n; i++) {
+    if (prices[i] > peak) peak = prices[i];
+    const dd = (prices[i] / peak - 1) * 100;
+    if (dd < maxDD) maxDD = dd;
+  }
+  // Z-score dla ostatniej ceny wzgl. calego okna
+  const sdP = Math.sqrt(prices.reduce((s,x)=>s+(x-mean)**2,0)/n);
+  const zLast = sdP > 1e-9 ? (last - mean) / sdP : 0;
+  return { mean, min, max, last, chg, annVol, maxDD, sharpe, zLast };
+}
+function legFormula() {
+  return state.spreadLegs.map(l => {
+    const sign = l.side === 1 ? '+' : '−';
+    const filt = (state.spreadView === 'seasonal' && l.ensoFilter && l.ensoFilter !== 'all')
+      ? ('[' + ENSO_ICONS[l.ensoFilter] + ']') : '';
+    return `${sign}${l.qty}×${l.pid}${filt}`;
+  }).join('  ');
+}
+function computeGrossAtEntry() {
+  const [from, to] = windowIndexes();
+  const fromDate = FULL_DATES[Math.max(0, from)] || MIN_DATE;
+  let gross = 0;
+  state.spreadLegs.forEach(l => {
+    const p = PMAP[l.pid]; if (!p) return;
+    const d = DATA[l.pid]; if (!d || !d.prices.length) return;
+    let price = null;
+    for (let i = 0; i < d.dates.length; i++) { if (d.dates[i] >= fromDate) { price = d.prices[i]; break; } }
+    if (price == null) price = d.prices[0];
+    if (price != null) gross += p.contractSize * l.qty * price;
+  });
+  return gross;
+}
+function computeSpreadSeries(fromDate, toDate, dollarMode) {
+  // Zbior unikalnych pid uzywanych w nogach
+  const uniquePids = Array.from(new Set(state.spreadLegs.map(l => l.pid)));
+  const allDates = new Set();
+  const perProduct = {};
+  uniquePids.forEach(pid => {
+    const s = sliceByDates(pid, fromDate, toDate);
+    perProduct[pid] = { byDate: {} };
+    for (let i = 0; i < s.dates.length; i++) { perProduct[pid].byDate[s.dates[i]] = s.prices[i]; allDates.add(s.dates[i]); }
+  });
+  const commonDates = Array.from(allDates).sort();
+  const filled = {};
+  uniquePids.forEach(pid => {
+    filled[pid] = new Array(commonDates.length);
+    let last = null;
+    for (let i = 0; i < commonDates.length; i++) {
+      const v = perProduct[pid].byDate[commonDates[i]];
+      if (v != null) last = v;
+      filled[pid][i] = last;
+    }
+    let firstVal = null;
+    for (let i = 0; i < filled[pid].length; i++) { if (filled[pid][i] != null) { firstVal = filled[pid][i]; break; } }
+    for (let i = 0; i < filled[pid].length; i++) if (filled[pid][i] == null) filled[pid][i] = firstVal;
+  });
+  const series = new Array(commonDates.length).fill(0);
+  state.spreadLegs.forEach(l => {
+    const p = PMAP[l.pid]; if (!p || !filled[l.pid]) return;
+    const mult = dollarMode ? p.contractSize : 1;
+    for (let i = 0; i < commonDates.length; i++) series[i] += l.side * l.qty * mult * filled[l.pid][i];
+  });
+  return { dates: commonDates, series };
+}
 
+/* ============ wydarzenia (nakładka na wykresy) ============ */
+function eventsInRange(fromDate, toDate) {
+  if (!state.showEvents) return [];
+  return EVENTS.filter(e => e.date >= fromDate && e.date <= toDate);
+}
+function buildEventOverlay(fromDate, toDate) {
+  const evs = eventsInRange(fromDate, toDate);
+  if (!evs.length) return { shapes: [], annotations: [], listHtml: '' };
+  const shapes = evs.map(e => ({
+    type: 'line', x0: e.date, x1: e.date, y0: 0, y1: 1, yref: 'paper',
+    line: { color: 'rgba(255,183,77,0.35)', width: 1, dash: 'dot' }, layer: 'below',
+  }));
+  const annotations = evs.map(e => ({
+    x: e.date, y: 0.98, yref: 'paper', yanchor: 'top',
+    text: e.icon || '●', showarrow: false,
+    font: { size: 14 },
+    bgcolor: 'rgba(26,32,41,0.7)', borderpad: 2,
+  }));
+  const items = evs.map(e => `
+    <div style="padding:6px 0; border-bottom:1px solid var(--border); font-size:12px">
+      <div><b>${e.icon || '●'} ${e.date}</b> · ${e.title}</div>
+      <div style="color:var(--muted); margin-top:2px">${e.desc}</div>
+    </div>`).join('');
+  const listHtml = `
+    <details style="margin-top:12px" open>
+      <summary style="cursor:pointer; color:var(--accent-2); font-size:12px; padding:4px 0">
+        Wydarzenia w tym oknie (${evs.length})
+      </summary>
+      <div style="max-height:280px; overflow-y:auto; margin-top:6px">${items}</div>
+    </details>`;
+  return { shapes, annotations, listHtml };
+}
 
-_EUROSTAT_ELEC_CACHE = None
+/* ============ Eksport CSV z wykresu Plotly ============ */
+function exportPlotCSV(elId, baseName) {
+  const el = document.getElementById(elId);
+  if (!el || !el.data) return;
+  const traces = el.data.filter(t => t && t.x && t.y && t.name && t.showlegend !== false);
+  if (!traces.length) { alert('Brak danych do eksportu'); return; }
 
-def _fetch_eurostat_elec_all():
-    """Pobiera detaliczne ceny elektryki (gospodarstwa domowe) z Eurostat nrg_pc_204
-    dla wszystkich krajow z PRODUCTS[eurostat_elec] w jednym API call.
-    Band DC 2500-4999 kWh/rok, wszystkie podatki wliczone (TAX_INC), EUR/kWh.
-    Dane pol-roczne (S1/S2) - konwertuje do daty (S1=01-01, S2=07-01).
-    Zwraca slownik {geo_code: [{date, value}]}.
-    """
-    global _EUROSTAT_ELEC_CACHE
-    if _EUROSTAT_ELEC_CACHE is not None:
-        return _EUROSTAT_ELEC_CACHE
+  // Suma unikalnych X (dat)
+  const allX = new Set();
+  traces.forEach(t => { for (let i = 0; i < t.x.length; i++) allX.add(t.x[i]); });
+  const xs = Array.from(allX).sort();
 
-    geos = [p["series"] for p in PRODUCTS if p["source"] == "eurostat_elec"]
-    if not geos:
-        _EUROSTAT_ELEC_CACHE = {}
-        return _EUROSTAT_ELEC_CACHE
+  // Mapa: dla kazdego trace, indeks x
+  const xIdxMaps = traces.map(t => {
+    const m = new Map();
+    for (let i = 0; i < t.x.length; i++) m.set(t.x[i], t.y[i]);
+    return m;
+  });
 
-    params_list = [
-        ("format", "JSON"),
-        ("lang", "EN"),
-        ("product", "6000"),          # 6000 = Electricity
-        ("nrg_cons", "KWH2500-4999"),  # band DC (przecietne gospodarstwo)
-        ("unit", "KWH"),               # EUR/kWh
-        ("tax", "I_TAX"),              # all taxes included
-        ("currency", "EUR"),
-    ]
-    for g in geos:
-        params_list.append(("geo", g))
-    query = urllib.parse.urlencode(params_list)
-    url = f"https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/nrg_pc_204?{query}"
+  // CSV
+  const escape = s => {
+    const str = String(s);
+    return /[",\n]/.test(str) ? '"' + str.replace(/"/g, '""') + '"' : str;
+  };
+  const header = ['Date', ...traces.map(t => t.name)].map(escape).join(',');
+  const rows = xs.map(x => {
+    const row = [x, ...xIdxMaps.map(m => m.has(x) ? m.get(x) : '')];
+    return row.map(escape).join(',');
+  });
+  const csv = header + '\n' + rows.join('\n');
 
-    print(f"  [EUROSTAT_ELEC] pobieram detal elektryki dla {len(geos)} krajow ...", flush=True)
-    try:
-        req = urllib.request.Request(url, headers={"User-Agent": "energy-analytics/1.0"})
-        with urllib.request.urlopen(req, timeout=90) as r:
-            data = json.load(r)
-    except Exception as e:
-        print(f"  [EUROSTAT_ELEC] BLAD: {e}", flush=True)
-        _EUROSTAT_ELEC_CACHE = {}
-        return _EUROSTAT_ELEC_CACHE
+  const ts = new Date().toISOString().slice(0, 10);
+  const filename = `${baseName}-${state.mode}-${ts}.csv`;
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 100);
+}
 
-    # SDMX-JSON: mapowanie plaskich indeksow na wymiary
-    dim_ids = data.get("id", [])   # np ["freq","product","nrg_cons","unit","tax","currency","geo","time"]
-    dim_sizes = data.get("size", [])
-    dims = data.get("dimension", {})
-    values = data.get("value", {})
-    if not dim_ids or not values:
-        print(f"  [EUROSTAT_ELEC] pusta odpowiedz", flush=True)
-        _EUROSTAT_ELEC_CACHE = {}
-        return _EUROSTAT_ELEC_CACHE
+const layoutBase = {
+  paper_bgcolor: '#1a2029', plot_bgcolor: '#1a2029',
+  font: { color: '#e6edf3', family: 'inherit' },
+  margin: { l: 65, r: 55, t: 20, b: 40 },
+  xaxis: { gridcolor: '#2d3746', zerolinecolor: '#2d3746' },
+  yaxis: { gridcolor: '#2d3746', zerolinecolor: '#2d3746' },
+  legend: { orientation: 'h', y: -0.18 },
+  hovermode: 'x unified',
+};
+function setEmpty(elId, msg) { Plotly.purge(elId); document.getElementById(elId).innerHTML = `<div class="empty">${msg}</div>`; }
 
-    # Rozkoduj indeksy per wymiar
-    dim_index = {}  # dim_id -> [category_id per pozycja]
-    for did in dim_ids:
-        cat = dims.get(did, {}).get("category", {})
-        idx_map = cat.get("index", {})  # cat_id -> pozycja
-        # odwroc: pozycja -> cat_id
-        pos_to_id = [None] * len(idx_map)
-        for cid, pos in idx_map.items():
-            pos_to_id[pos] = cid
-        dim_index[did] = pos_to_id
+/* ============ Nakładka ============ */
+function renderStandard() {
+  const active = PRODUCTS.filter(p => state.selected.includes(p.id));
+  document.getElementById('mainTitle').innerHTML = active.length
+    ? `Nakładka: ${active.map(p => p.name).join('  ·  ')}${state.pct ? ' <span class="sub">(% zmiana od początku okna)</span>' : ''}`
+    : 'Nakładka — brak wyboru';
+  if (!active.length) { setEmpty('mainPlot', 'Zaznacz produkt po lewej.'); Plotly.purge('corrPlot'); return; }
+  const traces = [];
+  const convertedUnits = [];
+  active.forEach((p, i) => {
+    const s = slice(p.id);
+    const conv = convertSeries(s.dates, s.prices, p.unit, p.id);
+    convertedUnits.push(conv.unit);
+    let y = conv.prices; if (state.pct && y.length) y = pctNormalize(y);
+    traces.push({
+      x: s.dates, y, name: p.name, type: 'scatter', mode: 'lines',
+      line: { color: p.color, width: 2 },
+      yaxis: (state.dual && i === 1 && !state.pct) ? 'y2' : 'y',
+    });
+  });
+  // Wskazniki techniczne dla PIERWSZEGO produktu (SMA/BB/RSI) - tylko dla 1 produktu i nie w %
+  const rsiEl = document.getElementById('rsiPlot');
+  if (!state.pct && active.length === 1) {
+    const p0 = active[0]; const s0 = slice(p0.id);
+    const conv0 = convertSeries(s0.dates, s0.prices, p0.unit, p0.id);
+    const px = conv0.prices;
+    if (state.showSMA && px.length >= 50) {
+      const sma50 = rollingSMA(px, 50);
+      traces.push({ x: s0.dates, y: sma50, name: 'SMA50', type: 'scatter', mode: 'lines',
+        line: { color: '#ffd54f', width: 1.2, dash: 'dash' }, yaxis: 'y' });
+      if (px.length >= 200) {
+        const sma200 = rollingSMA(px, 200);
+        traces.push({ x: s0.dates, y: sma200, name: 'SMA200', type: 'scatter', mode: 'lines',
+          line: { color: '#ff8a65', width: 1.2, dash: 'dash' }, yaxis: 'y' });
+      }
+    }
+    if (state.showBB && px.length >= 20) {
+      const bb = bollingerBands(px, 20, 2);
+      traces.push({ x: s0.dates, y: bb.upper, name: 'BB upper', type: 'scatter', mode: 'lines',
+        line: { color: '#4fc3f7', width: 1, dash: 'dot' }, yaxis: 'y', showlegend: false });
+      traces.push({ x: s0.dates, y: bb.lower, name: 'BB±2σ', type: 'scatter', mode: 'lines',
+        line: { color: '#4fc3f7', width: 1, dash: 'dot' }, yaxis: 'y',
+        fill: 'tonexty', fillcolor: 'rgba(79,195,247,0.06)' });
+    }
+    if (state.showRSI && px.length >= 20) {
+      const rsi = rsi14(px, 14);
+      const first = s0.dates[0], last = s0.dates[s0.dates.length - 1];
+      rsiEl.style.display = '';
+      Plotly.react('rsiPlot', [
+        { x: s0.dates, y: rsi, type: 'scatter', mode: 'lines', name: `RSI14 ${p0.id}`, line: { color: '#ba68c8', width: 1.5 } },
+        { x: [first, last], y: [70, 70], type: 'scatter', mode: 'lines', name: 'overbought 70', line: { color: '#ef5350', width: 1, dash: 'dot' }, showlegend: false },
+        { x: [first, last], y: [30, 30], type: 'scatter', mode: 'lines', name: 'oversold 30',  line: { color: '#66bb6a', width: 1, dash: 'dot' }, showlegend: false },
+        { x: [first, last], y: [50, 50], type: 'scatter', mode: 'lines', line: { color: '#8b96a5', width: 1, dash: 'dot' }, showlegend: false },
+      ], { ...layoutBase, yaxis: { ...layoutBase.yaxis, range: [0, 100], title: 'RSI(14)' }, height: 220 },
+         { responsive: true, displaylogo: false });
+    } else {
+      rsiEl.style.display = 'none'; Plotly.purge('rsiPlot');
+    }
+  } else {
+    rsiEl.style.display = 'none'; Plotly.purge('rsiPlot');
+  }
 
-    def unflatten(flat_idx):
-        # zwraca dict {dim_id: cat_id} z plaskiego indeksu SDMX
-        out = {}
-        for i in range(len(dim_ids) - 1, -1, -1):
-            sz = dim_sizes[i]
-            out[dim_ids[i]] = dim_index[dim_ids[i]][flat_idx % sz]
-            flat_idx //= sz
-        return out
+  const layout = { ...layoutBase };
+  layout.yaxis = { ...layoutBase.yaxis, title: state.pct ? '% zmiana' : (convertedUnits[0] || '') };
+  if (state.dual && active.length > 1 && !state.pct) {
+    layout.yaxis2 = { ...layoutBase.yaxis, title: convertedUnits[1], overlaying: 'y', side: 'right' };
+  }
+  // wydarzenia
+  const ev = buildEventOverlay(active[0] ? slice(active[0].id).dates[0] || MIN_DATE : MIN_DATE,
+                                active[0] ? slice(active[0].id).dates.slice(-1)[0] || MAX_DATE : MAX_DATE);
+  layout.shapes = ev.shapes;
+  layout.annotations = ev.annotations;
+  document.getElementById('eventsList').innerHTML = ev.listHtml;
+  Plotly.react('mainPlot', traces, layout, { responsive: true, displaylogo: false });
+  // Selektor okna widoczny tylko dla dokladnie 2 produktow (line-corr)
+  const cwr = document.getElementById('corrWindowRow');
+  if (cwr) cwr.style.display = active.length === 2 ? 'flex' : 'none';
+  if (active.length === 2) {
+    // Klasyczna para: krocząca korelacja (line)
+    const sa = slice(active[0].id), sb = slice(active[1].id);
+    const dm = {}; sa.dates.forEach((d,i)=>dm[d]=[sa.prices[i]]);
+    sb.dates.forEach((d,i)=>{ if (dm[d]) dm[d].push(sb.prices[i]); });
+    const commonDates = Object.keys(dm).filter(d=>dm[d].length===2).sort();
+    const a = commonDates.map(d=>dm[d][0]);
+    const b = commonDates.map(d=>dm[d][1]);
+    const wantWin = state.corrWindow || 60;
+    const win = Math.min(wantWin, Math.max(5, Math.floor(a.length / 3)));
+    const winNote = win < wantWin ? ` <span class="sub" style="color:#ff9800">(za mało danych, użyto ${win}d)</span>` : '';
+    document.getElementById('corrTitle').innerHTML = `Korelacja krocząca (${win} dni)${winNote}: <span class="sub">${active[0].id} ↔ ${active[1].id}</span>`;
+    const corr = rollingCorr(a, b, win);
+    Plotly.react('corrPlot', [
+      { x: commonDates, y: corr, type: 'scatter', mode: 'lines', line: { color: '#4fc3f7', width: 2 }, name: `corr ${win}d` },
+      { x: [commonDates[0], commonDates[commonDates.length-1]], y: [0, 0], type: 'scatter', mode: 'lines', line: {color: '#8b96a5', width: 1, dash: 'dot'}, showlegend: false },
+    ], { ...layoutBase, yaxis: { ...layoutBase.yaxis, range: [-1, 1], title: 'korelacja' } }, { responsive: true, displaylogo: false });
+  } else if (active.length >= 3) {
+    // Macierz korelacji: heatmap NxN (Pearson na overlapping dates)
+    document.getElementById('corrTitle').innerHTML = `Macierz korelacji <span class="sub">(${active.length} produktów, cały widoczny okres)</span>`;
+    const seriesMap = {};
+    active.forEach(p => { const s = slice(p.id); seriesMap[p.id] = {}; s.dates.forEach((d,i)=>{ seriesMap[p.id][d] = s.prices[i]; }); });
+    const N = active.length;
+    const matrix = Array.from({length: N}, () => new Array(N).fill(null));
+    const labels = active.map(p => p.id);
+    for (let i = 0; i < N; i++) {
+      for (let j = 0; j < N; j++) {
+        if (i === j) { matrix[i][j] = 1; continue; }
+        if (j < i) { matrix[i][j] = matrix[j][i]; continue; }
+        const aM = seriesMap[active[i].id], bM = seriesMap[active[j].id];
+        const common = Object.keys(aM).filter(d => d in bM);
+        if (common.length < 10) { matrix[i][j] = null; continue; }
+        const aV = common.map(d => aM[d]), bV = common.map(d => bM[d]);
+        const mA = aV.reduce((s,x)=>s+x,0)/aV.length;
+        const mB = bV.reduce((s,x)=>s+x,0)/bV.length;
+        let num=0, dA=0, dB=0;
+        for (let k=0;k<aV.length;k++){ const xa=aV[k]-mA, xb=bV[k]-mB; num+=xa*xb; dA+=xa*xa; dB+=xb*xb; }
+        matrix[i][j] = (dA>0 && dB>0) ? num / Math.sqrt(dA*dB) : null;
+      }
+    }
+    const annotations = [];
+    for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) {
+      const v = matrix[i][j];
+      annotations.push({ x: labels[j], y: labels[i], text: v == null ? '—' : v.toFixed(2),
+        font: { color: v != null && Math.abs(v) > 0.5 ? '#000' : '#fff', size: 11 },
+        showarrow: false });
+    }
+    Plotly.react('corrPlot', [{
+      type: 'heatmap', z: matrix, x: labels, y: labels,
+      zmin: -1, zmax: 1, colorscale: [
+        [0, '#d32f2f'], [0.25, '#ff8a65'], [0.5, '#212a3d'], [0.75, '#4fc3f7'], [1, '#0d47a1']
+      ],
+      colorbar: { title: 'r', thickness: 12 }, hoverongaps: false,
+    }], { ...layoutBase, xaxis: { ...layoutBase.xaxis, side: 'top', type: 'category' },
+          yaxis: { ...layoutBase.yaxis, autorange: 'reversed', type: 'category' },
+          annotations, height: Math.max(320, N * 42) }, { responsive: true, displaylogo: false });
+  } else {
+    document.getElementById('corrTitle').textContent = 'Korelacja — wybierz 2+ produkty';
+    Plotly.purge('corrPlot');
+  }
+  renderStats(active);
+}
 
-    def period_to_date(t):
-        # np "2024-S1" -> "2024-01-01"; "2024-S2" -> "2024-07-01"
-        t = str(t)
-        if "-S1" in t: return t[:4] + "-01-01"
-        if "-S2" in t: return t[:4] + "-07-01"
-        if len(t) == 4 and t.isdigit(): return t + "-01-01"
-        return None
+/* ============ Sezonowa (uniwersalna, obsługuje pct + method) ============ */
+function renderSeasonalGeneric(seriesDates, seriesValues, opts) {
+  const { window, showMinMax, showYears, colorLine, unitLabel, targetElId, pct, method, yearFilter } = opts;
+  // Grupuj po roku
+  const byYear = {};
+  seriesDates.forEach((ds, i) => {
+    const dt = new Date(ds); const y = dt.getFullYear();
+    const start = new Date(y, 0, 1); const doy = Math.floor((dt - start) / 86400000);
+    (byYear[y] = byYear[y] || {})[doy] = seriesValues[i];
+  });
+  // Jeśli pct: przelicz każdy rok na % zmianę od bazy (domyślnie DOY 0 = 1 stycznia,
+  // ale ustawiane przez zoom - state.seasonPctBaseDoy)
+  const yearsSorted = Object.keys(byYear).map(Number).sort();
+  if (pct) {
+    const baseDoy = state.seasonPctBaseDoy || 0;
+    yearsSorted.forEach(y => {
+      // Znajdz baze: wartosc dokladnie w baseDoy albo najblizsza dalej
+      let base = byYear[y][baseDoy];
+      if (base == null) {
+        for (let d = baseDoy + 1; d < 366; d++) {
+          if (byYear[y][d] != null) { base = byYear[y][d]; break; }
+        }
+      }
+      if (!base) return;
+      Object.keys(byYear[y]).forEach(doyStr => {
+        const doy = +doyStr;
+        byYear[y][doy] = (byYear[y][doy] / base - 1) * 100;
+      });
+    });
+  }
+  const currentYear = new Date(seriesDates[seriesDates.length-1]).getFullYear();
+  // Filtruj lata: najpierw wg okna, potem wg opcjonalnego yearFilter (np. ENSO)
+  let historicalYears = yearsSorted.filter(y => y < currentYear).slice(-window);
+  if (yearFilter) historicalYears = historicalYears.filter(yearFilter);
 
-    result = {}
-    for flat_key, v in values.items():
-        try:
-            fk = int(flat_key)
-            fv = float(v)
-        except (ValueError, TypeError):
-            continue
-        coord = unflatten(fk)
-        geo = coord.get("geo")
-        period = coord.get("time")
-        date_str = period_to_date(period)
-        if not geo or not date_str: continue
-        result.setdefault(geo, []).append({"date": date_str, "value": round(fv, 5)})
+  const traces = [];
+  const yLabel = pct ? '% zmiana YTD' : unitLabel;
 
-    # sortuj/dedup
-    for g in list(result.keys()):
-        seen = {}
-        for o in result[g]:
-            seen[o["date"]] = o["value"]
-        result[g] = [{"date": d, "value": v} for d, v in sorted(seen.items())]
-        print(f"  [EUROSTAT_ELEC] {g}: {len(result[g])} punktow", flush=True)
+  // Koperta min/max (zawsze literalna, dla porównania)
+  if (showMinMax) {
+    const doys = Array.from({length: 366}, (_, i) => i);
+    const mins = [], maxs = [];
+    doys.forEach(doy => {
+      let mn = Infinity, mx = -Infinity;
+      historicalYears.forEach(y => { const v = byYear[y][doy]; if (v != null) { if (v < mn) mn = v; if (v > mx) mx = v; } });
+      mins.push(mn === Infinity ? null : mn); maxs.push(mx === -Infinity ? null : mx);
+    });
+    const doyDates = doys.map(doy => { const dt = new Date(currentYear, 0, 1); dt.setDate(dt.getDate() + doy); return dt.toISOString().slice(0, 10); });
+    const minsSm = smoothSeries(mins, 3), maxsSm = smoothSeries(maxs, 3);
+    traces.push({ x: doyDates, y: maxsSm, type: 'scatter', mode: 'lines', line: { width: 0 }, showlegend: false, hovertemplate: 'max: %{y:.2f}<extra></extra>' });
+    traces.push({ x: doyDates, y: minsSm, type: 'scatter', mode: 'lines', fill: 'tonexty', fillcolor: 'rgba(79,195,247,0.12)', line: { width: 0 }, name: `min-max ${window}L`, hovertemplate: 'min: %{y:.2f}<extra></extra>' });
+  }
+  if (showYears) {
+    historicalYears.forEach(y => {
+      const doys = Object.keys(byYear[y]).map(Number).sort((a,b)=>a-b);
+      const dates = doys.map(doy => { const dt = new Date(currentYear, 0, 1); dt.setDate(dt.getDate() + doy); return dt.toISOString().slice(0, 10); });
+      const phase = ensoOf(y);
+      const lineColor = ENSO_COLORS[phase] + '80'; // alpha 50%
+      traces.push({ x: dates, y: doys.map(doy => byYear[y][doy]), name: `${y} ${ENSO_ICONS[phase]}`, type: 'scatter', mode: 'lines', line: { width: 1, color: lineColor }, hovertemplate: `${y} (${ENSO_LABELS[phase]}): %{y:.2f}<extra></extra>` });
+    });
+  }
+  // Linia centralna - wg wybranej metody
+  const avgY = [], avgDates = [];
+  for (let doy = 0; doy < 366; doy++) {
+    const vals = historicalYears.map(y => byYear[y][doy]).filter(v => v != null);
+    if (vals.length) {
+      avgY.push(computeAvg(vals, method));
+      const dt = new Date(currentYear, 0, 1); dt.setDate(dt.getDate() + doy);
+      avgDates.push(dt.toISOString().slice(0, 10));
+    }
+  }
+  const methodLabel = method === 'median' ? 'mediana' : method === 'trimmed' ? 'średnia obc. 20%' : 'średnia';
+  const avgYSm = smoothSeries(avgY, 3);
+  traces.push({ x: avgDates, y: avgYSm, name: `${methodLabel} ${window}L`, type: 'scatter', mode: 'lines', line: { color: colorLine, width: 3 } });
+  // Bieżący rok
+  const cur = byYear[currentYear];
+  let curLastVal = null;
+  if (cur) {
+    const doys = Object.keys(cur).map(Number).sort((a,b)=>a-b);
+    const dates = doys.map(doy => { const dt = new Date(currentYear, 0, 1); dt.setDate(dt.getDate() + doy); return dt.toISOString().slice(0, 10); });
+    const vals = doys.map(doy => cur[doy]);
+    curLastVal = vals[vals.length - 1];
+    traces.push({ x: dates, y: vals, name: `${currentYear} (bieżący)`, type: 'scatter', mode: 'lines', line: { color: '#ffb74d', width: 2.5, dash: 'dash' } });
+  }
+  Plotly.react(targetElId, traces, {
+    ...layoutBase,
+    xaxis: { ...layoutBase.xaxis, tickformat: '%b', dtick: 'M1' },
+    yaxis: { ...layoutBase.yaxis, title: yLabel },
+  }, { responsive: true, displaylogo: false });
 
-    _EUROSTAT_ELEC_CACHE = result
-    return _EUROSTAT_ELEC_CACHE
+  // statystyki
+  const rowMax = { doy: -1, val: -Infinity, year: null };
+  const rowMin = { doy: -1, val: Infinity, year: null };
+  historicalYears.forEach(y => {
+    Object.entries(byYear[y]).forEach(([doy, v]) => {
+      if (v > rowMax.val) { rowMax.val = v; rowMax.year = y; rowMax.doy = +doy; }
+      if (v < rowMin.val) { rowMin.val = v; rowMin.year = y; rowMin.doy = +doy; }
+    });
+  });
+  const fmtDoy = doy => { const dt = new Date(currentYear, 0, 1); dt.setDate(dt.getDate() + doy); return dt.toLocaleDateString('pl-PL', { day: 'numeric', month: 'short' }); };
+  const avgVal = avgY.length ? avgY[avgY.length-1] : 0;
+  const unit = pct ? '%' : unitLabel;
+  return {
+    html: `<div class="stats-grid">
+      <div class="stat"><div class="label">Maks. (${window}L)</div><div class="value up">${isFinite(rowMax.val) ? fmtNum(rowMax.val) : '—'} ${unit}</div><div class="sub">${rowMax.year || '—'} · ${rowMax.doy >= 0 ? fmtDoy(rowMax.doy) : '—'}</div></div>
+      <div class="stat"><div class="label">Min. (${window}L)</div><div class="value down">${isFinite(rowMin.val) ? fmtNum(rowMin.val) : '—'} ${unit}</div><div class="sub">${rowMin.year || '—'} · ${rowMin.doy >= 0 ? fmtDoy(rowMin.doy) : '—'}</div></div>
+      <div class="stat"><div class="label">${methodLabel} ${window}L (dziś)</div><div class="value">${fmtNum(avgVal)} ${unit}</div></div>
+      <div class="stat"><div class="label">Bieżący vs ${methodLabel}</div><div class="value">${curLastVal != null && avgVal ? ((curLastVal - avgVal)).toFixed(2) + (pct ? ' p.p.' : ' ' + unit) : '—'}</div><div class="sub">różnica</div></div>
+    </div>`
+  };
+}
 
+function renderSeasonalENSOSpread(seriesDates, seriesValues, opts) {
+  const { window, unitLabel, targetElId, method, pct } = opts;
+  const byYear = {};
+  seriesDates.forEach((ds, i) => {
+    const dt = new Date(ds); const y = dt.getFullYear();
+    const start = new Date(y, 0, 1); const doy = Math.floor((dt - start) / 86400000);
+    (byYear[y] = byYear[y] || {})[doy] = seriesValues[i];
+  });
+  const yearsSorted = Object.keys(byYear).map(Number).sort();
+  const currentYear = new Date(seriesDates[seriesDates.length-1]).getFullYear();
+  const historicalYears = yearsSorted.filter(y => y < currentYear).slice(-window);
+  const laNinaYears = historicalYears.filter(y => ensoOf(y) === 'la_nina');
+  const elNinoYears = historicalYears.filter(y => ensoOf(y) === 'el_nino');
+  if (pct) {
+    const baseDoy = state.seasonPctBaseDoy || 0;
+    yearsSorted.forEach(y => {
+      let base = byYear[y][baseDoy];
+      if (base == null) {
+        for (let d = baseDoy + 1; d < 366; d++) {
+          if (byYear[y][d] != null) { base = byYear[y][d]; break; }
+        }
+      }
+      if (!base) return;
+      Object.keys(byYear[y]).forEach(doyStr => {
+        const doy = +doyStr;
+        byYear[y][doy] = (byYear[y][doy] / base - 1) * 100;
+      });
+    });
+  }
+  const lnY = [], enY = [], diffY = [], dates = [];
+  for (let doy = 0; doy < 366; doy++) {
+    const lnV = laNinaYears.map(y => byYear[y][doy]).filter(v => v != null);
+    const enV = elNinoYears.map(y => byYear[y][doy]).filter(v => v != null);
+    if (lnV.length && enV.length) {
+      const lnAvg = computeAvg(lnV, method);
+      const enAvg = computeAvg(enV, method);
+      lnY.push(lnAvg); enY.push(enAvg); diffY.push(lnAvg - enAvg);
+      const dt = new Date(currentYear, 0, 1); dt.setDate(dt.getDate() + doy);
+      dates.push(dt.toISOString().slice(0, 10));
+    }
+  }
+  if (!lnY.length) {
+    setEmpty(targetElId, `Brak danych - potrzeba lat La Niña (${laNinaYears.length}) i El Niño (${elNinoYears.length}) w oknie ${window}L.`);
+    return { html: '<div class="hint">Zwiększ okno lat lub sprawdź plik data/enso.json.</div>' };
+  }
+  const lnYs = smoothSeries(lnY, 3), enYs = smoothSeries(enY, 3), diffYs = smoothSeries(diffY, 3);
+  Plotly.react(targetElId, [
+    { x: dates, y: lnYs, name: `La Niña ❄️ (${laNinaYears.length}L)`, type: 'scatter', mode: 'lines', line: { color: '#4fc3f7', width: 2.5 } },
+    { x: dates, y: enYs, name: `El Niño ☀️ (${elNinoYears.length}L)`, type: 'scatter', mode: 'lines', line: { color: '#ef5350', width: 2.5 } },
+    { x: dates, y: diffYs, name: 'La Niña − El Niño', type: 'scatter', mode: 'lines', line: { color: '#ffb74d', width: 2, dash: 'dot' }, yaxis: 'y2' },
+  ], { ...layoutBase,
+       xaxis: { ...layoutBase.xaxis, tickformat: '%b', dtick: 'M1' },
+       yaxis: { ...layoutBase.yaxis, title: pct ? '% zmiana YTD' : unitLabel },
+       yaxis2: { ...layoutBase.yaxis, title: 'różnica', overlaying: 'y', side: 'right' },
+     }, { responsive: true, displaylogo: false });
+  const avgDiff = diffY.reduce((s,x)=>s+x,0)/diffY.length;
+  const maxDiff = Math.max(...diffY);
+  const minDiff = Math.min(...diffY);
+  const posDays = diffY.filter(v => v > 0).length;
+  const negDays = diffY.filter(v => v < 0).length;
+  const unit = pct ? 'p.p.' : unitLabel;
+  return {
+    html: `<div class="stats-grid">
+      <div class="stat"><div class="label">Średnia różnica (LN − EN)</div><div class="value ${avgDiff >= 0 ? 'up' : 'down'}">${avgDiff >= 0 ? '+' : ''}${fmtNum(avgDiff)} ${unit}</div><div class="sub">${avgDiff >= 0 ? 'La Niña typowo droższa' : 'El Niño typowo droższy'}</div></div>
+      <div class="stat"><div class="label">Max przewaga La Niña</div><div class="value up">+${fmtNum(maxDiff)} ${unit}</div></div>
+      <div class="stat"><div class="label">Max przewaga El Niño</div><div class="value down">${fmtNum(minDiff)} ${unit}</div></div>
+      <div class="stat"><div class="label">Dni droższe</div><div class="value" style="font-size:14px">La Niña: ${posDays}<br>El Niño: ${negDays}</div></div>
+    </div>
+    <div style="margin-top:12px; font-size:12px; color:var(--muted); line-height:1.7">
+      <div><b>❄️ La Niña (${laNinaYears.length}):</b> ${laNinaYears.join(', ') || '—'}</div>
+      <div><b>☀️ El Niño (${elNinoYears.length}):</b> ${elNinoYears.join(', ') || '—'}</div>
+    </div>`
+  };
+}
 
-def fetch_eurostat_elec(geo_code: str) -> list:
-    return _fetch_eurostat_elec_all().get(geo_code, [])
+// Overlay wielu produktow w Sezonowej: kazdy produkt jego N-letnia srednia + biezacy rok
+function renderSeasonalMulti(products) {
+  const currentYear = new Date().getFullYear();
+  const dateFor = doy => { const dt = new Date(currentYear, 0, 1); dt.setDate(dt.getDate() + doy); return dt.toISOString().slice(0, 10); };
+  const dates = Array.from({length: 366}, (_, i) => dateFor(i));
+  const traces = [];
+  let commonUnit = null;
+  products.forEach(p => {
+    const conv = convertSeries(DATA[p.id].dates, DATA[p.id].prices, p.unit, p.id);
+    if (commonUnit === null) commonUnit = conv.unit;
+    else if (commonUnit !== conv.unit) commonUnit = 'różne';
+    const byYear = {};
+    DATA[p.id].dates.forEach((ds, i) => {
+      const dt = new Date(ds); const y = dt.getFullYear();
+      const doy = Math.floor((dt - new Date(y, 0, 1)) / 86400000);
+      (byYear[y] = byYear[y] || {})[doy] = conv.prices[i];
+    });
+    if (state.seasonPct) {
+      const baseDoy = state.seasonPctBaseDoy || 0;
+      Object.keys(byYear).forEach(y => {
+        let base = byYear[y][baseDoy];
+        if (base == null) {
+          for (let d = baseDoy + 1; d < 366; d++) {
+            if (byYear[y][d] != null) { base = byYear[y][d]; break; }
+          }
+        }
+        if (!base) return;
+        Object.keys(byYear[y]).forEach(doyStr => {
+          const doy = +doyStr;
+          byYear[y][doy] = (byYear[y][doy] / base - 1) * 100;
+        });
+      });
+    }
+    const years = Object.keys(byYear).map(Number).sort();
+    let historicalYears = years.filter(y => y < currentYear).slice(-state.seasonWindow);
+    if (state.ensoFilter && state.ensoFilter !== 'all' && state.ensoFilter !== 'spread') {
+      historicalYears = historicalYears.filter(y => ensoOf(y) === state.ensoFilter);
+    }
+    const avg = new Array(366).fill(null);
+    for (let doy = 0; doy < 366; doy++) {
+      const vals = historicalYears.map(y => byYear[y][doy]).filter(v => v != null);
+      if (vals.length) avg[doy] = computeAvg(vals, state.seasonAvg);
+    }
+    const avgSm = smoothSeries(avg, 3);
+    traces.push({ x: dates, y: avgSm, name: `${p.id} (${state.seasonWindow}L avg)`,
+      type: 'scatter', mode: 'lines', line: { color: p.color, width: 2.5 }, connectgaps: false });
+    // Biezacy rok jako przerywana
+    const cur = byYear[currentYear];
+    if (cur) {
+      const curY = new Array(366).fill(null);
+      Object.entries(cur).forEach(([doy, v]) => { curY[+doy] = v; });
+      traces.push({ x: dates, y: curY, name: `${p.id} ${currentYear}`,
+        type: 'scatter', mode: 'lines', line: { color: p.color, width: 1.2, dash: 'dash' }, connectgaps: false });
+    }
+  });
+  const unitLabel = state.seasonPct ? '% zmiana YTD' :
+    (commonUnit === 'różne' ? 'różne jednostki - włącz "Skala %" żeby porównać' : commonUnit);
+  Plotly.react('mainPlot', traces, {
+    ...layoutBase,
+    xaxis: { ...layoutBase.xaxis, tickformat: '%b', dtick: 'M1' },
+    yaxis: { ...layoutBase.yaxis, title: unitLabel },
+  }, { responsive: true, displaylogo: false });
 
+  // Statystyki - dla kazdego produktu ostatnia wartosc vs srednia
+  const items = products.map(p => {
+    const conv = convertSeries(DATA[p.id].dates, DATA[p.id].prices, p.unit, p.id);
+    const last = conv.prices.length ? conv.prices[conv.prices.length - 1] : 0;
+    return `<div class="stat"><div class="label">${p.name}</div><div class="value">${fmtNum(last)} ${conv.unit}</div><div class="sub">ostatnia obserwacja</div></div>`;
+  }).join('');
+  return { html: `<div class="stats-grid">${items}</div>
+    <div style="margin-top:10px; font-size:11px; color:var(--muted)">
+      Nakładka średnich ${state.seasonWindow}-letnich${state.seasonPct ? ' (w % zmiany od 1 stycznia)' : ''}.
+      ${state.ensoFilter !== 'all' && state.ensoFilter !== 'spread' ? ' Filtr ENSO: ' + ENSO_ICONS[state.ensoFilter] + ' ' + ENSO_LABELS[state.ensoFilter] : ''}
+    </div>` };
+}
 
-def fetch_stooq(symbol: str, unit_scale: float = 1.0) -> list:
-    """Pobiera dzienne dane ze Stooq (CSV). Uzywane dla tickerow ktorych Yahoo nie ma
-    (MATIF EMA.F, CA.F; MGEX MW.F; itd).
-    Zwraca liste {date, value} sortowana rosnaco po dacie.
-    """
-    import urllib.request
-    sym = symbol.lower()
-    url = f"https://stooq.com/q/d/l/?s={urllib.parse.quote(sym)}&i=d"
-    try:
-        req = urllib.request.Request(url, headers={"User-Agent": "energy-analytics/1.0"})
-        with urllib.request.urlopen(req, timeout=90) as r:
-            raw = r.read().decode("utf-8", errors="replace")
-    except Exception as e:
-        print(f"  [STOOQ {symbol}] BLAD pobrania: {e}", flush=True)
-        return []
-    if not raw or "Date" not in raw.split("\n", 1)[0]:
-        print(f"  [STOOQ {symbol}] pusta odpowiedz lub blad formatu", flush=True)
-        return []
-    obs = []
-    import csv, io
-    reader = csv.DictReader(io.StringIO(raw))
-    for row in reader:
-        date_str = (row.get("Date") or "").strip()
-        close_str = (row.get("Close") or "").strip()
-        if not date_str or not close_str: continue
-        try:
-            v = float(close_str) * unit_scale
-        except ValueError:
-            continue
-        if date_str < START_DATE: continue
-        obs.append({"date": date_str, "value": round(v, 4)})
-    obs.sort(key=lambda o: o["date"])
-    return obs
+function renderSeasonal() {
+  document.getElementById('eventsList').innerHTML = '';
+  const active = PRODUCTS.filter(p => state.selected.includes(p.id));
+  if (!active.length) { document.getElementById('mainTitle').textContent = 'Sezonowa — wybierz produkt'; setEmpty('mainPlot', 'Wybierz produkt.'); return; }
 
+  // Wiele produktow (2+): nakładka srednich
+  if (active.length >= 2) {
+    document.getElementById('mainTitle').innerHTML =
+      `Sezonowa nakładka: ${active.map(p => p.name).join(' · ')} <span class="sub">średnia ${state.seasonWindow}L${state.seasonPct ? ' · % zmiana YTD' : ''}</span>`;
+    const res = renderSeasonalMulti(active);
+    document.getElementById('seasonalStats').innerHTML = res.html;
+    renderStats(active);
+    return;
+  }
 
-def fetch_yahoo(ticker: str, unit_scale: float = 1.0) -> list:
-    """Zwraca liste {date, value} z Yahoo Finance przez yfinance."""
-    try:
-        import yfinance as yf
-    except ImportError:
-        raise RuntimeError("Brakuje pakietu yfinance - dodaj do requirements.txt")
+  // Jeden produkt: pelne detale (envelope + wszystkie lata + ENSO spread + itd.)
+  const p = active[0];
+  const methodLabel = state.seasonAvg === 'median' ? 'mediana' : state.seasonAvg === 'trimmed' ? 'średnia obc.' : 'średnia';
+  const d = DATA[p.id];
 
-    t = yf.Ticker(ticker)
-    df = t.history(start=START_DATE, auto_adjust=False, actions=False)
-    if df is None or df.empty:
-        return []
-    obs = []
-    for ts, row in df.iterrows():
-        close = row.get("Close")
-        if close is None:
-            continue
-        try:
-            v = float(close) * unit_scale
-        except (TypeError, ValueError):
-            continue
-        # ts moze byc pd.Timestamp; wez ISO date
-        date_str = ts.strftime("%Y-%m-%d") if hasattr(ts, "strftime") else str(ts)[:10]
-        obs.append({"date": date_str, "value": round(v, 4)})
-    return obs
+  // konwersja jednostek (bbl→gal/L, gal→L) z time-aligned FX
+  const convD = convertSeries(d.dates, d.prices, p.unit, p.id);
 
+  // Tryb spread La Niña - El Niño
+  if (state.ensoFilter === 'spread') {
+    document.getElementById('mainTitle').innerHTML =
+      `Sezonowa spread ENSO: ${p.name} <span class="sub">La Niña vs El Niño · ${methodLabel} ${state.seasonWindow}L${state.seasonPct ? ' · % zmiana YTD' : ''}</span>`;
+    const res = renderSeasonalENSOSpread(d.dates, convD.prices, {
+      window: state.seasonWindow, unitLabel: convD.unit, targetElId: 'mainPlot',
+      pct: state.seasonPct, method: state.seasonAvg,
+    });
+    document.getElementById('seasonalStats').innerHTML = res.html;
+    renderStats([p]);
+    return;
+  }
 
-def _load_existing_prices():
-    """Zwraca istniejacy prices.json (jesli jest) jako slownik products {pid: [obs]}."""
-    fp = DATA_DIR / "prices.json"
-    if not fp.exists():
-        return {}
-    try:
-        with fp.open() as f:
-            data = json.load(f)
-        return data.get('products', {})
-    except Exception as e:
-        print(f"[WARN] Nie moge odczytac istniejacego prices.json: {e}", flush=True)
-        return {}
+  // Tryby: wszystkie / tylko jedna faza
+  const ensoLabel = state.ensoFilter === 'all' ? '' : ' · ' + ENSO_ICONS[state.ensoFilter] + ' tylko ' + ENSO_LABELS[state.ensoFilter];
+  document.getElementById('mainTitle').innerHTML =
+    `Sezonowa: ${p.name} <span class="sub">${methodLabel} ${state.seasonWindow}L${state.seasonPct ? ' · % zmiana YTD' : ''}${ensoLabel}</span>`;
+  const yearFilter = state.ensoFilter === 'all' ? null : (y => ensoOf(y) === state.ensoFilter);
+  const res = renderSeasonalGeneric(d.dates, convD.prices, {
+    window: state.seasonWindow, showMinMax: state.showMinMax, showYears: state.showYears,
+    colorLine: p.color, unitLabel: convD.unit, targetElId: 'mainPlot',
+    pct: state.seasonPct, method: state.seasonAvg, yearFilter,
+  });
+  // Grupowanie lat wg ENSO (do wyswietlenia pod statystykami)
+  const currentYear = new Date(d.dates[d.dates.length-1]).getFullYear();
+  const allYears = Array.from(new Set(d.dates.map(ds => new Date(ds).getFullYear()))).filter(y => y < currentYear).sort().slice(-state.seasonWindow);
+  const groups = { el_nino: [], la_nina: [], neutral: [] };
+  allYears.forEach(y => { groups[ensoOf(y)].push(y); });
+  const yearListHtml = `
+    <div style="margin-top:12px; font-size:12px; color:var(--muted); line-height:1.7">
+      <div><b>☀️ El Niño (${groups.el_nino.length}):</b> ${groups.el_nino.join(', ') || '—'}</div>
+      <div><b>❄️ La Niña (${groups.la_nina.length}):</b> ${groups.la_nina.join(', ') || '—'}</div>
+      <div><b>⚪ Neutralne (${groups.neutral.length}):</b> ${groups.neutral.join(', ') || '—'}</div>
+    </div>`;
+  document.getElementById('seasonalStats').innerHTML = res.html + yearListHtml;
+  renderStats([p]);
+}
 
+/* ============ Spread ============ */
+// Sezonowy spread z per-noga filtrami: kazda noga liczy wlasna srednia sezonowa (z ew. filtrem ENSO),
+// potem sumujemy: sum_over_legs(side * qty * contractSize * leg_avg[DOY])
+function renderCustomSeasonalSpread(opts) {
+  const { legs, window, method, pct, targetElId } = opts;
+  // Dla kazdej nogi zbuduj byYear[y][doy] i wybierz historicalYears wg filtra
+  const currentYear = new Date().getFullYear();
+  const legAvgs = legs.map(leg => {
+    const p = PMAP[leg.pid];
+    const d = DATA[leg.pid];
+    if (!p || !d) return null;
+    const byYear = {};
+    d.dates.forEach((ds, i) => {
+      const dt = new Date(ds); const y = dt.getFullYear();
+      const doy = Math.floor((dt - new Date(y, 0, 1)) / 86400000);
+      (byYear[y] = byYear[y] || {})[doy] = d.prices[i];
+    });
+    if (pct) {
+      Object.keys(byYear).forEach(y => {
+        const doys = Object.keys(byYear[y]).map(Number).sort((a,b)=>a-b);
+        if (!doys.length) return;
+        const base = byYear[y][doys[0]];
+        if (!base) return;
+        doys.forEach(doy => byYear[y][doy] = (byYear[y][doy] / base - 1) * 100);
+      });
+    }
+    const years = Object.keys(byYear).map(Number).sort();
+    let historicalYears = years.filter(y => y < currentYear).slice(-window);
+    if (leg.ensoFilter && leg.ensoFilter !== 'all') {
+      historicalYears = historicalYears.filter(y => ensoOf(y) === leg.ensoFilter);
+    }
+    const avg = new Array(366).fill(null);
+    for (let doy = 0; doy < 366; doy++) {
+      const vals = historicalYears.map(y => byYear[y][doy]).filter(v => v != null);
+      if (vals.length) avg[doy] = computeAvg(vals, method);
+    }
+    return { avg, historicalYears, byYear, product: p, leg };
+  });
 
-def _merge_history(existing_obs, fresh_obs):
-    """Laczy istniejaca historie z nowymi danymi. Fresh nadpisuje istniejace daty (aktualizacja),
-    zachowuje daty ktorych nie ma w fresh (ochrona przed utrata historii jesli API zwrocilo mniej).
-    """
-    if not existing_obs and not fresh_obs: return []
-    if not existing_obs: return list(fresh_obs)
-    if not fresh_obs: return list(existing_obs)
-    combined = {o['date']: o['value'] for o in existing_obs}
-    for o in fresh_obs:
-        combined[o['date']] = o['value']  # fresh nadpisuje istniejace daty
-    return [{'date': d, 'value': v} for d, v in sorted(combined.items())]
+  // Sum per DOY: kazda noga side*qty*contract*(pct?1:contract implicit unit)
+  const spreadY = new Array(366).fill(null);
+  for (let doy = 0; doy < 366; doy++) {
+    let sum = 0, allOk = true;
+    for (let i = 0; i < legs.length; i++) {
+      const la = legAvgs[i]; if (!la) { allOk = false; break; }
+      if (la.avg[doy] == null) { allOk = false; break; }
+      const mult = pct ? 1 : la.product.contractSize;
+      sum += legs[i].side * legs[i].qty * mult * la.avg[doy];
+    }
+    if (allOk) spreadY[doy] = sum;
+  }
+  const spreadYSm = smoothSeries(spreadY, 3);
 
+  // Biezacy rok - kombinacja per-noga
+  const curYearSum = new Array(366).fill(null);
+  for (let doy = 0; doy < 366; doy++) {
+    let sum = 0, allOk = true;
+    for (let i = 0; i < legs.length; i++) {
+      const la = legAvgs[i]; if (!la) { allOk = false; break; }
+      const v = la.byYear[currentYear] && la.byYear[currentYear][doy];
+      if (v == null) { allOk = false; break; }
+      const mult = pct ? 1 : la.product.contractSize;
+      sum += legs[i].side * legs[i].qty * mult * v;
+    }
+    if (allOk) curYearSum[doy] = sum;
+  }
 
-def main():
-    print(f"Start: {datetime.now(timezone.utc).isoformat()}")
-    print(f"Zakres historii: od {START_DATE}")
+  const dateFor = doy => { const dt = new Date(currentYear, 0, 1); dt.setDate(dt.getDate() + doy); return dt.toISOString().slice(0, 10); };
+  const allDates = Array.from({length: 366}, (_, i) => dateFor(i));
+  const unitLabel = pct ? '% zmiana YTD' : '$';
 
-    existing = _load_existing_prices()
-    print(f"Wczytano istniejaca historie: {len(existing)} produktow", flush=True)
+  const traces = [
+    { x: allDates, y: spreadYSm, name: `spread (${window}L)`, type: 'scatter', mode: 'lines',
+      line: { color: '#ffb74d', width: 3 }, connectgaps: false },
+  ];
+  if (curYearSum.some(v => v != null)) {
+    traces.push({ x: allDates, y: curYearSum, name: `${currentYear} (bieżący)`, type: 'scatter', mode: 'lines',
+      line: { color: '#4fc3f7', width: 2, dash: 'dash' }, connectgaps: false });
+  }
+  // Linia zera dla odniesienia
+  traces.push({ x: [allDates[0], allDates[365]], y: [0, 0], type: 'scatter', mode: 'lines',
+    line: { color: '#8b96a5', width: 1, dash: 'dot' }, showlegend: false });
 
-    products_out = {}
-    meta_out = []
-    failed = []
+  Plotly.react(targetElId, traces, {
+    ...layoutBase,
+    xaxis: { ...layoutBase.xaxis, tickformat: '%b', dtick: 'M1' },
+    yaxis: { ...layoutBase.yaxis, title: unitLabel },
+  }, { responsive: true, displaylogo: false });
 
-    for p in PRODUCTS:
-        pid = p["id"]
-        scale = p.get("unit_scale", 1.0)
-        scale_note = f" (skala x{scale})" if scale != 1.0 else ""
-        print(f"\n[{pid}] {p['source']}:{p['series']}{scale_note} ...", flush=True)
-        try:
-            if p["source"] == "fred":
-                obs = fetch_fred(p["series"])
-            elif p["source"] == "yahoo":
-                obs = fetch_yahoo(p["series"], scale)
-            elif p["source"] == "stooq":
-                obs = fetch_stooq(p["series"], scale)
-            elif p["source"] == "wob":
-                obs = fetch_wob(p["series"])
-            elif p["source"] == "orlen_scrape":
-                # Append-only: rozszerz istniejaca historie o dzisiejsza cene
-                obs = fetch_orlen_append(p["series"], existing.get(pid, []))
-            elif p["source"] == "ember":
-                obs = fetch_ember(p["series"])
-            elif p["source"] == "eurostat_elec":
-                obs = fetch_eurostat_elec(p["series"])
-            elif p["source"] == "cftc":
-                obs = fetch_cftc(p["series"], p.get("series_alt"))
-            elif p["source"] == "agrifood_cereal":
-                obs = fetch_agrifood_cereal(p["series"])
-            else:
-                print(f"  [SKIP] nieznane zrodlo {p['source']}")
-                continue
+  // Statystyki
+  const validVals = spreadYSm.filter(v => v != null);
+  const avgVal = validVals.length ? validVals.reduce((s,x)=>s+x,0)/validVals.length : 0;
+  const maxVal = validVals.length ? Math.max(...validVals) : 0;
+  const minVal = validVals.length ? Math.min(...validVals) : 0;
+  const legInfoLines = legAvgs.map((la, i) => {
+    if (!la) return `<div>Noga ${i+1}: BRAK danych</div>`;
+    const l = legs[i];
+    const filt = l.ensoFilter && l.ensoFilter !== 'all' ? ` [${ENSO_ICONS[l.ensoFilter]} ${ENSO_LABELS[l.ensoFilter]}]` : '';
+    return `<div>Noga ${i+1}: ${l.side === 1 ? '+' : '−'}${l.qty}×${l.pid}${filt} · lata: ${la.historicalYears.length ? la.historicalYears.join(', ') : '—'}</div>`;
+  }).join('');
+  return {
+    html: `<div class="stats-grid">
+      <div class="stat"><div class="label">Średnia (rok)</div><div class="value">${fmtNum(avgVal)} ${unitLabel}</div></div>
+      <div class="stat"><div class="label">Max (rok)</div><div class="value up">${fmtNum(maxVal)} ${unitLabel}</div></div>
+      <div class="stat"><div class="label">Min (rok)</div><div class="value down">${fmtNum(minVal)} ${unitLabel}</div></div>
+      <div class="stat"><div class="label">Zakres</div><div class="value">${fmtNum(maxVal - minVal)} ${unitLabel}</div></div>
+    </div>
+    <div style="margin-top:12px; font-size:11px; color:var(--muted); line-height:1.6">
+      ${legInfoLines}
+    </div>`
+  };
+}
 
-            # ZAWSZE merge z historia (ochrona danych)
-            existing_obs = existing.get(pid, [])
-            merged = _merge_history(existing_obs, obs)
-            if not merged:
-                print(f"  [WARN] brak obserwacji (i brak historii)")
-                failed.append(pid)
-                continue
-            if not obs and existing_obs:
-                print(f"  [WARN] fresh pusty - zachowano {len(existing_obs)} historycznych obs")
-            elif obs and len(existing_obs) > len(obs) + 5:
-                print(f"  [INFO] fresh={len(obs)} < historia={len(existing_obs)}, merged={len(merged)}")
+function renderSpread() {
+  const detail = document.getElementById('spreadDetail');
+  if (state.spreadLegs.length < 2) {
+    document.getElementById('mainTitle').textContent = 'Spread — dodaj min. 2 nogi (przycisk +)';
+    setEmpty('mainPlot', 'Kliknij "+ Dodaj nogę" po lewej. Możesz dodać ten sam produkt wiele razy z różnymi filtrami ENSO.');
+    detail.innerHTML = '';
+    document.getElementById('eventsList').innerHTML = '';
+    return;
+  }
+  const active = Array.from(new Set(state.spreadLegs.map(l => l.pid))).map(pid => PMAP[pid]).filter(Boolean);
+  const formula = legFormula();
 
-            products_out[pid] = merged
-            first, last = merged[0], merged[-1]
-            print(f"  [OK] {len(merged)} obs (fresh {len(obs)}), {first['date']} -> {last['date']}, "
-                  f"ostatnia = {last['value']} {p['unit']}")
-            meta_out.append({
-                "id": pid, "name": p["name"], "unit": p["unit"],
-                "contract_size": p["contract_size"], "contract_unit": p["contract_unit"],
-                "category": p["category"], "color": p["color"],
-                "source": p["source"], "series": p["series"],
-                "first_date": first["date"], "last_date": last["date"],
-                "n_observations": len(merged),
-            })
-        except urllib.error.HTTPError as e:
-            print(f"  [BLAD HTTP {e.code}] {e.reason}")
-            failed.append(pid)
-            # Zachowaj historyczne dane jesli sa
-            existing_obs = existing.get(pid, [])
-            if existing_obs:
-                products_out[pid] = existing_obs
-                print(f"  [SAVE] zachowano {len(existing_obs)} historycznych obs")
-        except Exception as e:
-            print(f"  [BLAD] {type(e).__name__}: {e}")
-            failed.append(pid)
-            existing_obs = existing.get(pid, [])
-            if existing_obs:
-                products_out[pid] = existing_obs
-                print(f"  [SAVE] zachowano {len(existing_obs)} historycznych obs")
-        time.sleep(0.3)
+  if (state.spreadView === 'seasonal') {
+    document.getElementById('eventsList').innerHTML = '';
+    const methodLabel = state.spreadSeasonAvg === 'median' ? 'mediana' : state.spreadSeasonAvg === 'trimmed' ? 'średnia obc.' : 'średnia';
+    document.getElementById('mainTitle').innerHTML =
+      `Spread sezonowy: <span style="color:var(--accent-2)">${formula}</span> ` +
+      `<span class="sub">${methodLabel} ${state.spreadSeasonWindow}L${state.spreadSeasonPct ? ' · % zmiana YTD' : ' · w $'}</span>`;
+    // Kombinujemy per-noga sezonowe srednie (kazda z wlasnym filtrem ENSO)
+    const res = renderCustomSeasonalSpread({
+      legs: state.spreadLegs,
+      window: state.spreadSeasonWindow,
+      method: state.spreadSeasonAvg,
+      pct: state.spreadSeasonPct,
+      targetElId: 'mainPlot',
+    });
+    detail.innerHTML = `<div class="chart-title">Statystyki sezonowe spreadu <span class="sub">${formula}</span></div>` + (res.html || '');
+    renderStats(active);
+    return;
+  }
 
-    prices_file = DATA_DIR / "prices.json"
-    meta_file = DATA_DIR / "meta.json"
+  // Widok P&L
+  const $mode = state.dollarMode;
+  const pctMode = state.spreadPnlPct && $mode; // % ma sens tylko w $ mode
+  document.getElementById('mainTitle').innerHTML =
+    `Spread: <span style="color:var(--accent-2)">${formula}</span>` +
+    ` <span class="sub">${pctMode ? '% zwrot od wejścia (P&L / zaangażowanie brutto)' : ($mode ? 'wartość w $' : 'suma jednostkowa')}</span>`;
 
-    with prices_file.open("w") as f:
-        json.dump({
-            "generated_at": datetime.now(timezone.utc).isoformat(),
-            "start_date": START_DATE,
-            "products": products_out,
-        }, f, separators=(",", ":"))
+  const [from, to] = windowIndexes();
+  const fromDate = FULL_DATES[Math.max(0, from)] || MIN_DATE;
+  const toDate = FULL_DATES[Math.min(FULL_DATES.length - 1, to - 1)] || MAX_DATE;
+  const spread = computeSpreadSeries(fromDate, toDate, $mode);
+  const dates = spread.dates; const series = spread.series;
+  if (!series.length) { setEmpty('mainPlot', 'Brak wspólnych dat w wybranym oknie.'); detail.innerHTML = ''; return; }
+  const entryValue = series[0];
+  const pnl = series.map(v => v - entryValue);
 
-    with meta_file.open("w") as f:
-        json.dump({
-            "generated_at": datetime.now(timezone.utc).isoformat(),
-            "products": meta_out, "failed": failed,
-        }, f, indent=2, ensure_ascii=False)
+  // Wykres główny
+  const spreadEv = buildEventOverlay(dates[0], dates[dates.length-1]);
+  document.getElementById('eventsList').innerHTML = spreadEv.listHtml;
+  if (pctMode) {
+    const gross = computeGrossAtEntry() || 1;
+    const pnlPct = pnl.map(v => (v / gross) * 100);
+    Plotly.react('mainPlot', [
+      { x: dates, y: pnlPct, type: 'scatter', mode: 'lines',
+        line: { color: '#ffb74d', width: 2 }, name: formula,
+        hovertemplate: '%{x}<br>zwrot: %{y:.2f}%<extra></extra>' },
+      { x: [dates[0], dates[dates.length-1]], y: [0, 0], type: 'scatter', mode: 'lines',
+        line: { color: '#8b96a5', width: 1, dash: 'dot' }, name: 'zero', showlegend: false },
+    ], { ...layoutBase, yaxis: { ...layoutBase.yaxis, title: '% zwrot od wejścia' },
+         shapes: spreadEv.shapes, annotations: spreadEv.annotations },
+       { responsive: true, displaylogo: false });
+  } else {
+    Plotly.react('mainPlot', [
+      { x: dates, y: series, type: 'scatter', mode: 'lines',
+        line: { color: '#ffb74d', width: 2 }, name: formula,
+        hovertemplate: '%{x}<br>wartość: %{y:,.0f}<extra></extra>' },
+      { x: [dates[0], dates[dates.length-1]], y: [entryValue, entryValue], type: 'scatter', mode: 'lines',
+        line: { color: '#8b96a5', width: 1, dash: 'dot' }, name: 'wartość wejścia' },
+    ], { ...layoutBase, yaxis: { ...layoutBase.yaxis, title: $mode ? 'wartość pozycji ($)' : 'wartość jednostkowa' },
+         shapes: spreadEv.shapes, annotations: spreadEv.annotations },
+       { responsive: true, displaylogo: false });
+  }
 
-    print(f"\n{'='*60}")
-    print(f"Zapisano {prices_file} ({prices_file.stat().st_size/1024:.1f} KB)")
-    print(f"Zapisano {meta_file}")
-    print(f"Udane serie: {len(products_out)} | Nieudane: {len(failed)}")
-    if failed:
-        print(f"Nieudane: {', '.join(failed)}")
+  // Statystyki - w $ zawsze + w % dodatkowo jeśli pctMode
+  const pnlNow = pnl[pnl.length-1];
+  const pnlMax = Math.max(...pnl);
+  const pnlMin = Math.min(...pnl);
+  let peak = pnl[0], maxDd = 0;
+  pnl.forEach(v => { if (v > peak) peak = v; if (peak - v > maxDd) maxDd = peak - v; });
+  const range = pnlMax - pnlMin;
+  const gross = computeGrossAtEntry() || 1;
+  const pct = (v) => fmtPct((v / gross) * 100);
+  const fmt = (v) => $mode ? fmtMoneySigned(v) : (v >= 0 ? '+' : '') + fmtNum(v);
+  const fmtAbs = (v) => $mode ? fmtMoneyAbs(v) : fmtNum(v);
+  const cls = pnlNow >= 0 ? 'up' : 'down';
+  const withPct = (v) => $mode ? `<div class="sub">${pct(v)}</div>` : '';
 
+  detail.innerHTML = `
+    <div class="chart-title">P&amp;L pozycji w widocznym okresie <span class="sub">(gdybyś wszedł na początku okna i trzymał do dziś)</span></div>
+    <div class="stats-grid" style="margin-bottom:14px">
+      <div class="stat"><div class="label">Aktualny P&amp;L</div><div class="value ${cls}">${fmt(pnlNow)}</div>${withPct(pnlNow)}<div class="sub">od wejścia (${dates[0]})</div></div>
+      <div class="stat"><div class="label">Max zysk</div><div class="value up">${fmt(pnlMax)}</div>${withPct(pnlMax)}</div>
+      <div class="stat"><div class="label">Max strata</div><div class="value down">${fmt(pnlMin)}</div>${withPct(pnlMin)}</div>
+      <div class="stat"><div class="label">Max drawdown</div><div class="value down">−${fmtAbs(maxDd)}</div>${$mode ? `<div class="sub">−${fmtNum((maxDd/gross)*100)}%</div>` : ''}<div class="sub">szczyt → dołek</div></div>
+      <div class="stat"><div class="label">Zakres wahań</div><div class="value">${fmtAbs(range)}</div>${$mode ? `<div class="sub">${fmtNum((range/gross)*100)}%</div>` : ''}</div>
+    </div>
+    <div class="chart-title">Z-score spreadu <span class="sub">(odchylenie od 5L średniej, ±2σ = ekstremum)</span></div>
+    <div id="zscorePlot" class="plot-small"></div>`;
 
-if __name__ == "__main__":
-    main()
+  const win = Math.min(1260, Math.max(20, Math.floor(series.length / 2)));
+  const zs = new Array(series.length).fill(null);
+  for (let i = win; i < series.length; i++) {
+    const w = series.slice(i - win, i);
+    const m = w.reduce((s,x)=>s+x,0)/win;
+    const v = w.reduce((s,x)=>s+(x-m)**2,0)/win;
+    zs[i] = (series[i] - m) / Math.sqrt(v);
+  }
+  Plotly.react('zscorePlot', [
+    { x: dates, y: zs, type: 'scatter', mode: 'lines', line: { color: '#4fc3f7', width: 2 }, name: 'z-score' },
+    { x: [dates[0], dates[dates.length-1]], y: [2, 2], type: 'scatter', mode: 'lines', line: { color: '#ef5350', width: 1, dash: 'dot' }, name: '+2σ' },
+    { x: [dates[0], dates[dates.length-1]], y: [-2, -2], type: 'scatter', mode: 'lines', line: { color: '#66bb6a', width: 1, dash: 'dot' }, name: '−2σ' },
+  ], { ...layoutBase, yaxis: { ...layoutBase.yaxis, title: 'σ od średniej' } }, { responsive: true, displaylogo: false });
+
+  renderStats(active);
+}
+
+function renderRatio() {
+  const active = PRODUCTS.filter(p => state.selected.includes(p.id));
+  if (active.length < 2) {
+    document.getElementById('mainTitle').textContent = 'Ratio — wybierz 2 produkty';
+    setEmpty('mainPlot', 'Wybierz dokładnie 2 produkty.');
+    document.getElementById('ratioStats').innerHTML = '';
+    return;
+  }
+  const [A, B] = active;
+  document.getElementById('mainTitle').innerHTML = `Ratio: <span style="color:#ba68c8">${A.id} / ${B.id}</span>`;
+  document.getElementById('ratioTitle').innerHTML = `Statystyki ratio <span class="sub">${A.id} / ${B.id}</span>`;
+  const sa = slice(A.id), sb = slice(B.id);
+  const dm = {}; sa.dates.forEach((d,i)=>dm[d]=[sa.prices[i]]);
+  sb.dates.forEach((d,i)=>{ if (dm[d]) dm[d].push(sb.prices[i]); });
+  const commonDates = Object.keys(dm).filter(d=>dm[d].length===2).sort();
+  if (!commonDates.length) { setEmpty('mainPlot','Brak wspólnych dat.'); return; }
+  const ratio = commonDates.map(d => dm[d][0] / dm[d][1]);
+  const mean = ratio.reduce((s,x)=>s+x,0)/ratio.length;
+  const ratioEv = buildEventOverlay(commonDates[0], commonDates[commonDates.length-1]);
+  document.getElementById('eventsList').innerHTML = ratioEv.listHtml;
+  Plotly.react('mainPlot', [
+    { x: commonDates, y: ratio, type: 'scatter', mode: 'lines', line: { color: '#ba68c8', width: 2 }, name: `${A.id}/${B.id}` },
+    { x: [commonDates[0], commonDates[commonDates.length-1]], y: [mean, mean], type: 'scatter', mode: 'lines', line: { color: '#8b96a5', width: 1, dash: 'dot' }, name: `średnia ${mean.toFixed(3)}` },
+  ], { ...layoutBase, yaxis: { ...layoutBase.yaxis, title: `ratio ${A.id}/${B.id}` },
+       shapes: ratioEv.shapes, annotations: ratioEv.annotations }, { responsive: true, displaylogo: false });
+  document.getElementById('ratioStats').innerHTML = `
+    <div class="stats-grid">
+      <div class="stat"><div class="label">Aktualne ratio</div><div class="value">${ratio[ratio.length-1].toFixed(3)}</div></div>
+      <div class="stat"><div class="label">Średnia w oknie</div><div class="value">${mean.toFixed(3)}</div></div>
+      <div class="stat"><div class="label">Min / Max</div><div class="value">${Math.min(...ratio).toFixed(2)} / ${Math.max(...ratio).toFixed(2)}</div></div>
+      <div class="stat"><div class="label">Odchylenie</div><div class="value">${(((ratio[ratio.length-1]/mean)-1)*100).toFixed(1)}%</div><div class="sub">od średniej</div></div>
+    </div>`;
+  renderStats(active);
+}
+
+function renderStats(active) {
+  const el = document.getElementById('stats');
+  el.innerHTML = '';
+  active.forEach(p => {
+    const s = slice(p.id);
+    if (!s.prices.length) return;
+    const conv = convertSeries(s.dates, s.prices, p.unit, p.id);
+    const st = statSummary(conv.prices);
+    const cls = st.chg >= 0 ? 'up' : 'down';
+    const arrow = st.chg >= 0 ? '▲' : '▼';
+    const zCls = Math.abs(st.zLast) >= 2 ? (st.zLast > 0 ? 'down' : 'up') : '';
+    const zTag = Math.abs(st.zLast) >= 2 ? ` <b class="${zCls}">${st.zLast > 0 ? '⚠ przewartościowany' : '⚠ niedowartościowany'}</b>` : '';
+    el.innerHTML += `
+      <div class="stat">
+        <div class="label">${p.name}</div>
+        <div class="value">${st.last.toFixed(2)} <span style="font-size:11px;color:var(--muted)">${conv.unit}</span></div>
+        <div class="sub ${cls}">${arrow} ${st.chg.toFixed(2)}% w okresie</div>
+        <div class="sub">min ${st.min.toFixed(2)} · max ${st.max.toFixed(2)}</div>
+        <div class="sub">zmienność ${st.annVol.toFixed(1)}% · Sharpe ${st.sharpe.toFixed(2)}</div>
+        <div class="sub">max DD ${st.maxDD.toFixed(1)}% · z-score ${st.zLast.toFixed(2)}${zTag}</div>
+      </div>`;
+  });
+}
+
+/* ============ Dashboard "co się dzieje dziś" ============ */
+function renderDashboard() {
+  document.getElementById('mainTitle').innerHTML = 'Dashboard — skan wszystkich produktów';
+  setEmpty('mainPlot', 'Podsumowanie ruchów cen we wszystkich kategoriach - zobacz panele poniżej.');
+  document.getElementById('eventsList').innerHTML = '';
+  document.getElementById('stats').innerHTML = '';
+
+  // Pomin FX i produkty ktore nie sa cennami (np. czysto walutowe)
+  const skipCats = new Set(['Waluty']);
+  const relevant = PRODUCTS.filter(p => !skipCats.has(p.cat) && DATA[p.id] && DATA[p.id].prices && DATA[p.id].prices.length >= 5);
+
+  // Pomocnicze: znajdz cene z konkretnego offsetu wstecz
+  const priceAtOffset = (pid, daysBack) => {
+    const d = DATA[pid];
+    if (!d || !d.prices.length) return null;
+    const idx = d.prices.length - 1 - daysBack;
+    return idx >= 0 ? d.prices[idx] : null;
+  };
+  // Cena w polnocy pierwszego dnia sprzed N dni (przybliżenie kalendarzowe)
+  const priceNDaysAgo = (pid, days) => {
+    const d = DATA[pid];
+    if (!d || !d.prices.length) return null;
+    const lastDate = new Date(d.dates[d.dates.length - 1]);
+    const target = new Date(lastDate); target.setDate(target.getDate() - days);
+    const targetStr = target.toISOString().slice(0, 10);
+    // znajdz najblizsza date <= targetStr
+    for (let i = d.dates.length - 1; i >= 0; i--) {
+      if (d.dates[i] <= targetStr) return d.prices[i];
+    }
+    return d.prices[0];
+  };
+  // 5Y srednia
+  const avg5Y = (pid) => {
+    const d = DATA[pid];
+    if (!d || !d.prices.length) return null;
+    const lastDate = new Date(d.dates[d.dates.length - 1]);
+    const cutoff = new Date(lastDate); cutoff.setFullYear(cutoff.getFullYear() - 5);
+    const cutoffStr = cutoff.toISOString().slice(0, 10);
+    let sum = 0, n = 0;
+    for (let i = 0; i < d.dates.length; i++) {
+      if (d.dates[i] >= cutoffStr) { sum += d.prices[i]; n++; }
+    }
+    return n ? sum / n : null;
+  };
+
+  const movers = relevant.map(p => {
+    const last = priceAtOffset(p.id, 0);
+    const prev1d = priceAtOffset(p.id, 1);
+    const prev7d = priceNDaysAgo(p.id, 7);
+    const prev30d = priceNDaysAgo(p.id, 30);
+    const prev365d = priceNDaysAgo(p.id, 365);
+    const avg5 = avg5Y(p.id);
+    const pct = (a, b) => (b && b !== 0) ? ((a / b - 1) * 100) : null;
+    return {
+      p, last,
+      d1: pct(last, prev1d),
+      d7: pct(last, prev7d),
+      d30: pct(last, prev30d),
+      d365: pct(last, prev365d),
+      dev5Y: pct(last, avg5),
+      lastDate: DATA[p.id].dates[DATA[p.id].dates.length - 1],
+    };
+  }).filter(m => m.last != null);
+
+  // Sortowania
+  const sortBy = (arr, key, desc = true) => arr.filter(m => m[key] != null).sort((a, b) => desc ? b[key] - a[key] : a[key] - b[key]);
+  const topN = (arr, n) => arr.slice(0, n);
+
+  const buildTable = (items, valueKey, valueLabel) => {
+    if (!items.length) return '<div class="empty">Brak danych</div>';
+    return `<table style="width:100%; border-collapse:collapse; font-size:12px">
+      <thead><tr style="border-bottom:1px solid var(--border); color:var(--muted); text-align:left">
+        <th style="padding:6px 4px">Produkt</th>
+        <th style="padding:6px 4px; text-align:right">Cena</th>
+        <th style="padding:6px 4px; text-align:right">${valueLabel}</th>
+      </tr></thead>
+      <tbody>
+      ${items.map(m => {
+        const v = m[valueKey];
+        const cls = v >= 0 ? 'up' : 'down';
+        const arrow = v >= 0 ? '▲' : '▼';
+        return `<tr style="border-bottom:1px solid rgba(45,55,70,0.5)">
+          <td style="padding:6px 4px"><span class="swatch" style="background:${m.p.color}"></span> ${m.p.name}</td>
+          <td style="padding:6px 4px; text-align:right; font-family:monospace">${fmtNum(m.last)} <span style="color:var(--muted);font-size:10px">${m.p.unit}</span></td>
+          <td style="padding:6px 4px; text-align:right; font-family:monospace" class="${cls}">${arrow} ${Math.abs(v).toFixed(2)}%</td>
+        </tr>`;
+      }).join('')}
+      </tbody>
+    </table>`;
+  };
+
+  const lastUpdate = movers.length ? movers.map(m => m.lastDate).sort().slice(-1)[0] : '';
+
+  // Alerty z ostatnich 7 dni
+  const alertsCutoff = new Date(Date.now() - 7*24*3600*1000).toISOString();
+  const recentAlerts = ALERTS_LOG.filter(a => (a.at || '') >= alertsCutoff).slice(-30).reverse();
+  const alertsHtml = recentAlerts.length ? `
+    <div class="card" style="padding:12px; margin-bottom:16px; border-left:4px solid var(--accent-2)">
+      <div style="font-weight:600; margin-bottom:8px; color:var(--accent-2)">🚨 Alerty (ostatnie 7 dni)</div>
+      <div style="max-height:250px; overflow-y:auto">
+        ${recentAlerts.map(a => `
+          <div style="padding:6px 0; border-bottom:1px solid rgba(45,55,70,0.4); font-size:12px">
+            <div><b>${a.message || a.type}</b></div>
+            ${a.note ? `<div style="color:var(--muted); font-size:11px; margin-top:2px">${a.note}</div>` : ''}
+            <div style="color:var(--muted); font-size:10px">${(a.at || '').slice(0,16).replace('T', ' ')}</div>
+          </div>`).join('')}
+      </div>
+    </div>` : `
+    <div class="card" style="padding:12px; margin-bottom:16px; color:var(--muted); font-size:12px">
+      Brak alertów w ostatnich 7 dniach. Konfiguracja w <code>data/alerts_config.json</code>.
+    </div>`;
+
+  const content = `
+    <div class="chart-title"><span class="title-text">Dashboard — co się dzieje na rynkach</span></div>
+    <div style="color:var(--muted); font-size:12px; margin-bottom:16px">
+      Skan ${relevant.length} produktów. Ostatnia aktualizacja danych: <b>${lastUpdate}</b>.
+    </div>
+    ${alertsHtml}
+
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:16px">
+      <div class="card" style="padding:12px">
+        <div style="font-weight:600; margin-bottom:8px; color:var(--ok)">▲ Top 5 wzrost 1 dzień</div>
+        ${buildTable(topN(sortBy(movers, 'd1', true), 5), 'd1', 'Δ 1d')}
+      </div>
+      <div class="card" style="padding:12px">
+        <div style="font-weight:600; margin-bottom:8px; color:var(--bad)">▼ Top 5 spadek 1 dzień</div>
+        ${buildTable(topN(sortBy(movers, 'd1', false), 5), 'd1', 'Δ 1d')}
+      </div>
+      <div class="card" style="padding:12px">
+        <div style="font-weight:600; margin-bottom:8px; color:var(--ok)">▲ Top 5 wzrost 1 tydzień</div>
+        ${buildTable(topN(sortBy(movers, 'd7', true), 5), 'd7', 'Δ 7d')}
+      </div>
+      <div class="card" style="padding:12px">
+        <div style="font-weight:600; margin-bottom:8px; color:var(--bad)">▼ Top 5 spadek 1 tydzień</div>
+        ${buildTable(topN(sortBy(movers, 'd7', false), 5), 'd7', 'Δ 7d')}
+      </div>
+      <div class="card" style="padding:12px">
+        <div style="font-weight:600; margin-bottom:8px; color:var(--ok)">▲ Top 5 wzrost 30 dni</div>
+        ${buildTable(topN(sortBy(movers, 'd30', true), 5), 'd30', 'Δ 30d')}
+      </div>
+      <div class="card" style="padding:12px">
+        <div style="font-weight:600; margin-bottom:8px; color:var(--bad)">▼ Top 5 spadek 30 dni</div>
+        ${buildTable(topN(sortBy(movers, 'd30', false), 5), 'd30', 'Δ 30d')}
+      </div>
+      <div class="card" style="padding:12px">
+        <div style="font-weight:600; margin-bottom:8px; color:var(--accent)">📈 Najbardziej powyżej 5L średniej</div>
+        ${buildTable(topN(sortBy(movers, 'dev5Y', true), 5), 'dev5Y', 'vs 5L avg')}
+      </div>
+      <div class="card" style="padding:12px">
+        <div style="font-weight:600; margin-bottom:8px; color:var(--accent)">📉 Najbardziej poniżej 5L średniej</div>
+        ${buildTable(topN(sortBy(movers, 'dev5Y', false), 5), 'dev5Y', 'vs 5L avg')}
+      </div>
+      <div class="card" style="padding:12px">
+        <div style="font-weight:600; margin-bottom:8px; color:var(--accent-2)">🔥 Największe ruchy roczne (wzrost)</div>
+        ${buildTable(topN(sortBy(movers, 'd365', true), 5), 'd365', 'Δ 12m')}
+      </div>
+      <div class="card" style="padding:12px">
+        <div style="font-weight:600; margin-bottom:8px; color:var(--accent-2)">❄️ Największe ruchy roczne (spadek)</div>
+        ${buildTable(topN(sortBy(movers, 'd365', false), 5), 'd365', 'Δ 12m')}
+      </div>
+    </div>
+
+    ${buildFreshnessPanel()}
+  `;
+  document.getElementById('dashboardContent').innerHTML = content;
+}
+
+function buildFreshnessPanel() {
+  const now = new Date();
+  const rows = [];
+  PRODUCTS.forEach(p => {
+    const d = DATA[p.id];
+    if (!d || !d.dates || !d.dates.length) {
+      rows.push({ id: p.id, name: p.name, cat: p.cat, lastDate: '—', ageDays: 999, points: 0 });
+      return;
+    }
+    const last = d.dates[d.dates.length - 1];
+    const age = Math.floor((now - new Date(last)) / (24 * 3600 * 1000));
+    rows.push({ id: p.id, name: p.name, cat: p.cat, lastDate: last, ageDays: age, points: d.dates.length });
+  });
+  // sortuj: najbardziej przeterminowane najpierw
+  rows.sort((a, b) => b.ageDays - a.ageDays);
+  // pokaz tylko te ktorym > 10 dni lub 0 punktow (dane potencjalnie stale)
+  const stale = rows.filter(r => r.ageDays > 10 || r.points === 0);
+  const dayLabel = (a) => a >= 999 ? 'BRAK' : (a === 0 ? 'dziś' : (a === 1 ? '1 dz' : `${a} dni`));
+  const colorFor = (a) => a >= 999 ? 'var(--bad)' : (a > 30 ? 'var(--bad)' : (a > 10 ? 'var(--accent-2)' : 'var(--muted)'));
+  if (!stale.length) {
+    return `
+      <div class="card" style="padding:12px; margin-top:16px">
+        <div style="font-weight:600; margin-bottom:8px; color:var(--ok)">✅ Świeżość danych</div>
+        <div style="color:var(--muted); font-size:12px">Wszystkie ${rows.length} produkty aktualne (≤10 dni). Cotygodniowe/półroczne serie (WOB, CFTC, Eurostat) mogą naturalnie mieć większy odstęp między odczytami — patrz sekcja poniżej.</div>
+      </div>`;
+  }
+  const html = stale.slice(0, 40).map(r =>
+    `<tr>
+       <td style="padding:3px 6px">${r.id}</td>
+       <td style="padding:3px 6px; color:var(--muted); font-size:11px">${r.name}</td>
+       <td style="padding:3px 6px; text-align:right">${r.lastDate}</td>
+       <td style="padding:3px 6px; text-align:right; color:${colorFor(r.ageDays)}; font-weight:600">${dayLabel(r.ageDays)}</td>
+       <td style="padding:3px 6px; text-align:right; color:var(--muted)">${r.points}</td>
+     </tr>`).join('');
+  return `
+    <div class="card" style="padding:12px; margin-top:16px">
+      <div style="font-weight:600; margin-bottom:8px; color:var(--accent-2)">⏱️ Świeżość danych (najstarsze na górze)</div>
+      <div style="color:var(--muted); font-size:11px; margin-bottom:8px">Produkty tygodniowe/półroczne (WOB, CFTC, Eurostat, Grain PL) naturalnie starzeją się między publikacjami — to normalne. Cały brak (0 punktów) sygnalizuje problem z fetchem.</div>
+      <div style="max-height:400px; overflow-y:auto">
+      <table style="width:100%; font-size:12px; border-collapse:collapse">
+        <thead style="position:sticky; top:0; background:var(--bg2)">
+          <tr style="color:var(--muted)">
+            <th style="text-align:left; padding:3px 6px">ID</th>
+            <th style="text-align:left; padding:3px 6px">Nazwa</th>
+            <th style="text-align:right; padding:3px 6px">Ostatnia</th>
+            <th style="text-align:right; padding:3px 6px">Wiek</th>
+            <th style="text-align:right; padding:3px 6px">Pkt</th>
+          </tr>
+        </thead>
+        <tbody>${html}</tbody>
+      </table>
+      </div>
+    </div>`;
+}
+
+function render() {
+  if (state.mode === 'dashboard') renderDashboard();
+  if (state.mode === 'standard')  renderStandard();
+  if (state.mode === 'seasonal')  renderSeasonal();
+  if (state.mode === 'spread')    renderSpread();
+  if (state.mode === 'ratio')     renderRatio();
+}
+
+loadData();
+</script>
+</body>
+</html>
