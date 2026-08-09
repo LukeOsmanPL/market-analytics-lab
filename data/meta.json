@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-09T09:23:42.046182+00:00",
+  "generated_at": "2026-08-09T13:02:21.335228+00:00",
   "products": [
     {
       "id": "NG",
@@ -380,6 +380,20 @@
       "n_observations": 2
     },
     {
+      "id": "PL_ORLEN_EKOTERM",
+      "name": "Orlen ON Ekoterm hurt",
+      "unit": "zł/L",
+      "contract_size": 1,
+      "contract_unit": "L",
+      "category": "Lokalne PL",
+      "color": "#e65100",
+      "source": "orlen_scrape",
+      "series": "ON_EKOTERM",
+      "first_date": "2026-08-09",
+      "last_date": "2026-08-09",
+      "n_observations": 1
+    },
+    {
       "id": "FR_PB95_WOB",
       "name": "Pb95 detal Francja (WOB)",
       "unit": "€/1000L",
@@ -754,8 +768,8 @@
       "source": "cftc",
       "series": "CRUDE OIL, LIGHT SWEET - NEW YORK MERCANTILE EXCHANGE",
       "first_date": "2006-06-13",
-      "last_date": "2022-02-01",
-      "n_observations": 817
+      "last_date": "2026-08-04",
+      "n_observations": 1052
     },
     {
       "id": "COT_BRENT_NET",
@@ -768,8 +782,8 @@
       "source": "cftc",
       "series": "BRENT CRUDE OIL LAST DAY - NEW YORK MERCANTILE EXCHANGE",
       "first_date": "2011-10-18",
-      "last_date": "2022-02-01",
-      "n_observations": 527
+      "last_date": "2026-08-04",
+      "n_observations": 762
     },
     {
       "id": "COT_NG_NET",
@@ -880,8 +894,8 @@
       "source": "agrifood_cereal",
       "series": "Common wheat",
       "first_date": "2015-11-16",
-      "last_date": "2021-07-05",
-      "n_observations": 295
+      "last_date": "2026-07-27",
+      "n_observations": 548
     },
     {
       "id": "PL_CORN_SKUP",
@@ -908,8 +922,8 @@
       "source": "agrifood_cereal",
       "series": "Rye",
       "first_date": "2015-11-16",
-      "last_date": "2021-07-05",
-      "n_observations": 289
+      "last_date": "2026-07-27",
+      "n_observations": 546
     },
     {
       "id": "PL_BARLEY_SKUP",
@@ -1039,9 +1053,19 @@
     }
   ],
   "failed": [
+    "NG_STORAGE_US",
+    "CRUDE_STORAGE_US",
     "WHEAT_MW",
-    "PL_ORLEN_EKOTERM",
+    "PL_POWER_RETAIL",
+    "DE_POWER_RETAIL",
+    "FR_POWER_RETAIL",
+    "ES_POWER_RETAIL",
+    "IT_POWER_RETAIL",
+    "CZ_POWER_RETAIL",
+    "NL_POWER_RETAIL",
+    "EU_POWER_RETAIL",
     "MATIF_CORN",
-    "MATIF_RAPESEED"
+    "MATIF_RAPESEED",
+    "EUA"
   ]
 }
