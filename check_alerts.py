@@ -113,6 +113,57 @@ def check_spread_zscore(rule):
         return f"Spread [{formula}] z-score={z:+.2f} {arrow} ({dates[-1]})"
     return None
 
+def check_high_52w(rule):
+    """Wykrywa nowe 52-tyg (lub inne 'window' dni) maksimum."""
+    obs = get_series(rule["product"])
+    if not obs: return None
+    window = rule.get("window", 252)
+    if len(obs) < window: return None
+    w = obs[-window:]
+    last = w[-1]
+    max_prior = max(o["value"] for o in w[:-1]) if len(w) > 1 else last["value"]
+    if last["value"] > max_prior:
+        return f"{rule['product']} NOWE MAX {window}d = {last['value']:.2f} (poprzednie {max_prior:.2f}, {last['date']})"
+    return None
+
+def check_low_52w(rule):
+    """Wykrywa nowe 52-tyg (lub inne 'window' dni) minimum."""
+    obs = get_series(rule["product"])
+    if not obs: return None
+    window = rule.get("window", 252)
+    if len(obs) < window: return None
+    w = obs[-window:]
+    last = w[-1]
+    min_prior = min(o["value"] for o in w[:-1]) if len(w) > 1 else last["value"]
+    if last["value"] < min_prior:
+        return f"{rule['product']} NOWE MIN {window}d = {last['value']:.2f} (poprzednie {min_prior:.2f}, {last['date']})"
+    return None
+
+def check_ma_cross(rule):
+    """Wykrywa przeciecie sredniej krotkiej (short) z dluga (long) w OSTATNIM punkcie.
+    'golden' = short crosses ABOVE long (bullish), 'death' = short crosses BELOW long (bearish).
+    """
+    obs = get_series(rule["product"])
+    short_w = rule.get("short", 50)
+    long_w = rule.get("long", 200)
+    if not obs or len(obs) < long_w + 1: return None
+    vals = [o["value"] for o in obs]
+    def sma(seq, w, idx):
+        if idx + 1 < w: return None
+        return sum(seq[idx-w+1:idx+1]) / w
+    n = len(vals) - 1  # ostatni idx
+    s_now = sma(vals, short_w, n);   l_now = sma(vals, long_w, n)
+    s_prev = sma(vals, short_w, n-1); l_prev = sma(vals, long_w, n-1)
+    if None in (s_now, l_now, s_prev, l_prev): return None
+    direction = rule.get("direction", "both")  # 'golden'|'death'|'both'
+    last = obs[-1]
+    if s_prev <= l_prev and s_now > l_now and direction in ("golden","both"):
+        return f"{rule['product']} 🟢 GOLDEN CROSS SMA{short_w}>SMA{long_w} ({last['date']}, cena {last['value']:.2f})"
+    if s_prev >= l_prev and s_now < l_now and direction in ("death","both"):
+        return f"{rule['product']} 🔴 DEATH CROSS SMA{short_w}<SMA{long_w} ({last['date']}, cena {last['value']:.2f})"
+    return None
+
+
 def check_pct_change(rule):
     obs = get_series(rule["product"])
     if not obs or len(obs) < 2: return None
@@ -143,6 +194,9 @@ CHECKERS = {
     "product_zscore": check_product_zscore,
     "spread_zscore": check_spread_zscore,
     "pct_change": check_pct_change,
+    "high_window": check_high_52w,
+    "low_window": check_low_52w,
+    "ma_cross": check_ma_cross,
 }
 
 triggered_now = []
