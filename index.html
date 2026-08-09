@@ -30,6 +30,26 @@
   .export-btn { background: var(--panel-2); color: var(--muted); border: 1px solid var(--border);
     padding: 4px 10px; border-radius: 6px; font-size: 11px; cursor: pointer; font-family: inherit; }
   .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .help-btn { background: var(--panel-2); color: var(--accent); border: 1px solid var(--accent);
+    padding: 6px 12px; border-radius: 6px; font-size: 13px; cursor: pointer; font-family: inherit; font-weight: 600; }
+  .help-btn:hover { background: var(--accent); color: var(--bg); }
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100;
+    justify-content: center; align-items: flex-start; padding: 20px; overflow-y: auto; }
+  .modal-overlay.active { display: flex; }
+  .modal { background: var(--panel); max-width: 900px; width: 100%; border-radius: 10px; padding: 24px;
+    max-height: 90vh; overflow-y: auto; border: 1px solid var(--border); }
+  .modal h2 { margin-top: 0; color: var(--accent); font-size: 22px; }
+  .modal h3 { color: var(--accent-2); font-size: 15px; margin-top: 20px; margin-bottom: 8px; text-transform: none; letter-spacing: 0; border: none; padding: 0; }
+  .modal h4 { color: var(--text); font-size: 13px; margin-top: 14px; margin-bottom: 6px; }
+  .modal p, .modal li { font-size: 13px; line-height: 1.55; color: var(--text); }
+  .modal code { background: var(--panel-2); padding: 1px 6px; border-radius: 3px; font-size: 12px; }
+  .modal .close-btn { float: right; background: var(--panel-2); color: var(--muted); border: 1px solid var(--border);
+    padding: 4px 12px; border-radius: 6px; cursor: pointer; font-size: 14px; font-family: inherit; }
+  .modal .close-btn:hover { color: var(--bad); border-color: var(--bad); }
+  .modal table { width: 100%; border-collapse: collapse; font-size: 12px; margin: 8px 0; }
+  .modal th { text-align: left; padding: 6px; border-bottom: 1px solid var(--border); color: var(--muted); font-weight: 600; }
+  .modal td { padding: 6px; border-bottom: 1px solid rgba(45,55,70,0.5); }
+  .modal .tag { background: var(--panel-2); padding: 2px 6px; border-radius: 3px; font-size: 11px; color: var(--muted); }
   .cat-header { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
     color: var(--muted); padding: 8px 4px 4px; font-weight: 700; border-top: 1px dotted var(--border); margin-top: 4px; }
   .cat-header:first-of-type { border-top: none; margin-top: 0; }
@@ -114,8 +134,150 @@
     <h1>Market Analytics Lab</h1>
     <div class="badge" id="dataFreshness">ładuję dane…</div>
   </div>
-  <div class="badge">v2.6 · projekt i realizacja: Łukasz Osman</div>
+  <div style="display:flex; gap:10px; align-items:center">
+    <button class="help-btn" onclick="document.getElementById('manualModal').classList.add('active')">? Manual</button>
+    <div class="badge">v2.7 · projekt i realizacja: Łukasz Osman</div>
+  </div>
 </header>
+
+<div class="modal-overlay" id="manualModal" onclick="if(event.target===this) this.classList.remove('active')">
+  <div class="modal">
+    <button class="close-btn" onclick="document.getElementById('manualModal').classList.remove('active')">× zamknij</button>
+    <h2>Manual — Market Analytics Lab</h2>
+    <p>Aplikacja do analizy cen surowców (energia, metale, rolne), walutowych, elektryki, pozycji funduszy hedgingowych (COT). Dane historyczne 10-30 lat, aktualizowane 2× dziennie.</p>
+
+    <h3>🎯 Tryby analizy</h3>
+
+    <h4>Dashboard</h4>
+    <p>Skan wszystkich produktów. 10 paneli: top wzrosty/spadki (1d, 7d, 30d, 12m) i największe odchylenia od 5-letniej średniej. Nie wymaga selekcji produktów - automatycznie skanuje wszystko. Widok "co się dzieje dziś" - zacznij od tego rano.</p>
+
+    <h4>Nakładka (do 10 produktów)</h4>
+    <p>Klasyczny wykres liniowy z wielu produktów na jednym wykresie. Opcje:</p>
+    <ul>
+      <li><b>Skala procentowa</b> — znormalizowanie wszystkich linii od 0% w pierwszym punkcie widocznego okna. Kluczowe przy porównaniu produktów o różnej skali.</li>
+      <li><b>Druga oś Y</b> — druga oś Y dla drugiego produktu (przy różnych jednostkach).</li>
+      <li><b>Korelacja krocząca</b> pod wykresem — 60-dniowa korelacja pomiędzy pierwszymi dwoma produktami.</li>
+    </ul>
+
+    <h4>Sezonowa (do 10 produktów)</h4>
+    <p>Wzorzec sezonowy - jak produkt zwykle się zachowuje w cyklu rocznym. Dla 1 produktu: średnia N-letnia + koperta min/max + bieżący rok jako przerywana. Dla wielu: nakładka średnich per produkt.</p>
+    <ul>
+      <li><b>Okno średniej</b> — 3/5/10/15/20/25/30 lat (zależnie od dostępności danych).</li>
+      <li><b>Metoda uśredniania</b>: <code>średnia</code> / <code>mediana</code> (odporna na skrajności jak 2022) / <code>trimmed 20%</code>.</li>
+      <li><b>Skala %</b> — od 1 stycznia każdego roku (domyślnie), <b>automatycznie przelicza od początku widocznego zakresu po zoom-ie myszką</b>. Dwuklik = powrót.</li>
+      <li><b>Filtr ENSO</b> — pokaż tylko lata El Niño / La Niña / neutralne, albo <b>spread La Niña − El Niño</b> (klasyczna analiza agro).</li>
+    </ul>
+
+    <h4>Spread (2-10 nóg)</h4>
+    <p>Buduj dowolny wielo-nogowy spread. Każda noga niezależna - może być ten sam produkt wiele razy z różnymi filtrami. Klasyki tradera:</p>
+    <ul>
+      <li><b>Crack spread</b> (rafineria): <code>+3×WTI −2×RBOB −1×HEAT</code> — marża krakingu ropy na paliwa.</li>
+      <li><b>Crush spread</b> (soja): <code>+2×SOYMEAL +1×SOYOIL −1×SOYBEAN</code> — marża tłoczenia soi.</li>
+      <li><b>US vs EU wheat</b>: <code>+1×WHEAT −1×MATIF_WHEAT</code>.</li>
+      <li><b>ENSO spread</b>: <code>+1×CORN[La Niña] −1×CORN[El Niño]</code> — czy La Niña zwykle daje wyższe ceny kukurydzy niż El Niño.</li>
+    </ul>
+    <p>Widok <b>P&amp;L</b> pokazuje wartość pozycji w dolarach + z-score (±2σ = ekstremum) + max drawdown. Widok <b>Sezonowy</b> - sezonowy wzorzec zbudowanego spreadu.</p>
+
+    <h4>Ratio (2 produkty)</h4>
+    <p>Stosunek A/B w czasie ze średnią. Klasycznie: <code>GOLD/SILVER ratio</code> (wysokie = ryzyko na rynku), <code>WTI/BRENT ratio</code>, <code>CORN/SOYBEAN ratio</code>.</p>
+
+    <h3>💱 Konwersja jednostek</h3>
+    <p>Select "Jednostka docelowa" w panelu bocznym. Konwertuje wszystkie widoczne produkty na wybraną jednostkę używając <b>time-aligned FX</b> (kurs walut z tej samej daty co cena, nie dzisiejszy).</p>
+    <ul>
+      <li>Ropa <code>$/bbl</code> → <code>$/gal</code> (÷42), <code>$/L</code> (÷159)</li>
+      <li>Benzyna <code>$/gal</code> → <code>$/L</code> (÷3.79)</li>
+      <li>Waluty: USD ↔ EUR ↔ PLN (przez kursy Yahoo)</li>
+      <li>Zboża <code>$/bu</code> → <code>$/t</code>: kukurydza 56 lb/bu (÷25.4 kg), pszenica/soja 60 lb/bu (÷27.2 kg)</li>
+    </ul>
+
+    <h3>📦 Specyfikacja kontraktów</h3>
+    <p>Wartość kontraktu w trybie Spread = <code>contract_size × price × qty</code>. Standardowe rozmiary CME/ICE:</p>
+    <table>
+      <thead><tr><th>Produkt</th><th>Symbol</th><th>Kontrakt</th><th>Giełda</th></tr></thead>
+      <tbody>
+        <tr><td>WTI Crude Oil</td><td>CL</td><td>1 000 baryłek (bbl)</td><td>NYMEX</td></tr>
+        <tr><td>Brent Crude Oil</td><td>BZ</td><td>1 000 baryłek</td><td>ICE</td></tr>
+        <tr><td>Henry Hub Natural Gas</td><td>NG</td><td>10 000 MMBtu</td><td>NYMEX</td></tr>
+        <tr><td>Heating Oil (ULSD)</td><td>HO</td><td>42 000 galonów</td><td>NYMEX</td></tr>
+        <tr><td>RBOB Gasoline</td><td>RB</td><td>42 000 galonów</td><td>NYMEX</td></tr>
+        <tr><td>TTF Natural Gas EU</td><td>TFM</td><td>1 000 MWh (miesięczny)</td><td>ICE Endex</td></tr>
+        <tr><td>Gold</td><td>GC</td><td>100 uncji trojańskich</td><td>COMEX</td></tr>
+        <tr><td>Silver</td><td>SI</td><td>5 000 uncji trojańskich</td><td>COMEX</td></tr>
+        <tr><td>Copper</td><td>HG</td><td>25 000 lb</td><td>COMEX</td></tr>
+        <tr><td>Platinum</td><td>PL</td><td>50 uncji trojańskich</td><td>NYMEX</td></tr>
+        <tr><td>Corn</td><td>ZC</td><td>5 000 bushel (~127 t)</td><td>CBOT Chicago</td></tr>
+        <tr><td>Wheat SRW</td><td>ZW</td><td>5 000 bu (~136 t)</td><td>CBOT Chicago</td></tr>
+        <tr><td>Wheat HRW</td><td>KE</td><td>5 000 bu (~136 t)</td><td>Kansas City (CBOT)</td></tr>
+        <tr><td>Soybean</td><td>ZS</td><td>5 000 bu (~136 t)</td><td>CBOT Chicago</td></tr>
+        <tr><td>Soybean Meal</td><td>ZM</td><td>100 short tons (~91 t)</td><td>CBOT Chicago</td></tr>
+        <tr><td>Soybean Oil</td><td>ZL</td><td>60 000 lb (~27 t)</td><td>CBOT Chicago</td></tr>
+        <tr><td>Coffee Arabica</td><td>KC</td><td>37 500 lb (~17 t)</td><td>ICE US</td></tr>
+        <tr><td>Cocoa</td><td>CC</td><td>10 metric tons</td><td>ICE US</td></tr>
+        <tr><td>Sugar #11</td><td>SB</td><td>112 000 lb (~50 t)</td><td>ICE US</td></tr>
+      </tbody>
+    </table>
+
+    <h3>🌊 ENSO - El Niño / La Niña</h3>
+    <p><b>El Niño Southern Oscillation</b> - cykliczne ocieplenie/oziębienie centralnego Pacyfiku. Wpływa na globalną pogodę i produkcję rolną. <b>El Niño</b> typowo: susze w Australii/Azji, powodzie w Ameryce Południowej. <b>La Niña</b> odwrotnie: susze w USA/południe (kluczowe dla zbóż), powodzie w Australii/Azji.</p>
+    <p>Klasyfikacja w aplikacji (z NOAA ONI) 2014-2026:</p>
+    <ul>
+      <li>☀️ <b>El Niño</b>: 2015, 2019, 2023, 2024</li>
+      <li>❄️ <b>La Niña</b>: 2016, 2017, 2020, 2021, 2022, 2025</li>
+      <li>⚪ <b>Neutralne</b>: 2014, 2018, 2026</li>
+    </ul>
+
+    <h3>📊 CFTC COT - Commitments of Traders</h3>
+    <p>Cotygodniowe raporty CFTC (US regulator futures) o pozycjach dużych graczy. Kategorie: Money Managers (fundusze hedgingowe), Commercials (producenci/hedgerzy), Non-Reportable (mali).</p>
+    <p><b>W aplikacji</b>: COT_XXX_NET = pozycja NETTO Money Managers = Long − Short. Klasyczny <b>wskaźnik kontrariański</b>:</p>
+    <ul>
+      <li>Rekordowo <b>dodatnia</b> pozycja → wszyscy są long → często blisko szczytu ceny</li>
+      <li>Rekordowo <b>ujemna</b> (short) → wszyscy są krótko → często blisko dołka</li>
+      <li><b>Divergence</b>: cena rośnie a pozycja netto spada = ostrzeżenie o odwróceniu</li>
+    </ul>
+
+    <h3>📅 Wydarzenia historyczne</h3>
+    <p>~24 wydarzenia (inwazja Ukrainy, sabotaż Nord Stream, decyzje OPEC, WTI negative w kwietniu 2020, cła Trumpa, itp.) - pionowe linie z ikonką na wykresach. Zawsze widoczna lista pod głównym wykresem "Wydarzenia w tym oknie". Toggle "Pokaż wydarzenia" w sidebar.</p>
+
+    <h3>📥 Eksport CSV</h3>
+    <p>Przycisk <code>📥 CSV</code> w prawym górnym rogu głównego wykresu. Pobiera aktualnie widoczne dane jako plik CSV do dalszej analizy w Excelu.</p>
+
+    <h3>🗂️ Kategorie produktów</h3>
+    <p><b>Energia</b>: WTI, Brent, Henry Hub, Heating Oil, RBOB, US Gulf Gasoline, US Retail Gasoline, TTF, węgiel AU, LNG JP.<br>
+    <b>Metale</b>: Gold, Silver, Copper, Platinum (wszystkie z COMEX/NYMEX).<br>
+    <b>Rolne</b>: 3 pszenice US (SRW, HRW, Spring), kukurydza, soja (bean/meal/oil), kawa, kakao, cukier, próba MATIF Paris.<br>
+    <b>Lokalne PL</b>: retail Pb95/ON/LPG/Olej opałowy (z EU WOB od 2005), hurt Orlen (Pb95/Pb98/ON/Ekoterm - narastające od uruchomienia), skup zbóż (w budowie).<br>
+    <b>Europa</b>: retail 5 krajów UE (DE, FR, ES, IT, CZ, HU), średnia UE-27.<br>
+    <b>Elektryka</b>: day-ahead prices dla 10 krajów UE (PL, DE, FR, ES, IT, CZ, SK, HU, NL, GB).<br>
+    <b>Waluty</b>: EUR/USD, EUR/PLN, USD/PLN, GBP/USD, USD/JPY, USD/CHF (kursy z Yahoo).<br>
+    <b>COT</b>: pozycje Money Managers dla 9 rynków (WTI, Brent, NG, Gold, Silver, Copper, Corn, Wheat, Soybean).</p>
+
+    <h3>🔌 Źródła danych (wszystkie darmowe)</h3>
+    <ul>
+      <li><b>FRED</b> (Federal Reserve St. Louis) — energia, walutowe historyczne</li>
+      <li><b>EIA</b> (US Energy Information Admin) — energia, backup</li>
+      <li><b>Yahoo Finance</b> — futures metali/zbóż/FX, TTF</li>
+      <li><b>EU Weekly Oil Bulletin</b> — cotygodniowe retail paliw w EU od 2005</li>
+      <li><b>Ember Energy</b> — day-ahead elektryka dla EU (CC-BY-4.0)</li>
+      <li><b>CFTC</b> — cotygodniowe COT reports (Socrata API)</li>
+      <li><b>cenypaliw.fyi</b> — scraping cen hurtowych Orlenu (append-only od uruchomienia)</li>
+      <li><b>EU Agri-Food Data Portal</b> — ceny skupu zbóż (w budowie)</li>
+    </ul>
+
+    <h3>💡 Tips i tricks</h3>
+    <ul>
+      <li><b>Zoom myszką</b> na każdym wykresie - zaznacz obszar, dwuklik cofa</li>
+      <li>W <b>Sezonowej z %</b> zoom automatycznie przelicza bazę - zaznacz marzec-lipiec = % od 1 marca</li>
+      <li><b>Custom</b> zakres czasowy = date picker start/koniec</li>
+      <li>Historia narasta - <b>dane nie znikają</b> nawet gdy fetch zawiedzie (ochrona historii od v2.7)</li>
+      <li>Aktualizacja automatyczna 2× dziennie (07:00 i 19:00 UTC = 09:00 i 21:00 PL)</li>
+    </ul>
+
+    <p style="color:var(--muted); font-size:11px; margin-top:24px; text-align:center">
+      Market Analytics Lab v2.7 · projekt i realizacja: Łukasz Osman<br>
+      Repo: <a href="https://github.com/LukeOsmanPL/market-analytics-lab" target="_blank" style="color:var(--accent)">github.com/LukeOsmanPL/market-analytics-lab</a>
+    </p>
+  </div>
+</div>
 
 <div id="loading">
   <p>Wczytuję dane z <code>data/prices.json</code>…</p>
@@ -567,9 +729,9 @@ function convertSeries(dates, prices, fromUnit, productId) {
 
 const SELECT_RULES = {
   dashboard:{ min: 0, max: 99, kind: 'multi',  label: 'Dashboard skanuje wszystkie produkty automatycznie.' },
-  standard: { min: 1, max: 8, kind: 'multi',  label: 'Wybierz 1-8 produktów.' },
-  seasonal: { min: 1, max: 8, kind: 'multi',  label: 'Wybierz 1-8 produktów. Jeden: pełne detale. Wiele: nakładka średnich sezonowych (włącz % przy różnych jednostkach).' },
-  spread:   { min: 2, max: 8, kind: 'multi',  label: 'Wybierz 2-8 produktów (nogi spreadu).' },
+  standard: { min: 1, max: 10, kind: 'multi',  label: 'Wybierz 1-10 produktów.' },
+  seasonal: { min: 1, max: 10, kind: 'multi',  label: 'Wybierz 1-10 produktów. Jeden: pełne detale. Wiele: nakładka średnich sezonowych.' },
+  spread:   { min: 2, max: 10, kind: 'multi',  label: 'Wybierz 2-10 produktów (nogi spreadu).' },
   ratio:    { min: 2, max: 2, kind: 'pair',   label: 'Wybierz DOKŁADNIE 2 produkty.' },
 };
 
