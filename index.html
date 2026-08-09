@@ -156,7 +156,7 @@
     <ul>
       <li><b>Skala procentowa</b> — znormalizowanie wszystkich linii od 0% w pierwszym punkcie widocznego okna. Kluczowe przy porównaniu produktów o różnej skali.</li>
       <li><b>Druga oś Y</b> — druga oś Y dla drugiego produktu (przy różnych jednostkach).</li>
-      <li><b>Korelacja krocząca</b> pod wykresem — pomiędzy pierwszymi dwoma produktami; okno 20/30/60/90/120/252 dni do wyboru.</li>
+      <li><b>Korelacja</b> pod wykresem — <b>dla 2 produktów</b>: krocząca (line) z wyborem okna 20/30/60/90/120/252 dni; <b>dla 3+</b>: macierz Pearson NxN (heatmap, cały widoczny okres).</li>
       <li><b>Statystyki na dole</b> — min/max/zmienność ann., <b>Sharpe</b> (annRet/annVol, bez rf), <b>max drawdown</b> (peak-to-trough w oknie), <b>z-score</b> ostatniej ceny (|z|≥2 podświetla).</li>
     </ul>
 
@@ -264,6 +264,18 @@
       <li><b>CFTC</b> — cotygodniowe COT reports (Socrata API, alternatywne nazwy rynków dla nowych kontraktów)</li>
       <li><b>cenypaliw.fyi</b> — scraping cen hurtowych Orlenu (append-only od uruchomienia)</li>
       <li><b>EU Agri-Food Data Portal</b> — ceny skupu zbóż (aliasy kodów SEG/BLT/MAI/ORG)</li>
+    </ul>
+
+    <h3>🚨 System alertów</h3>
+    <p>Osobny cron 30 min po głównym fetchu sprawdza reguły z <code>data/alerts_config.json</code>. Log w <code>data/alerts_log.json</code>, opcjonalnie email SMTP (Gmail App Password w GitHub Secrets: <code>SMTP_USER</code>, <code>SMTP_PASS</code>, <code>ALERT_EMAIL_TO</code>). Dedup: ta sama reguła nie strzela mailem 2× w 3 dni.</p>
+    <p><b>Typy reguł:</b></p>
+    <ul>
+      <li><code>product_above</code> / <code>product_below</code> — próg absolutny na cenę.</li>
+      <li><code>product_zscore</code> — |z| ≥ <code>threshold</code> w oknie <code>window</code> dni (klasyczny sygnał mean-reversion).</li>
+      <li><code>spread_zscore</code> — j.w. dla wielo-nogowego spreadu z listą <code>legs</code>: <code>[{pid,side:+1|-1,qty}]</code>.</li>
+      <li><code>pct_change</code> — |zmiana %| ≥ <code>threshold</code> w <code>days</code> dni; <code>both_directions:true</code> dla obu kierunków.</li>
+      <li><code>high_window</code> / <code>low_window</code> — nowe max/min z ostatnich <code>window</code> dni (52-tyg = 252).</li>
+      <li><code>ma_cross</code> — przecięcie SMA <code>short</code> / <code>long</code> (klasyk 50/200 = golden/death cross). <code>direction</code>: <code>golden</code> / <code>death</code> / <code>both</code>.</li>
     </ul>
 
     <h3>💡 Tips i tricks</h3>
@@ -464,7 +476,7 @@
 
     <div class="card mode-panel active" id="panel-standard">
       <div class="chart-title" id="corrTitle">Korelacja krocząca (60 dni)</div>
-      <div class="row" style="margin-bottom:6px">
+      <div class="row" style="margin-bottom:6px" id="corrWindowRow">
         <label style="min-width:auto">Okno korelacji</label>
         <select id="corrWindow" style="max-width:120px">
           <option value="20">20 dni</option>
@@ -1324,7 +1336,11 @@ function renderStandard() {
   layout.annotations = ev.annotations;
   document.getElementById('eventsList').innerHTML = ev.listHtml;
   Plotly.react('mainPlot', traces, layout, { responsive: true, displaylogo: false });
-  if (active.length >= 2) {
+  // Selektor okna widoczny tylko dla dokladnie 2 produktow (line-corr)
+  const cwr = document.getElementById('corrWindowRow');
+  if (cwr) cwr.style.display = active.length === 2 ? 'flex' : 'none';
+  if (active.length === 2) {
+    // Klasyczna para: krocząca korelacja (line)
     const sa = slice(active[0].id), sb = slice(active[1].id);
     const dm = {}; sa.dates.forEach((d,i)=>dm[d]=[sa.prices[i]]);
     sb.dates.forEach((d,i)=>{ if (dm[d]) dm[d].push(sb.prices[i]); });
@@ -1340,8 +1356,47 @@ function renderStandard() {
       { x: commonDates, y: corr, type: 'scatter', mode: 'lines', line: { color: '#4fc3f7', width: 2 }, name: `corr ${win}d` },
       { x: [commonDates[0], commonDates[commonDates.length-1]], y: [0, 0], type: 'scatter', mode: 'lines', line: {color: '#8b96a5', width: 1, dash: 'dot'}, showlegend: false },
     ], { ...layoutBase, yaxis: { ...layoutBase.yaxis, range: [-1, 1], title: 'korelacja' } }, { responsive: true, displaylogo: false });
+  } else if (active.length >= 3) {
+    // Macierz korelacji: heatmap NxN (Pearson na overlapping dates)
+    document.getElementById('corrTitle').innerHTML = `Macierz korelacji <span class="sub">(${active.length} produktów, cały widoczny okres)</span>`;
+    const seriesMap = {};
+    active.forEach(p => { const s = slice(p.id); seriesMap[p.id] = {}; s.dates.forEach((d,i)=>{ seriesMap[p.id][d] = s.prices[i]; }); });
+    const N = active.length;
+    const matrix = Array.from({length: N}, () => new Array(N).fill(null));
+    const labels = active.map(p => p.id);
+    for (let i = 0; i < N; i++) {
+      for (let j = 0; j < N; j++) {
+        if (i === j) { matrix[i][j] = 1; continue; }
+        if (j < i) { matrix[i][j] = matrix[j][i]; continue; }
+        const aM = seriesMap[active[i].id], bM = seriesMap[active[j].id];
+        const common = Object.keys(aM).filter(d => d in bM);
+        if (common.length < 10) { matrix[i][j] = null; continue; }
+        const aV = common.map(d => aM[d]), bV = common.map(d => bM[d]);
+        const mA = aV.reduce((s,x)=>s+x,0)/aV.length;
+        const mB = bV.reduce((s,x)=>s+x,0)/bV.length;
+        let num=0, dA=0, dB=0;
+        for (let k=0;k<aV.length;k++){ const xa=aV[k]-mA, xb=bV[k]-mB; num+=xa*xb; dA+=xa*xa; dB+=xb*xb; }
+        matrix[i][j] = (dA>0 && dB>0) ? num / Math.sqrt(dA*dB) : null;
+      }
+    }
+    const annotations = [];
+    for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) {
+      const v = matrix[i][j];
+      annotations.push({ x: labels[j], y: labels[i], text: v == null ? '—' : v.toFixed(2),
+        font: { color: v != null && Math.abs(v) > 0.5 ? '#000' : '#fff', size: 11 },
+        showarrow: false });
+    }
+    Plotly.react('corrPlot', [{
+      type: 'heatmap', z: matrix, x: labels, y: labels,
+      zmin: -1, zmax: 1, colorscale: [
+        [0, '#d32f2f'], [0.25, '#ff8a65'], [0.5, '#212a3d'], [0.75, '#4fc3f7'], [1, '#0d47a1']
+      ],
+      colorbar: { title: 'r', thickness: 12 }, hoverongaps: false,
+    }], { ...layoutBase, xaxis: { ...layoutBase.xaxis, side: 'top', type: 'category' },
+          yaxis: { ...layoutBase.yaxis, autorange: 'reversed', type: 'category' },
+          annotations, height: Math.max(320, N * 42) }, { responsive: true, displaylogo: false });
   } else {
-    document.getElementById('corrTitle').textContent = 'Korelacja krocząca — wybierz 2+ produkty';
+    document.getElementById('corrTitle').textContent = 'Korelacja — wybierz 2+ produkty';
     Plotly.purge('corrPlot');
   }
   renderStats(active);
