@@ -242,7 +242,7 @@ PRODUCTS = [
     dict(id="IT_POWER", source="ember", series="Italy",
          name="Elektryka hurt Włochy",      unit="€/MWh",
          contract_size=1, contract_unit="MWh", category="Elektryka", color="#66bb6a"),
-    dict(id="CZ_POWER", source="ember", series="Czech Republic",
+    dict(id="CZ_POWER", source="ember", series="Czechia",
          name="Elektryka hurt Czechy",      unit="€/MWh",
          contract_size=1, contract_unit="MWh", category="Elektryka", color="#26a69a"),
     dict(id="SK_POWER", source="ember", series="Slovakia",
@@ -562,81 +562,74 @@ _AGRIFOOD_CACHE = None
 
 def _fetch_agrifood_cereal_pl():
     """Pobiera tygodniowe ceny cereal z EU Agri-Food Data Portal dla Polski.
-    Zwraca slownik {product_name: [{date, value}, ...]}.
+    Realne pola z API: productName, beginDate DD/MM/YYYY, price "€143,89".
     """
     global _AGRIFOOD_CACHE
     if _AGRIFOOD_CACHE is not None:
         return _AGRIFOOD_CACHE
+    from datetime import datetime as _dt3
 
     url = "https://api.tech.ec.europa.eu/agrifood/api/cereal/prices?memberStateCodes=PL&limit=10000"
     print(f"  [AGRIFOOD] pobieram ceny zbóż PL z EU Agri Portal ...", flush=True)
     try:
-        req = urllib.request.Request(url, headers={
-            "User-Agent": "energy-analytics/1.0",
-            "Accept": "application/json"
-        })
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (energy-analytics)", "Accept": "application/json"})
         with urllib.request.urlopen(req, timeout=60) as r:
             data = json.load(r)
-        print(f"  [AGRIFOOD] odpowiedz typu: {type(data).__name__}", flush=True)
     except Exception as e:
-        print(f"  [AGRIFOOD] BLAD pobierania: {e}", flush=True)
+        print(f"  [AGRIFOOD] BLAD: {e}", flush=True)
         _AGRIFOOD_CACHE = {}
         return _AGRIFOOD_CACHE
 
-    # Sprobuj kilka mozliwych ksztaltow odpowiedzi
-    items = None
-    if isinstance(data, list):
-        items = data
-    elif isinstance(data, dict):
-        for key in ('items', 'data', 'results', 'value', 'content'):
-            if key in data and isinstance(data[key], list):
-                items = data[key]
-                print(f"  [AGRIFOOD] uzywam pola '{key}' ({len(items)} wpisow)", flush=True)
-                break
-
+    items = data if isinstance(data, list) else (data.get('items') if isinstance(data, dict) else [])
     if not items:
-        print(f"  [AGRIFOOD] BLAD: nie znaleziono listy items w odpowiedzi. Klucze: {list(data.keys()) if isinstance(data, dict) else 'lista'}", flush=True)
+        print(f"  [AGRIFOOD] brak items w odpowiedzi", flush=True)
         _AGRIFOOD_CACHE = {}
         return _AGRIFOOD_CACHE
+    print(f"  [AGRIFOOD] wpisow: {len(items)}", flush=True)
 
-    print(f"  [AGRIFOOD] przykladowy wpis: {items[0] if items else 'brak'}", flush=True)
+    def parse_price(s):
+        # "€143,89" -> 143.89; "143.89" -> 143.89; "1 234,56" -> 1234.56
+        if s is None: return None
+        s = str(s).replace('€', '').replace('EUR', '').replace(' ', '').replace('\xa0', '').strip()
+        # jesli jest zarowno kropka jak przecinek: kropka to tysiace, przecinek to dziesietne
+        if ',' in s and '.' in s:
+            s = s.replace('.', '').replace(',', '.')
+        else:
+            s = s.replace(',', '.')
+        try: return float(s)
+        except ValueError: return None
 
-    # Zgadnij pola: product, date/beginDate/endDate/period, price/value
+    def parse_date(s):
+        if not s: return None
+        s = str(s).strip()
+        for fmt in ('%d/%m/%Y', '%Y-%m-%d', '%d.%m.%Y', '%d-%m-%Y'):
+            try: return _dt3.strptime(s[:10], fmt).strftime('%Y-%m-%d')
+            except: pass
+        return None
+
     result = {}
     n_ok = 0
+    unique_products = set()
     for row in items:
         if not isinstance(row, dict): continue
-        # produkt
-        product = row.get('product') or row.get('productName') or row.get('name')
+        product = row.get('productName') or row.get('product') or row.get('name')
         if not product: continue
-        # data - preferuj beginDate/date/period
-        date_str = None
-        for k in ('beginDate', 'date', 'period', 'week_ending', 'endDate'):
-            v = row.get(k)
-            if v:
-                date_str = str(v)[:10]
-                break
+        unique_products.add(product)
+        date_str = parse_date(row.get('beginDate') or row.get('endDate') or row.get('date') or row.get('referencePeriod'))
         if not date_str: continue
-        # cena
-        price = None
-        for k in ('price', 'value', 'avgPrice', 'weeklyPrice'):
-            v = row.get(k)
-            if v is not None:
-                try: price = float(str(v).replace(',', '.').replace(' ', ''))
-                except (ValueError, TypeError): pass
-                if price is not None: break
+        price = parse_price(row.get('price'))
         if price is None or price <= 0: continue
         result.setdefault(product, []).append({'date': date_str, 'value': price})
         n_ok += 1
 
-    # Dedup + sort
     for prod in list(result.keys()):
         seen = {}
         for o in result[prod]:
             seen[o['date']] = o['value']
         result[prod] = [{'date': d, 'value': v} for d, v in sorted(seen.items())]
 
-    print(f"  [AGRIFOOD] wczytano {n_ok} valid wierszy, {len(result)} produktow: {sorted(result.keys())[:20]}", flush=True)
+    print(f"  [AGRIFOOD] wczytano {n_ok} valid wierszy", flush=True)
+    print(f"  [AGRIFOOD] unikalne productName ({len(unique_products)}): {sorted(unique_products)}", flush=True)
     _AGRIFOOD_CACHE = result
     return _AGRIFOOD_CACHE
 
@@ -940,6 +933,19 @@ def _load_existing_prices():
         return {}
 
 
+def _merge_history(existing_obs, fresh_obs):
+    """Laczy istniejaca historie z nowymi danymi. Fresh nadpisuje istniejace daty (aktualizacja),
+    zachowuje daty ktorych nie ma w fresh (ochrona przed utrata historii jesli API zwrocilo mniej).
+    """
+    if not existing_obs and not fresh_obs: return []
+    if not existing_obs: return list(fresh_obs)
+    if not fresh_obs: return list(existing_obs)
+    combined = {o['date']: o['value'] for o in existing_obs}
+    for o in fresh_obs:
+        combined[o['date']] = o['value']  # fresh nadpisuje istniejace daty
+    return [{'date': d, 'value': v} for d, v in sorted(combined.items())]
+
+
 def main():
     print(f"Start: {datetime.now(timezone.utc).isoformat()}")
     print(f"Zakres historii: od {START_DATE}")
@@ -976,14 +982,21 @@ def main():
                 print(f"  [SKIP] nieznane zrodlo {p['source']}")
                 continue
 
-            if not obs:
-                print(f"  [WARN] brak obserwacji")
+            # ZAWSZE merge z historia (ochrona danych)
+            existing_obs = existing.get(pid, [])
+            merged = _merge_history(existing_obs, obs)
+            if not merged:
+                print(f"  [WARN] brak obserwacji (i brak historii)")
                 failed.append(pid)
                 continue
+            if not obs and existing_obs:
+                print(f"  [WARN] fresh pusty - zachowano {len(existing_obs)} historycznych obs")
+            elif obs and len(existing_obs) > len(obs) + 5:
+                print(f"  [INFO] fresh={len(obs)} < historia={len(existing_obs)}, merged={len(merged)}")
 
-            products_out[pid] = obs
-            first, last = obs[0], obs[-1]
-            print(f"  [OK] {len(obs)} obs, {first['date']} -> {last['date']}, "
+            products_out[pid] = merged
+            first, last = merged[0], merged[-1]
+            print(f"  [OK] {len(merged)} obs (fresh {len(obs)}), {first['date']} -> {last['date']}, "
                   f"ostatnia = {last['value']} {p['unit']}")
             meta_out.append({
                 "id": pid, "name": p["name"], "unit": p["unit"],
@@ -991,14 +1004,23 @@ def main():
                 "category": p["category"], "color": p["color"],
                 "source": p["source"], "series": p["series"],
                 "first_date": first["date"], "last_date": last["date"],
-                "n_observations": len(obs),
+                "n_observations": len(merged),
             })
         except urllib.error.HTTPError as e:
             print(f"  [BLAD HTTP {e.code}] {e.reason}")
             failed.append(pid)
+            # Zachowaj historyczne dane jesli sa
+            existing_obs = existing.get(pid, [])
+            if existing_obs:
+                products_out[pid] = existing_obs
+                print(f"  [SAVE] zachowano {len(existing_obs)} historycznych obs")
         except Exception as e:
             print(f"  [BLAD] {type(e).__name__}: {e}")
             failed.append(pid)
+            existing_obs = existing.get(pid, [])
+            if existing_obs:
+                products_out[pid] = existing_obs
+                print(f"  [SAVE] zachowano {len(existing_obs)} historycznych obs")
         time.sleep(0.3)
 
     prices_file = DATA_DIR / "prices.json"
