@@ -1,23 +1,16 @@
 {
-  "updated_at": "2026-08-09T19:21:11.619669+00:00",
+  "updated_at": "2026-08-10T22:27:37.921343+00:00",
   "products": [
     {
       "pid": "CL",
-      "name": "WTI Crude (NYMEX)",
+      "name": "WTI Crude Oil (NYMEX)",
       "unit": "$/bbl",
       "contract_size": 1000,
       "contract_unit": "bbl",
       "category": "Energia",
-      "color": "#ff8a65"
-    },
-    {
-      "pid": "BZ",
-      "name": "Brent Crude (ICE)",
-      "unit": "$/bbl",
-      "contract_size": 1000,
-      "contract_unit": "bbl",
-      "category": "Energia",
-      "color": "#ba68c8"
+      "color": "#ff8a65",
+      "has_rolling": true,
+      "has_contracts": true
     },
     {
       "pid": "NG",
@@ -26,16 +19,20 @@
       "contract_size": 10000,
       "contract_unit": "MMBtu",
       "category": "Energia",
-      "color": "#4fc3f7"
+      "color": "#4fc3f7",
+      "has_rolling": true,
+      "has_contracts": true
     },
     {
       "pid": "HO",
-      "name": "Heating Oil / ULSD (NYMEX)",
+      "name": "Heating Oil (NYMEX)",
       "unit": "$/gal",
       "contract_size": 42000,
       "contract_unit": "gal",
       "category": "Energia",
-      "color": "#ff5722"
+      "color": "#ff5722",
+      "has_rolling": true,
+      "has_contracts": true
     },
     {
       "pid": "RB",
@@ -44,7 +41,20 @@
       "contract_size": 42000,
       "contract_unit": "gal",
       "category": "Energia",
-      "color": "#ffb74d"
+      "color": "#ffb74d",
+      "has_rolling": true,
+      "has_contracts": true
+    },
+    {
+      "pid": "BZ",
+      "name": "Brent Crude (ICE)",
+      "unit": "$/bbl",
+      "contract_size": 1000,
+      "contract_unit": "bbl",
+      "category": "Energia",
+      "color": "#ba68c8",
+      "has_rolling": false,
+      "has_contracts": true
     },
     {
       "pid": "GC",
@@ -53,7 +63,9 @@
       "contract_size": 100,
       "contract_unit": "oz",
       "category": "Metale",
-      "color": "#ffd54f"
+      "color": "#ffd54f",
+      "has_rolling": false,
+      "has_contracts": true
     },
     {
       "pid": "SI",
@@ -62,7 +74,9 @@
       "contract_size": 5000,
       "contract_unit": "oz",
       "category": "Metale",
-      "color": "#b0bec5"
+      "color": "#b0bec5",
+      "has_rolling": false,
+      "has_contracts": true
     },
     {
       "pid": "HG",
@@ -71,16 +85,20 @@
       "contract_size": 25000,
       "contract_unit": "lb",
       "category": "Metale",
-      "color": "#d84315"
+      "color": "#d84315",
+      "has_rolling": false,
+      "has_contracts": true
     },
     {
-      "pid": "PL",
+      "pid": "PL_M",
       "name": "Platinum (NYMEX)",
       "unit": "$/oz",
       "contract_size": 50,
       "contract_unit": "oz",
       "category": "Metale",
-      "color": "#78909c"
+      "color": "#78909c",
+      "has_rolling": false,
+      "has_contracts": true
     },
     {
       "pid": "PA",
@@ -89,7 +107,9 @@
       "contract_size": 100,
       "contract_unit": "oz",
       "category": "Metale",
-      "color": "#8d6e63"
+      "color": "#8d6e63",
+      "has_rolling": false,
+      "has_contracts": true
     },
     {
       "pid": "ZC",
@@ -98,7 +118,9 @@
       "contract_size": 5000,
       "contract_unit": "bu",
       "category": "Rolne",
-      "color": "#fbc02d"
+      "color": "#fbc02d",
+      "has_rolling": false,
+      "has_contracts": true
     },
     {
       "pid": "ZW",
@@ -107,7 +129,9 @@
       "contract_size": 5000,
       "contract_unit": "bu",
       "category": "Rolne",
-      "color": "#8d6e63"
+      "color": "#8d6e63",
+      "has_rolling": false,
+      "has_contracts": true
     },
     {
       "pid": "KE",
@@ -116,7 +140,9 @@
       "contract_size": 5000,
       "contract_unit": "bu",
       "category": "Rolne",
-      "color": "#795548"
+      "color": "#795548",
+      "has_rolling": false,
+      "has_contracts": true
     },
     {
       "pid": "ZS",
@@ -125,7 +151,9 @@
       "contract_size": 5000,
       "contract_unit": "bu",
       "category": "Rolne",
-      "color": "#9ccc65"
+      "color": "#9ccc65",
+      "has_rolling": false,
+      "has_contracts": true
     },
     {
       "pid": "ZM",
@@ -134,7 +162,9 @@
       "contract_size": 100,
       "contract_unit": "short ton",
       "category": "Rolne",
-      "color": "#7cb342"
+      "color": "#7cb342",
+      "has_rolling": false,
+      "has_contracts": true
     },
     {
       "pid": "ZL",
@@ -143,7 +173,9 @@
       "contract_size": 60000,
       "contract_unit": "lb",
       "category": "Rolne",
-      "color": "#c0ca33"
+      "color": "#c0ca33",
+      "has_rolling": false,
+      "has_contracts": true
     },
     {
       "pid": "KC",
@@ -152,7 +184,9 @@
       "contract_size": 37500,
       "contract_unit": "lb",
       "category": "Rolne",
-      "color": "#6d4c41"
+      "color": "#6d4c41",
+      "has_rolling": false,
+      "has_contracts": true
     },
     {
       "pid": "CC",
@@ -161,7 +195,9 @@
       "contract_size": 10,
       "contract_unit": "mt",
       "category": "Rolne",
-      "color": "#5d4037"
+      "color": "#5d4037",
+      "has_rolling": false,
+      "has_contracts": true
     },
     {
       "pid": "SB",
@@ -170,7 +206,9 @@
       "contract_size": 112000,
       "contract_unit": "lb",
       "category": "Rolne",
-      "color": "#f8bbd0"
+      "color": "#f8bbd0",
+      "has_rolling": false,
+      "has_contracts": true
     },
     {
       "pid": "CT",
@@ -179,7 +217,9 @@
       "contract_size": 50000,
       "contract_unit": "lb",
       "category": "Rolne",
-      "color": "#f5f5dc"
+      "color": "#f5f5dc",
+      "has_rolling": false,
+      "has_contracts": true
     },
     {
       "pid": "LE",
@@ -188,7 +228,9 @@
       "contract_size": 40000,
       "contract_unit": "lb",
       "category": "Rolne",
-      "color": "#8d6e63"
+      "color": "#8d6e63",
+      "has_rolling": false,
+      "has_contracts": true
     },
     {
       "pid": "HE",
@@ -197,7 +239,9 @@
       "contract_size": 40000,
       "contract_unit": "lb",
       "category": "Rolne",
-      "color": "#e91e63"
+      "color": "#e91e63",
+      "has_rolling": false,
+      "has_contracts": true
     }
   ]
 }
