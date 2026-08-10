@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-10T10:49:35.990533+00:00",
+  "generated_at": "2026-08-10T21:27:25.969248+00:00",
   "products": [
     {
       "id": "NG",
@@ -670,8 +670,8 @@
       "source": "yahoo",
       "series": "^GSPC",
       "first_date": "1995-01-03",
-      "last_date": "2026-08-07",
-      "n_observations": 7952
+      "last_date": "2026-08-10",
+      "n_observations": 7953
     },
     {
       "id": "BTC",
@@ -698,8 +698,8 @@
       "source": "fred",
       "series": "DGS10",
       "first_date": "1995-01-03",
-      "last_date": "2026-08-06",
-      "n_observations": 7905
+      "last_date": "2026-08-07",
+      "n_observations": 7906
     },
     {
       "id": "US2Y",
@@ -712,8 +712,8 @@
       "source": "fred",
       "series": "DGS2",
       "first_date": "1995-01-03",
-      "last_date": "2026-08-06",
-      "n_observations": 7905
+      "last_date": "2026-08-07",
+      "n_observations": 7906
     },
     {
       "id": "US10Y2Y",
@@ -726,8 +726,8 @@
       "source": "fred",
       "series": "T10Y2Y",
       "first_date": "1995-01-03",
-      "last_date": "2026-08-07",
-      "n_observations": 7906
+      "last_date": "2026-08-10",
+      "n_observations": 7907
     },
     {
       "id": "PL_POWER",
@@ -1062,8 +1062,8 @@
       "source": "yahoo",
       "series": "OJ=F",
       "first_date": "2001-09-17",
-      "last_date": "2026-08-07",
-      "n_observations": 6246
+      "last_date": "2026-08-10",
+      "n_observations": 6247
     },
     {
       "id": "LIVE_CATTLE",
@@ -1076,8 +1076,8 @@
       "source": "yahoo",
       "series": "LE=F",
       "first_date": "2001-03-01",
-      "last_date": "2026-08-07",
-      "n_observations": 6375
+      "last_date": "2026-08-10",
+      "n_observations": 6376
     },
     {
       "id": "LEAN_HOGS",
@@ -1090,8 +1090,8 @@
       "source": "yahoo",
       "series": "HE=F",
       "first_date": "2000-12-15",
-      "last_date": "2026-08-07",
-      "n_observations": 6443
+      "last_date": "2026-08-10",
+      "n_observations": 6444
     }
   ],
   "failed": [
