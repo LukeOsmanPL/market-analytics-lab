@@ -2545,8 +2545,6 @@ function renderDashboard() {
         ${buildTable(topN(sortBy(movers, 'd365', false), 5), 'd365', 'Δ 12m')}
       </div>
     </div>
-
-    ${buildFreshnessPanel()}
   `;
   document.getElementById('dashboardContent').innerHTML = content;
 }
