@@ -140,6 +140,17 @@
   </div>
 </header>
 
+<nav id="topnav" style="display:flex; gap:0; padding:0 20px; background:var(--bg2); border-bottom:1px solid var(--border)">
+  <button class="topnav-btn active" data-view="main"
+    style="padding:12px 20px; background:none; border:none; border-bottom:3px solid var(--accent); color:var(--fg); font-size:14px; font-weight:600; cursor:pointer">
+    📈 Rynki (spot / continuous)
+  </button>
+  <button class="topnav-btn" data-view="futures"
+    style="padding:12px 20px; background:none; border:none; border-bottom:3px solid transparent; color:var(--muted); font-size:14px; font-weight:600; cursor:pointer">
+    🗓️ Terminowe (konkretne kontrakty)
+  </button>
+</nav>
+
 <div class="modal-overlay" id="manualModal" onclick="if(event.target===this) this.classList.remove('active')">
   <div class="modal">
     <button class="close-btn" onclick="document.getElementById('manualModal').classList.remove('active')">× zamknij</button>
@@ -332,7 +343,8 @@
   <pre id="errorDetail"></pre>
 </div>
 
-<main id="app" style="display:none">
+<div id="view-main" style="display:none">
+<main id="app">
   <aside>
     <h3>Produkty</h3>
     <div class="products" id="products"></div>
@@ -391,16 +403,15 @@
     <section class="divider">
       <h3>Tryb analizy</h3>
       <div class="mode-buttons" id="modes">
-        <button data-m="dashboard">Dashboard</button>
-        <button data-m="standard" class="active">Nakładka</button>
+        <button data-m="dashboard" class="active">Dashboard</button>
+        <button data-m="standard">Nakładka</button>
         <button data-m="seasonal">Sezonowa</button>
         <button data-m="spread">Spread</button>
         <button data-m="ratio">Ratio</button>
-        <button data-m="futures">Terminowe</button>
       </div>
     </section>
 
-    <section class="divider" id="stdCtrl">
+    <section class="divider" id="stdCtrl" style="display:none">
       <div class="toggle"><input type="checkbox" id="pctToggle"><label for="pctToggle">Skala procentowa (od początku okna)</label></div>
       <div class="toggle"><input type="checkbox" id="dualAxis" checked><label for="dualAxis">Druga oś Y</label></div>
       <div class="toggle"><input type="checkbox" id="showSMA"><label for="showSMA">SMA 50 &amp; 200 (dla 1 produktu)</label></div>
@@ -509,32 +520,6 @@
       <div id="positionSummary" class="position-summary"></div>
     </section>
 
-    <!-- ============ Terminowe (Sizzle) — konkretne kontrakty futures ============ -->
-    <section class="divider" id="futuresCtrl" style="display:none">
-      <h3>Terminowe — konkretne kontrakty</h3>
-      <div class="hint" style="margin-bottom:8px">Buduj spready z konkretnych miesięcy futures (np. WTI Jul25 − WTI Jul26, albo Wheat Dec25 − Corn Dec25). Dane ze Stooq, aktualizacja codzienna.</div>
-      <div class="row">
-        <label>Widok</label>
-        <select id="futuresView" style="flex:1">
-          <option value="lines">Nogi + spread (linie)</option>
-          <option value="spread_only">Tylko spread (suma nog)</option>
-          <option value="seasonal">Sezonowy (średnia N-letnia)</option>
-        </select>
-      </div>
-      <div class="row" id="futuresSeasonWinRow" style="display:none">
-        <label>Okno średniej</label>
-        <select id="futuresSeasonWindow">
-          <option value="3">3 lata</option>
-          <option value="5" selected>5 lat</option>
-          <option value="10">10 lat</option>
-        </select>
-      </div>
-      <div class="toggle"><input type="checkbox" id="futuresPct"><label for="futuresPct">Skala % (od początku okna)</label></div>
-      <h4 style="margin-top:14px">Nogi</h4>
-      <div id="futuresLegsList"></div>
-      <button id="addFutLegBtn" class="add-leg-btn">+ Dodaj nogę</button>
-      <div id="futuresStatus" class="hint" style="margin-top:8px"></div>
-    </section>
   </aside>
 
   <!-- ============ Modal wyboru kontraktu (2-krokowy) ============ -->
@@ -568,11 +553,11 @@
       <div id="rsiPlot" class="plot-small" style="display:none; margin-top:8px"></div>
       <div id="eventsList"></div>
     </div>
-    <div class="card mode-panel" id="panel-dashboard">
+    <div class="card mode-panel active" id="panel-dashboard">
       <div id="dashboardContent"></div>
     </div>
 
-    <div class="card mode-panel active" id="panel-standard">
+    <div class="card mode-panel" id="panel-standard">
       <div class="chart-title" id="corrTitle">Korelacja krocząca (60 dni)</div>
       <div class="row" style="margin-bottom:6px" id="corrWindowRow">
         <label style="min-width:auto">Okno korelacji</label>
@@ -599,15 +584,81 @@
       <div class="chart-title" id="ratioTitle">Statystyki ratio</div>
       <div id="ratioStats"></div>
     </div>
-    <div class="card mode-panel" id="panel-futures">
-      <div id="futuresDetail"></div>
-    </div>
     <div class="card">
       <div class="chart-title">Statystyki dla widocznego okresu</div>
       <div class="stats-grid" id="stats"></div>
     </div>
   </div>
 </main>
+</div><!-- /view-main -->
+
+<!-- ============ VIEW: TERMINOWE (osobny moduł) ============ -->
+<div id="view-futures" style="display:none">
+<main id="futApp">
+  <aside>
+    <h3>Terminowe — konkretne kontrakty</h3>
+    <div class="hint" style="margin-bottom:10px">Konkretne miesiące futures (jak seasonalgo). Dane ze Stooq, ~10-15 lat historii. Aktualizacja codzienna.</div>
+
+    <section class="divider">
+      <h3>Widok</h3>
+      <div class="row">
+        <label>Tryb wykresu</label>
+        <select id="futuresView" style="flex:1">
+          <option value="lines">Nogi + spread (linie)</option>
+          <option value="spread_only">Tylko spread</option>
+          <option value="seasonal">Sezonowy (średnia N-letnia)</option>
+        </select>
+      </div>
+      <div class="row" id="futuresSeasonWinRow" style="display:none">
+        <label>Okno średniej</label>
+        <select id="futuresSeasonWindow">
+          <option value="3">3 lata</option>
+          <option value="5" selected>5 lat</option>
+          <option value="10">10 lat</option>
+        </select>
+      </div>
+      <div class="toggle"><input type="checkbox" id="futuresPct"><label for="futuresPct">Skala % (od początku okna)</label></div>
+    </section>
+
+    <section class="divider">
+      <h3>Nogi spreadu</h3>
+      <div id="futuresLegsList"></div>
+      <button id="addFutLegBtn" class="add-leg-btn">+ Dodaj nogę</button>
+      <div id="futuresStatus" class="hint" style="margin-top:10px"></div>
+    </section>
+
+    <section class="divider">
+      <h3>Presety kalendarzowe</h3>
+      <select id="futPreset" style="width:100%">
+        <option value="">— wybierz preset —</option>
+        <option value="cl_cal_1y">WTI calendar Jul25 − Jul26</option>
+        <option value="ng_winter_summer">NG zima − lato (Sty − Lip)</option>
+        <option value="zc_oldnew">Corn old crop − new crop (Lip − Gru)</option>
+        <option value="zw_oldnew">Wheat old crop − new crop (Lip − Gru)</option>
+        <option value="cl_z_z">WTI Dec − Dec (roczny)</option>
+      </select>
+      <div class="hint" style="margin-top:6px">Presety oparte o roku bieżącym; jeśli kontrakt jeszcze nie istnieje, dostaniesz błąd.</div>
+    </section>
+  </aside>
+
+  <div class="content">
+    <div class="card">
+      <div class="chart-title" style="display:flex; justify-content:space-between; align-items:center">
+        <span id="futMainTitle">Terminowe — dodaj nogę żeby zacząć</span>
+        <button class="export-btn" onclick="exportPlotCSV('futMainPlot', 'terminowe')">📥 CSV</button>
+      </div>
+      <div id="futMainPlot" class="plot"></div>
+    </div>
+    <div class="card">
+      <div id="futuresDetail"></div>
+    </div>
+    <div class="card">
+      <div class="chart-title">Info o danych</div>
+      <div id="futDataInfo" class="hint">Ładuję manifest…</div>
+    </div>
+  </div>
+</main>
+</div><!-- /view-futures -->
 
 <script>
 /* ============ ładowanie danych ============ */
@@ -671,8 +722,10 @@ async function loadData() {
       `dane z ${gen.toLocaleString('pl-PL', {dateStyle: 'medium', timeStyle: 'short'})} · ${PRODUCTS.length} produktów`;
 
     document.getElementById('loading').style.display = 'none';
+    document.getElementById('view-main').style.display = '';   // pokaz glowny widok
     document.getElementById('app').style.display = 'grid';
     init();
+    initTopNav();
   } catch (e) {
     document.getElementById('loading').style.display = 'none';
     document.getElementById('loadError').style.display = 'block';
@@ -685,7 +738,7 @@ const state = {
   selected: [],
   range: '1Y',
   customFrom: null, customTo: null,
-  mode: 'standard',
+  mode: 'dashboard',
   pct: false, dual: true,
   corrWindow: 60,   // rolling correlation window (dni)
   showSMA: false, showBB: false, showRSI: false,   // wskazniki techniczne
@@ -1159,14 +1212,10 @@ function init() {
       renderSpreadLegs();
       document.querySelectorAll('.mode-panel').forEach(x => x.classList.remove('active'));
       document.getElementById('panel-' + state.mode).classList.add('active');
-      ['stdCtrl','seasonalCtrl','spreadCtrl','futuresCtrl'].forEach(id => document.getElementById(id).style.display = 'none');
+      ['stdCtrl','seasonalCtrl','spreadCtrl'].forEach(id => document.getElementById(id).style.display = 'none');
       if (state.mode === 'standard') document.getElementById('stdCtrl').style.display = 'block';
       if (state.mode === 'seasonal') document.getElementById('seasonalCtrl').style.display = 'block';
       if (state.mode === 'spread')   document.getElementById('spreadCtrl').style.display = 'block';
-      if (state.mode === 'futures') {
-        document.getElementById('futuresCtrl').style.display = 'block';
-        ensureFuturesManifestLoaded();  // lazy-load
-      }
       render();
     });
   });
@@ -2558,12 +2607,78 @@ function buildFreshnessPanel() {
 }
 
 function render() {
+  // Uwaga: futures maja osobny renderer (renderFutures) - wywolywany przez switchView
   if (state.mode === 'dashboard') renderDashboard();
   if (state.mode === 'standard')  renderStandard();
   if (state.mode === 'seasonal')  renderSeasonal();
   if (state.mode === 'spread')    renderSpread();
   if (state.mode === 'ratio')     renderRatio();
-  if (state.mode === 'futures')   renderFutures();
+}
+
+/* ============ TOP-LEVEL VIEW SWITCHING (Rynki vs Terminowe) ============ */
+let CURRENT_VIEW = 'main';
+function switchView(v) {
+  if (v === CURRENT_VIEW) return;
+  CURRENT_VIEW = v;
+  document.getElementById('view-main').style.display    = (v === 'main')    ? '' : 'none';
+  document.getElementById('view-futures').style.display = (v === 'futures') ? '' : 'none';
+  document.querySelectorAll('.topnav-btn').forEach(b => {
+    const active = b.dataset.view === v;
+    b.style.borderBottomColor = active ? 'var(--accent)' : 'transparent';
+    b.style.color = active ? 'var(--fg)' : 'var(--muted)';
+    b.classList.toggle('active', active);
+  });
+  if (v === 'futures') {
+    ensureFuturesManifestLoaded().then(() => {
+      renderFuturesLegsList();
+      renderFutures();
+    });
+  } else {
+    render();
+  }
+}
+function initTopNav() {
+  document.querySelectorAll('.topnav-btn').forEach(b => {
+    b.addEventListener('click', () => switchView(b.dataset.view));
+  });
+
+  // Presety kalendarzowe (view-futures)
+  const presetSel = document.getElementById('futPreset');
+  if (presetSel) presetSel.addEventListener('change', async e => {
+    const key = e.target.value; if (!key) return;
+    const cy = new Date().getFullYear();
+    const y2 = String(cy).slice(-2);
+    const y1 = String(cy + 1).slice(-2);
+    // helper: klucz z rokiem i miesiacem
+    const k = (yy, mo) => `${yy}${String(mo).padStart(2,'0')}`;
+    const PRESETS = {
+      cl_cal_1y:         [['CL', k(cy, 7),   +1], ['CL', k(cy+1, 7), -1]],
+      ng_winter_summer:  [['NG', k(cy+1, 1), +1], ['NG', k(cy+1, 7), -1]],
+      zc_oldnew:         [['ZC', k(cy, 7),   +1], ['ZC', k(cy, 12),  -1]],
+      zw_oldnew:         [['ZW', k(cy, 7),   +1], ['ZW', k(cy, 12),  -1]],
+      cl_z_z:            [['CL', k(cy, 12),  +1], ['CL', k(cy+1, 12), -1]],
+    };
+    const legs = PRESETS[key]; if (!legs) return;
+    await ensureFuturesManifestLoaded();
+    // Sprawdz czy produkty sa w manifescie
+    const missing = legs.filter(([pid]) => !FUT_MANIFEST.products.find(p => p.pid === pid));
+    if (missing.length) { alert(`Brak w manifescie: ${missing.map(m=>m[0]).join(', ')}`); e.target.value=''; return; }
+    // Zaladuj i sprawdz czy kontrakty istnieja
+    await Promise.all(Array.from(new Set(legs.map(l => l[0]))).map(pid => ensureFuturesProductLoaded(pid)));
+    const noKey = legs.filter(([pid, ck]) => !(FUT_DATA[pid] && FUT_DATA[pid].contracts && FUT_DATA[pid].contracts[ck]));
+    if (noKey.length) {
+      alert(`Brak kontraktu: ${noKey.map(m => `${m[0]} ${formatContractLabel(m[0],m[1])}`).join(', ')}`);
+      e.target.value=''; return;
+    }
+    state.futuresLegs = [];
+    state._nextFutLegId = 1;
+    legs.forEach(([pid, ck, side]) => {
+      state.futuresLegs.push({ id: 'flg_' + (state._nextFutLegId++), pid, contractKey: ck, side, qty: 1 });
+    });
+    renderFuturesLegsList();
+    renderFutures();
+    e.target.value = '';
+  });
 }
 
 /* ============ TERMINOWE (Sizzle / seasonal futures) ============ */
@@ -2698,26 +2813,37 @@ function addFuturesLeg(pid, contractKey) {
 /* ---- Renderer wykresu terminowych ---- */
 async function renderFutures() {
   const detail = document.getElementById('futuresDetail');
-  document.getElementById('mainTitle').textContent = 'Terminowe — konkretne kontrakty futures';
-  document.getElementById('eventsList').innerHTML = '';
-  document.getElementById('stats').innerHTML = '';
+  const titleEl = document.getElementById('futMainTitle');
   document.getElementById('futuresSeasonWinRow').style.display =
     state.futuresView === 'seasonal' ? 'flex' : 'none';
 
+  // Update info panel
+  const infoEl = document.getElementById('futDataInfo');
+  if (infoEl && FUT_MANIFEST) {
+    if (FUT_MANIFEST.products && FUT_MANIFEST.products.length) {
+      const upd = FUT_MANIFEST.updated_at ? new Date(FUT_MANIFEST.updated_at).toLocaleString('pl-PL') : '—';
+      infoEl.innerHTML = `${FUT_MANIFEST.products.length} produktów dostępnych, ostatnia aktualizacja: <b>${upd}</b>. Kliknij "+ Dodaj nogę" by wybrać produkt i miesiąc.`;
+    } else {
+      infoEl.innerHTML = `<span style="color:var(--bad)">⚠ Manifest pusty. Uruchom workflow "Kontrakty terminowe" (Actions → Run workflow → full).</span>`;
+    }
+  }
+
   if (!state.futuresLegs.length) {
-    setEmpty('mainPlot', 'Dodaj nogę (przycisk po lewej) — wybór 2-krokowy: produkt → miesiąc kontraktu.');
-    detail.innerHTML = '<div class="hint">Pusto. Dodaj co najmniej 1 nogę żeby zobaczyć wykres.</div>';
+    if (titleEl) titleEl.textContent = 'Terminowe — dodaj nogę żeby zacząć';
+    setEmpty('futMainPlot', 'Dodaj nogę (przycisk po lewej) — wybór 2-krokowy: produkt → miesiąc kontraktu.');
+    if (detail) detail.innerHTML = '<div class="hint">Pusto. Dodaj co najmniej 1 nogę żeby zobaczyć wykres.</div>';
     return;
   }
 
   // Pobierz dane dla wszystkich potrzebnych produktow
   const pids = Array.from(new Set(state.futuresLegs.map(l => l.pid)));
   await Promise.all(pids.map(pid => ensureFuturesProductLoaded(pid)));
-  const missing = state.futuresLegs.filter(l => !FUT_DATA[l.pid] || !FUT_DATA[l.pid].contracts[l.contractKey]);
+  const missing = state.futuresLegs.filter(l => !FUT_DATA[l.pid] || !FUT_DATA[l.pid].contracts || !FUT_DATA[l.pid].contracts[l.contractKey]);
   if (missing.length) {
-    setEmpty('mainPlot', `Brakuje danych: ${missing.map(m=>m.pid+' '+formatContractLabel(m.pid,m.contractKey)).join(', ')}`);
+    setEmpty('futMainPlot', `Brakuje danych: ${missing.map(m=>m.pid+' '+formatContractLabel(m.pid,m.contractKey)).join(', ')}`);
     return;
   }
+  titleEl.textContent = `Terminowe: ${state.futuresLegs.map(l => `${l.side>0?'+':'−'}${l.qty}×${l.pid} ${formatContractLabel(l.pid, l.contractKey)}`).join('  ')}`;
 
   // Zbuduj serie per noga
   const legSeries = state.futuresLegs.map(l => {
@@ -2734,7 +2860,7 @@ async function renderFutures() {
   const dateSets = legSeries.map(s => new Set(s.dates));
   const commonDates = legSeries[0].dates.filter(d => dateSets.every(s => s.has(d)));
   if (!commonDates.length) {
-    setEmpty('mainPlot', 'Brak wspólnych dat dla nog. Kontrakty mogą się nie pokrywać w czasie.');
+    setEmpty('futMainPlot', 'Brak wspólnych dat dla nog. Kontrakty mogą się nie pokrywać w czasie.');
     detail.innerHTML = `<div class="hint" style="color:var(--bad)">Nogi nie mają wspólnych dni handlowych. Zwykle znaczy że wybrane kontrakty wygasły w różnych okresach.</div>`;
     return;
   }
@@ -2808,7 +2934,7 @@ async function renderFutures() {
     }
   }
 
-  Plotly.react('mainPlot', traces, {
+  Plotly.react('futMainPlot', traces, {
     ...layoutBase,
     yaxis: { ...layoutBase.yaxis, title: state.futuresPct ? '% zmiana' : 'wartość spreadu' },
     height: 700,
