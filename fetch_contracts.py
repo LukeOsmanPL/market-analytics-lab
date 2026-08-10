@@ -119,17 +119,45 @@ def stooq_url(root: str, month_code: str, year: int) -> str:
     return f"https://stooq.com/q/d/l/?s={urllib.parse.quote(sym)}&i=d"
 
 
+_STOOQ_DEBUG_COUNT = 0
+_STOOQ_DEBUG_LIMIT = 20  # log pierwsze N zapytań szczegółowo
+
 def fetch_contract(root: str, month_code: str, year: int, unit_scale: float = 1.0):
-    """Pobiera 1 kontrakt ze Stooq. Zwraca liste {date,value} lub [] jesli brak."""
+    """Pobiera 1 kontrakt ze Stooq. Zwraca liste {date,value}, [] (brak) lub None (throttling)."""
+    global _STOOQ_DEBUG_COUNT
     url = stooq_url(root, month_code, year)
+    debug_this = _STOOQ_DEBUG_COUNT < _STOOQ_DEBUG_LIMIT
+    _STOOQ_DEBUG_COUNT += 1
     try:
-        req = urllib.request.Request(url, headers={"User-Agent": "market-analytics-lab/1.0"})
+        # UZYWAM prawdziwego browser UA - Stooq czasem blokuje botów
+        req = urllib.request.Request(url, headers={
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+            "Accept": "text/csv,text/plain,*/*",
+            "Accept-Language": "en-US,en;q=0.9,pl;q=0.8",
+        })
         with urllib.request.urlopen(req, timeout=45) as r:
+            status = r.status
             raw = r.read().decode("utf-8", errors="replace")
+    except urllib.error.HTTPError as e:
+        if debug_this:
+            print(f"    [DBG] {url} -> HTTP {e.code} {e.reason}", flush=True)
+        return None if e.code == 429 else []
     except Exception as e:
-        # Kontrakt nie istnieje albo throttling - cichy fail
+        if debug_this:
+            print(f"    [DBG] {url} -> EXC {type(e).__name__}: {e}", flush=True)
         return None if "Too many" in str(e) or "429" in str(e) else []
-    if not raw or "Date" not in raw.split("\n", 1)[0]:
+
+    # Debug: pokaz pierwsze N zapytan (URL + status + skrocona odpowiedz)
+    if debug_this:
+        preview = raw[:150].replace("\n", " | ")
+        print(f"    [DBG] {url} -> HTTP {status}, {len(raw)}B: {preview!r}", flush=True)
+
+    if not raw:
+        return []
+    # Stooq gdy brak symbolu zwraca text/html z komunikatem "Brak danych" - wykrywamy
+    if raw.strip().lower().startswith(("<!doctype", "<html", "no data", "brak")):
+        return []
+    if "Date" not in raw.split("\n", 1)[0]:
         return []
     import csv, io
     obs = []
