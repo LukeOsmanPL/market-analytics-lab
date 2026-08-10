@@ -1,7 +1,6 @@
-name: Kontrakty terminowe (Stooq)
+name: Kontrakty terminowe (EIA + Yahoo)
 
 on:
-  # Codziennie o 06:00 UTC (08:00 PL) - przed glownym fetchem
   schedule:
     - cron: '0 6 * * *'
   workflow_dispatch:
@@ -21,7 +20,7 @@ permissions:
 jobs:
   fetch:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -31,7 +30,14 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: Install deps
+        run: |
+          pip install yfinance --break-system-packages || pip install yfinance
+          pip install --upgrade requests --break-system-packages || pip install --upgrade requests
+
       - name: Fetch kontrakty terminowe
+        env:
+          EIA_KEY: ${{ secrets.EIA_KEY }}
         run: |
           python3 fetch_contracts.py "${{ github.event.inputs.mode || 'incremental' }}"
 
