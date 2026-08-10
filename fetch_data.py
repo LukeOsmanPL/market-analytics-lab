@@ -76,14 +76,8 @@ PRODUCTS = [
          contract_size=1, contract_unit="gal",
          category="Energia", color="#ffa000"),
     # Inventories & storage - wskazniki fundamentalne (leading indicators dla cen)
-    dict(id="NG_STORAGE_US", source="fred", series="WNGSTUS",
-         name="Zapasy gazu US (48 stanów)", unit="Bcf",
-         contract_size=1, contract_unit="Bcf",
-         category="Energia", color="#0288d1"),
-    dict(id="CRUDE_STORAGE_US", source="fred", series="WCESTUS",
-         name="Zapasy ropy US (komercyjne)", unit="tys. bbl",
-         contract_size=1, contract_unit="tys. bbl",
-         category="Energia", color="#ef5350"),
+    # UWAGA: FRED nie ma bezposrednich zapasow tygodniowych; usunieto do czasu znalezienia
+    # poprawnych series_id (WNGSTUS/WCESTUS zwracaly 400).
 
     # Metale (Yahoo Finance)
     dict(id="GOLD",     source="yahoo", series="GC=F",
@@ -120,10 +114,11 @@ PRODUCTS = [
          name="Pszenica HRW (Kansas)",    unit="$/bu",
          contract_size=5000, contract_unit="bu",
          category="Rolne", color="#a1887f"),
-    dict(id="WHEAT_MW", source="stooq", series="mw.f", unit_scale=0.01,
-         name="Pszenica Spring (MGEX)",   unit="$/bu",
-         contract_size=5000, contract_unit="bu",
-         category="Rolne", color="#4e342e"),
+    # WHEAT_MW (MGEX Spring Wheat) usuniete - Stooq nie ma symbolu mw.f, Yahoo tez nie dziala
+    # dict(id="WHEAT_MW", source="stooq", series="mw.f", unit_scale=0.01,
+    #      name="Pszenica Spring (MGEX)",   unit="$/bu",
+    #      contract_size=5000, contract_unit="bu",
+    #      category="Rolne", color="#4e342e"),
     dict(id="SOYBEAN", source="yahoo", series="ZS=F", unit_scale=0.01,
          name="Soja (CBOT)",              unit="$/bu",
          contract_size=5000, contract_unit="bu",
@@ -298,32 +293,9 @@ PRODUCTS = [
          name="Elektryka hurt UK",          unit="€/MWh",
          contract_size=1, contract_unit="MWh", category="Elektryka", color="#7e57c2"),
 
-    # Elektryka DETAL (gospodarstwa domowe) - Eurostat nrg_pc_204, band DC 2500-4999 kWh/rok,
-    # wszystkie podatki wliczone, EUR/kWh, dane polroczne (S1/S2, publikacja ~4mc po polroczu)
-    dict(id="PL_POWER_RETAIL", source="eurostat_elec", series="PL",
-         name="Elektryka detal Polska",     unit="€/kWh",
-         contract_size=1, contract_unit="kWh", category="Elektryka", color="#ffca28"),
-    dict(id="DE_POWER_RETAIL", source="eurostat_elec", series="DE",
-         name="Elektryka detal Niemcy",     unit="€/kWh",
-         contract_size=1, contract_unit="kWh", category="Elektryka", color="#ff9800"),
-    dict(id="FR_POWER_RETAIL", source="eurostat_elec", series="FR",
-         name="Elektryka detal Francja",    unit="€/kWh",
-         contract_size=1, contract_unit="kWh", category="Elektryka", color="#5c6bc0"),
-    dict(id="ES_POWER_RETAIL", source="eurostat_elec", series="ES",
-         name="Elektryka detal Hiszpania",  unit="€/kWh",
-         contract_size=1, contract_unit="kWh", category="Elektryka", color="#ec407a"),
-    dict(id="IT_POWER_RETAIL", source="eurostat_elec", series="IT",
-         name="Elektryka detal Włochy",     unit="€/kWh",
-         contract_size=1, contract_unit="kWh", category="Elektryka", color="#66bb6a"),
-    dict(id="CZ_POWER_RETAIL", source="eurostat_elec", series="CZ",
-         name="Elektryka detal Czechy",     unit="€/kWh",
-         contract_size=1, contract_unit="kWh", category="Elektryka", color="#26a69a"),
-    dict(id="NL_POWER_RETAIL", source="eurostat_elec", series="NL",
-         name="Elektryka detal Holandia",   unit="€/kWh",
-         contract_size=1, contract_unit="kWh", category="Elektryka", color="#ffb74d"),
-    dict(id="EU_POWER_RETAIL", source="eurostat_elec", series="EU27_2020",
-         name="Elektryka detal UE-27",      unit="€/kWh",
-         contract_size=1, contract_unit="kWh", category="Elektryka", color="#9575cd"),
+    # Elektryka DETAL (gospodarstwa domowe) - Eurostat nrg_pc_204 - TYMCZASOWO WYLACZONE
+    # API zwracalo 400 (prawdopodobnie zmiana schematu SDMX). Do naprawy w kolejnym kroku.
+    # Zeby przywrocic - odkomentuj i zdiagnozuj URL rucznie.
 
     # CFTC COT - pozycja NETTO Money Managers (Long - Short) per market, tygodniowo
     # Klasyczny wskaźnik kontrariański - ekstremum netto sygnalizuje odwrócenie
@@ -1298,7 +1270,8 @@ def main():
         pid = p["id"]
         scale = p.get("unit_scale", 1.0)
         scale_note = f" (skala x{scale})" if scale != 1.0 else ""
-        print(f"\n[{pid}] {p['source']}:{p['series']}{scale_note} ...", flush=True)
+        series_label = p.get('series') or ('|'.join('+'.join(g) for g in p.get('series_patterns', [])) or '(patterns)')
+        print(f"\n[{pid}] {p['source']}:{series_label}{scale_note} ...", flush=True)
         try:
             if p["source"] == "fred":
                 obs = fetch_fred(p["series"])
