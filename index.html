@@ -542,7 +542,7 @@
   </div>
 
   <div class="content">
-    <div class="card">
+    <div class="card" id="mainChartCard">
       <div class="chart-title">
         <span class="title-text" id="mainTitle">—</span>
         <button class="export-btn" onclick="exportPlotCSV('mainPlot', 'chart')">📥 CSV</button>
@@ -605,6 +605,7 @@
           <option value="lines">Nogi + spread (linie)</option>
           <option value="spread_only">Tylko spread</option>
           <option value="seasonal">Sezonowy (średnia N-letnia)</option>
+          <option value="cross_year">Cross-year DTE (seasonalgo-style)</option>
         </select>
       </div>
       <div class="row" id="futuresSeasonWinRow" style="display:none">
@@ -799,23 +800,11 @@ function updateFuturesStatusBanner() {
   const el = document.getElementById('futuresStatus');
   if (!el) return;
   if (!FUT_MANIFEST || !FUT_MANIFEST.products || !FUT_MANIFEST.products.length) {
-    el.innerHTML = `
-      <div style="background:rgba(239,83,80,0.12); border:1px solid var(--bad); border-radius:8px; padding:10px 12px; color:var(--fg); font-size:12px; line-height:1.5">
-        <div style="color:var(--bad); font-weight:700; margin-bottom:6px">⚠ Brak danych terminowych</div>
-        Workflow <b>"Kontrakty terminowe (Stooq)"</b> jeszcze nie uruchomiony (albo się wysypał).<br><br>
-        <b>Co zrobić:</b><br>
-        1. Wejdź na <a href="https://github.com/LukeOsmanPL/market-analytics-lab/actions" target="_blank" style="color:var(--accent)">GitHub Actions</a><br>
-        2. Wybierz workflow <b>"Kontrakty terminowe (Stooq)"</b> po lewej<br>
-        3. Kliknij <b>Run workflow</b> (prawy górny róg)<br>
-        4. W dropdown wybierz <b>full</b> (pierwszy backfill)<br>
-        5. Poczekaj ~30-60 min<br>
-        6. Odśwież tę stronę<br><br>
-        Codzienny cron będzie potem uruchamiał <code>incremental</code> automatycznie o 06:00 UTC.
-      </div>`;
+    el.innerHTML = `<div style="color:var(--muted); font-size:12px">⏳ Dane terminowe w trakcie przygotowywania. Zajrzyj za chwilę.</div>`;
   } else {
     const n = FUT_MANIFEST.products.length;
     const upd = FUT_MANIFEST.updated_at ? new Date(FUT_MANIFEST.updated_at).toLocaleString('pl-PL') : '—';
-    el.innerHTML = `<span style="color:var(--ok)">✅ ${n} produktów, aktualne z ${upd}</span>`;
+    el.innerHTML = `<span style="color:var(--ok); font-size:12px">✅ ${n} produktów, aktualne z ${upd}</span>`;
   }
 }
 
@@ -921,18 +910,23 @@ function convertValue(value, nativeUnit, productId, target) {
   const [tgtCur, tgtSub] = target.split('/');
   const fx = fxRate(src.cur, tgtCur);
   if (fx === null) return { v: value, unit: nativeUnit };
-  // Wymiar fizyczny
+  // Wymiar fizyczny - FIX 2026-08: dimFactor byl ZAINWERTOWANY dla masy/objetosci
+  // Poprawnie: X/tgt_unit = X/src_unit * (src_size_in_common) / (tgt_size_in_common)? NIE!
+  //   X/tgt = X/src * (kg_per_src / kg_per_tgt) - bo im wieksza source_unit tym wiecej tgt_unitow w niej
+  //   Przyklad: $6.53/bu * (27.2 kg/bu) / (1000 kg/mt) = $6.53 * 0.0272 = $0.18/mt ??? tez zle
+  //   Prawidlowo: $6.53/bu * (1000 kg/mt) / (27.2 kg/bu) = $6.53 * 36.74 = $239.94/mt ✓
+  //   Bo: chcesz przeliczyc "co dostaniesz za 1 tone (1000 kg)" - to jest 1000/27.2 = 36.74 buszla, wiec X mnoz przez 36.74
   let dimFactor = null;
   if (tgtSub === 'gal' || tgtSub === 'L' || tgtSub === '1000L') {
     if (src.kind !== 'volume') return { v: value, unit: nativeUnit };
     const tgtL = { gal: 3.7854, L: 1, '1000L': 1000 }[tgtSub];
-    dimFactor = src.liters / tgtL;
+    dimFactor = tgtL / src.liters;   // FIX: bylo src.liters / tgtL
   } else if (tgtSub === 'mt' || tgtSub === 't') {
     let srcKg;
     if (src.kind === 'bushel') { srcKg = BUSHEL_KG[productId]; if (!srcKg) return { v: value, unit: nativeUnit }; }
     else if (src.kind === 'mass') srcKg = src.kg;
     else return { v: value, unit: nativeUnit };
-    dimFactor = srcKg / 1000;
+    dimFactor = 1000 / srcKg;         // FIX: bylo srcKg / 1000
   } else if (tgtSub === 'MWh') {
     if (src.kind !== 'energy_mwh') return { v: value, unit: nativeUnit };
     dimFactor = 1;
@@ -2434,6 +2428,46 @@ function renderDashboard() {
     const idx = d.prices.length - 1 - daysBack;
     return idx >= 0 ? d.prices[idx] : null;
   };
+  // Prawdziwa zmiana 1-dniowa: bierze POPRZEDNIA obserwacje TYLKO jesli jest w ciagu 4 dni.
+  // Chroni przed tym ze tygodniowe/miesieczne serie (WOB, CFTC, FRED monthly) pokazuja 7/30-dniowa zmiane pod "1d".
+  // Dodatkowo: pomija obserwacje z wartoscia ~0 (zamkniete rynki, brakujace dane) po OBU stronach.
+  const prev1dSafe = (pid) => {
+    const d = DATA[pid];
+    if (!d || d.prices.length < 2) return null;
+    // Znajdz ostatnia OBSERWACJE z sensowna wartoscia (nie 0)
+    let lastIdx = -1;
+    for (let i = d.prices.length - 1; i >= 0; i--) {
+      if (d.prices[i] != null && Math.abs(d.prices[i]) > 1e-6) { lastIdx = i; break; }
+    }
+    if (lastIdx <= 0) return null;
+    const lastDate = new Date(d.dates[lastIdx]);
+    // Znajdz poprzednia sensowna wartosc (max 4 dni wstecz od lastIdx)
+    for (let i = lastIdx - 1; i >= 0; i--) {
+      if (d.prices[i] == null || Math.abs(d.prices[i]) < 1e-6) continue;
+      const gap = Math.round((lastDate - new Date(d.dates[i])) / (24*3600*1000));
+      if (gap > 4) return null;
+      return { last: d.prices[lastIdx], prev: d.prices[i] };
+    }
+    return null;
+  };
+  // Dla zmian tygodniowych podobnie: bierze obserwacje ~7 dni wstecz TYLKO jesli seria ma sensowne rozgestszenie
+  // Zawsze uzywa priceNDaysAgo (calendar-based), ale dodatkowo sprawdza czy roznica w danych to nie wiecej niz 30 dni
+  const priceNDaysAgoSafe = (pid, days, maxGapDays) => {
+    const d = DATA[pid];
+    if (!d || !d.prices.length) return null;
+    const lastDate = new Date(d.dates[d.dates.length - 1]);
+    const target = new Date(lastDate); target.setDate(target.getDate() - days);
+    const targetStr = target.toISOString().slice(0, 10);
+    let idx = -1;
+    for (let i = d.dates.length - 1; i >= 0; i--) {
+      if (d.dates[i] <= targetStr) { idx = i; break; }
+    }
+    if (idx < 0) return null;
+    const foundDate = new Date(d.dates[idx]);
+    const gapDays = Math.round((target - foundDate) / (24*3600*1000));
+    if (maxGapDays != null && gapDays > maxGapDays) return null;
+    return d.prices[idx];
+  };
   // Cena w polnocy pierwszego dnia sprzed N dni (przybliżenie kalendarzowe)
   const priceNDaysAgo = (pid, days) => {
     const d = DATA[pid];
@@ -2463,16 +2497,16 @@ function renderDashboard() {
 
   const movers = relevant.map(p => {
     const last = priceAtOffset(p.id, 0);
-    const prev1d = priceAtOffset(p.id, 1);
-    const prev7d = priceNDaysAgo(p.id, 7);
-    const prev30d = priceNDaysAgo(p.id, 30);
-    const prev365d = priceNDaysAgo(p.id, 365);
+    const pair1d = prev1dSafe(p.id);                     // {last, prev} albo null
+    const prev7d  = priceNDaysAgoSafe(p.id, 7, 5);
+    const prev30d = priceNDaysAgoSafe(p.id, 30, 15);
+    const prev365d = priceNDaysAgoSafe(p.id, 365, 60);
     const avg5 = avg5Y(p.id);
-    const pct = (a, b) => (b && b !== 0) ? ((a / b - 1) * 100) : null;
+    const pct = (a, b) => (b && Math.abs(b) > 1e-6) ? ((a / b - 1) * 100) : null;
     return {
       p, last,
-      d1: pct(last, prev1d),
-      d7: pct(last, prev7d),
+      d1:  pair1d ? ((pair1d.last/pair1d.prev - 1) * 100) : null,
+      d7:  pct(last, prev7d),
       d30: pct(last, prev30d),
       d365: pct(last, prev365d),
       dev5Y: pct(last, avg5),
@@ -2481,7 +2515,13 @@ function renderDashboard() {
   }).filter(m => m.last != null);
 
   // Sortowania
-  const sortBy = (arr, key, desc = true) => arr.filter(m => m[key] != null).sort((a, b) => desc ? b[key] - a[key] : a[key] - b[key]);
+  // sortBy(arr, key, desc=true): najwieksze pierwsze (wzrost). desc=false: najmniejsze pierwsze (spadek).
+  // Dodatkowo: dla desc=false filtrujemy do UJEMNYCH (rzeczywiste spadki), dla desc=true do DODATNICH.
+  const sortBy = (arr, key, desc = true) => {
+    const withVal = arr.filter(m => m[key] != null);
+    const filtered = desc ? withVal.filter(m => m[key] > 0) : withVal.filter(m => m[key] < 0);
+    return filtered.sort((a, b) => desc ? b[key] - a[key] : a[key] - b[key]);
+  };
   const topN = (arr, n) => arr.slice(0, n);
 
   const buildTable = (items, valueKey, valueLabel) => {
@@ -2767,16 +2807,7 @@ function openFutModal() {
     // renderuj grid produktow
     const grid = document.getElementById('futProductGrid');
     if (!FUT_MANIFEST || !FUT_MANIFEST.products || !FUT_MANIFEST.products.length) {
-      grid.innerHTML = `
-        <div style="background:rgba(239,83,80,0.12); border:1px solid var(--bad); border-radius:8px; padding:14px; color:var(--fg); font-size:13px; line-height:1.5">
-          <div style="color:var(--bad); font-weight:700; margin-bottom:8px">⚠ Brak danych — najpierw uruchom workflow</div>
-          Nie ma jeszcze żadnych kontraktów w <code>data/contracts/</code>. Musisz uruchomić fetcher w GitHub Actions:<br><br>
-          <b>1.</b> <a href="https://github.com/LukeOsmanPL/market-analytics-lab/actions" target="_blank" style="color:var(--accent)">Otwórz Actions</a><br>
-          <b>2.</b> Kliknij workflow <b>"Kontrakty terminowe (Stooq)"</b><br>
-          <b>3.</b> Prawy górny róg → <b>Run workflow</b> → wybierz <b>full</b> → Run<br>
-          <b>4.</b> Pierwszy backfill zajmuje ~30-60 min (ściąga ~5000 kontraktów)<br>
-          <b>5.</b> Po zakończeniu odśwież tę stronę
-        </div>`;
+      grid.innerHTML = `<div style="color:var(--muted); font-size:13px; padding:14px">⏳ Dane terminowe są aktualnie przygotowywane. Zajrzyj za chwilę.</div>`;
       return;
     }
     const byCat = {};
@@ -2893,7 +2924,7 @@ async function renderFutures() {
   const detail = document.getElementById('futuresDetail');
   const titleEl = document.getElementById('futMainTitle');
   document.getElementById('futuresSeasonWinRow').style.display =
-    state.futuresView === 'seasonal' ? 'flex' : 'none';
+    (state.futuresView === 'seasonal' || state.futuresView === 'cross_year') ? 'flex' : 'none';
 
   // Update info panel
   const infoEl = document.getElementById('futDataInfo');
@@ -2979,6 +3010,140 @@ async function renderFutures() {
       x: commonDates, y: sy, name: 'SPREAD', type: 'scatter', mode: 'lines',
       line: { color: '#ffd54f', width: 3 },
     });
+  }
+
+  // CROSS-YEAR DTE (seasonalgo-style): rekonstruuj wszystkie historyczne wersje spreadu
+  // dla ostatnich N lat. Wymaga: wszystkie nogi to CONKRETNE MIESIACE (nie M1-M4 rolling).
+  if (state.futuresView === 'cross_year') {
+    // Sprawdz czy wszystkie nogi maja konkretne miesiace
+    const allSpecific = state.futuresLegs.every(l => !l.contractKey.startsWith('M'));
+    if (!allSpecific) {
+      setEmpty('futMainPlot', 'Cross-year DTE wymaga konkretnych miesięcy (nie M1-M4 rolling). Zmień nogi.');
+      return;
+    }
+    // Wyznacz "target expiry" = najpozniejsza noga (jej ck jako YYYYMM)
+    const legExpiries = state.futuresLegs.map(l => parseInt(l.contractKey, 10));
+    const targetExpiry = Math.max(...legExpiries);
+    const targetYear = Math.floor(targetExpiry / 100);
+    const targetMonth = targetExpiry % 100;
+    // Dla kazdej nogi zapamietaj OFFSET (roznica lat) od target
+    const legOffsets = state.futuresLegs.map(l => {
+      const ck = parseInt(l.contractKey, 10);
+      const y = Math.floor(ck / 100), m = ck % 100;
+      // Offset w miesiacach vs target (na wypadek roznych miesiecy w nogach)
+      return (y - targetYear) * 12 + (m - targetMonth);
+    });
+    const win = state.futuresSeasonWindow;
+    // Wygeneruj wersje spreadu dla lat [targetYear-win .. targetYear]
+    const cohorts = [];  // [{year, dates, values}]
+    for (let yOffset = -win; yOffset <= 0; yOffset++) {
+      const cohortYear = targetYear + yOffset;
+      // Zbuduj klucze kontraktow dla tej kohorty
+      const cohortLegs = state.futuresLegs.map((l, i) => {
+        const monthOffset = legOffsets[i]; // offset w miesiacach vs target
+        const yy = cohortYear + Math.floor((targetMonth + monthOffset - 1) / 12);
+        let mm = ((targetMonth + monthOffset - 1) % 12) + 1;
+        if (mm <= 0) mm += 12;
+        return { pid: l.pid, ck: `${yy}${String(mm).padStart(2,'0')}`, side: l.side, qty: l.qty };
+      });
+      // Pobierz serie kazdej nogi dla tej kohorty
+      const series = cohortLegs.map(cl => getContractSeries(cl.pid, cl.ck));
+      if (series.some(s => !s)) continue; // brak danych dla tej kohorty
+      // Wspolne daty
+      const dateMaps = series.map(s => Object.fromEntries(s.map(o => [o.date, o.value])));
+      const dateSets = series.map(s => new Set(s.map(o => o.date)));
+      const common = series[0].map(o => o.date).filter(d => dateSets.every(s => s.has(d)));
+      if (!common.length) continue;
+      const yVals = common.map(d => cohortLegs.reduce((s, cl, i) => s + cl.side * cl.qty * dateMaps[i][d], 0));
+      cohorts.push({ year: cohortYear, dates: common, values: yVals, target: `${targetYear}${String(targetMonth).padStart(2,'0')}` });
+    }
+    if (cohorts.length < 2) {
+      setEmpty('futMainPlot', `Znaleziono tylko ${cohorts.length} kohortę(y) - za mało do cross-year analysis. Yahoo może nie mieć starszych kontraktów tego typu.`);
+      return;
+    }
+    // Normalizuj kazda kohorte na os DTE (days-to-expiry: 0 = dzien wygasniecia targetu)
+    const dteCohorts = cohorts.map(c => {
+      // dzien wygasniecia = 15 dnia miesiaca targetExpiry cohorty (approx)
+      const cohortTarget = new Date(c.year, targetMonth - 1, 15);
+      const dtes = c.dates.map(d => Math.floor((cohortTarget - new Date(d)) / 86400000));
+      return { year: c.year, dtes, values: c.values, isCurrent: c.year === targetYear };
+    });
+    // Zbuduj wspolna os DTE (rozmiar unii)
+    const allDtes = new Set();
+    dteCohorts.forEach(c => c.dtes.forEach(d => allDtes.add(d)));
+    const dteAxis = Array.from(allDtes).sort((a,b) => b-a); // od najstarszego DTE do 0
+    // Mapa year -> {dte: value}
+    const historyMaps = {};
+    dteCohorts.forEach(c => {
+      const m = {}; c.dtes.forEach((d,i) => m[d] = c.values[i]);
+      historyMaps[c.year] = m;
+    });
+    // Srednia i percentyle po historycznych (bez biezacego roku)
+    const histYears = dteCohorts.filter(c => !c.isCurrent).map(c => c.year);
+    const avgSeries = [], p25Series = [], p75Series = [], minSeries = [], maxSeries = [];
+    dteAxis.forEach(dte => {
+      const vals = histYears.map(y => historyMaps[y][dte]).filter(v => v != null);
+      if (vals.length) {
+        const sorted = vals.slice().sort((a,b) => a-b);
+        avgSeries.push(vals.reduce((s,x)=>s+x,0)/vals.length);
+        const qp = (arr, p) => {
+          const pos = (arr.length-1)*p, lo = Math.floor(pos), hi = Math.ceil(pos), fr = pos - lo;
+          return arr[lo]*(1-fr) + arr[hi]*fr;
+        };
+        p25Series.push(qp(sorted, 0.25));
+        p75Series.push(qp(sorted, 0.75));
+        minSeries.push(sorted[0]);
+        maxSeries.push(sorted[sorted.length-1]);
+      } else {
+        avgSeries.push(null); p25Series.push(null); p75Series.push(null);
+        minSeries.push(null); maxSeries.push(null);
+      }
+    });
+    // Traces (nadpisujemy wszystko - cross-year to inny wykres)
+    traces.length = 0;
+    traces.push({ x: dteAxis, y: maxSeries, name: 'max', mode: 'lines', line: { width: 0, color: '#4fc3f7' }, showlegend: false, hoverinfo: 'skip' });
+    traces.push({ x: dteAxis, y: minSeries, name: `min-max ${histYears.length}L`, mode: 'lines', fill: 'tonexty', fillcolor: 'rgba(79,195,247,0.08)', line: { width: 0, color: '#4fc3f7' }});
+    traces.push({ x: dteAxis, y: p75Series, name: 'p75', mode: 'lines', line: { width: 0, color: '#4fc3f7' }, showlegend: false, hoverinfo: 'skip' });
+    traces.push({ x: dteAxis, y: p25Series, name: `p25-p75 ${histYears.length}L`, mode: 'lines', fill: 'tonexty', fillcolor: 'rgba(79,195,247,0.22)', line: { width: 0 }});
+    traces.push({ x: dteAxis, y: avgSeries, name: `Średnia ${histYears.length}L`, mode: 'lines', line: { width: 3, color: '#4fc3f7' }});
+    // Kazda historyczna kohorta jako cienka linia
+    dteCohorts.filter(c => !c.isCurrent).forEach(c => {
+      const y = dteAxis.map(dte => historyMaps[c.year][dte] ?? null);
+      traces.push({ x: dteAxis, y, name: `${c.year}`, mode: 'lines', line: { width: 1, color: 'rgba(139,150,165,0.4)' }, hovertemplate: `${c.year}: %{y:.2f}<extra></extra>` });
+    });
+    // Biezaca kohorta (jasny akcent)
+    const curCohort = dteCohorts.find(c => c.isCurrent);
+    if (curCohort) {
+      const y = dteAxis.map(dte => historyMaps[curCohort.year][dte] ?? null);
+      traces.push({ x: dteAxis, y, name: `${curCohort.year} (bieżący)`, mode: 'lines', line: { width: 3, color: '#ff8a65' }, hovertemplate: `${curCohort.year}: %{y:.2f}<extra></extra>` });
+    }
+    // Statystyki: aktualny vs historia (Z-score na ostatnim DTE bez biezacego)
+    const curVal = curCohort ? curCohort.values[curCohort.values.length - 1] : null;
+    const curDte = curCohort ? curCohort.dtes[curCohort.dtes.length - 1] : null;
+    const histAtCurDte = curDte != null ? histYears.map(y => historyMaps[y][curDte]).filter(v => v != null) : [];
+    let zscore = null;
+    if (histAtCurDte.length >= 3 && curVal != null) {
+      const m = histAtCurDte.reduce((s,x)=>s+x,0)/histAtCurDte.length;
+      const sd = Math.sqrt(histAtCurDte.reduce((s,x)=>s+(x-m)**2,0)/histAtCurDte.length);
+      zscore = sd > 1e-9 ? (curVal - m) / sd : 0;
+    }
+    Plotly.react('futMainPlot', traces, {
+      ...layoutBase,
+      xaxis: { ...layoutBase.xaxis, title: 'Days-to-expiry (0 = wygaśnięcie)', autorange: 'reversed' },
+      yaxis: { ...layoutBase.yaxis, title: 'wartość spreadu' },
+      height: 700,
+    }, { responsive: true, displaylogo: false });
+    // Update detail panel
+    const zTag = zscore != null && Math.abs(zscore) >= 2 ? (zscore > 0 ? '⚠ powyżej normy' : '⚠ poniżej normy') : '';
+    detail.innerHTML = `
+      <div class="chart-title">Cross-year: ${cohorts.length} kohort, target ${MONTH_CODE_LABELS[targetMonth]} ${targetYear}</div>
+      <div class="stats-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px">
+        <div class="stat"><div class="label">Aktualny spread</div><div class="value">${curVal != null ? curVal.toFixed(3) : '—'}</div><div class="sub">DTE ${curDte ?? '—'}</div></div>
+        <div class="stat"><div class="label">Historyczne przy tym DTE</div><div class="value">${histAtCurDte.length ? (histAtCurDte.reduce((s,x)=>s+x,0)/histAtCurDte.length).toFixed(3) : '—'}</div><div class="sub">średnia z ${histAtCurDte.length} lat</div></div>
+        <div class="stat"><div class="label">Z-score</div><div class="value">${zscore != null ? zscore.toFixed(2) : '—'}</div><div class="sub ${Math.abs(zscore||0) >= 2 ? 'down' : ''}">${zTag}</div></div>
+        <div class="stat"><div class="label">Lata w kohorcie</div><div class="value" style="font-size:14px">${cohorts.map(c=>c.year).join(', ')}</div></div>
+      </div>`;
+    return; // rezygnujemy ze zwyklego rysowania
   }
 
   // Sezonowa: pokazujemy tylko srednia DOY z ostatnich N lat spreadu
