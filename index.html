@@ -582,7 +582,7 @@
       <div class="chart-title" id="ratioTitle">Statystyki ratio</div>
       <div id="ratioStats"></div>
     </div>
-    <div class="card">
+    <div class="card" id="statsCard">
       <div class="chart-title">Statystyki dla widocznego okresu</div>
       <div class="stats-grid" id="stats"></div>
     </div>
@@ -1239,6 +1239,10 @@ function init() {
       document.querySelectorAll('.mode-panel').forEach(x => x.classList.remove('active'));
       document.getElementById('panel-' + state.mode).classList.add('active');
       ['stdCtrl','seasonalCtrl','spreadCtrl'].forEach(id => document.getElementById(id).style.display = 'none');
+      // Ukryj gorna karte wykresu + panel statystyk gdy Dashboard (Dashboard sam wypelnia srodek)
+      const isDash = state.mode === 'dashboard';
+      const mcc = document.getElementById('mainChartCard'); if (mcc) mcc.style.display = isDash ? 'none' : '';
+      const sc = document.getElementById('statsCard'); if (sc) sc.style.display = isDash ? 'none' : '';
       if (state.mode === 'standard') document.getElementById('stdCtrl').style.display = 'block';
       if (state.mode === 'seasonal') document.getElementById('seasonalCtrl').style.display = 'block';
       if (state.mode === 'spread')   document.getElementById('spreadCtrl').style.display = 'block';
