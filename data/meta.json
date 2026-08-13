@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-13T10:45:06.230574+00:00",
+  "generated_at": "2026-08-13T21:32:20.771036+00:00",
   "products": [
     {
       "id": "NG",
@@ -670,8 +670,8 @@
       "source": "yahoo",
       "series": "^GSPC",
       "first_date": "1995-01-03",
-      "last_date": "2026-08-12",
-      "n_observations": 7955
+      "last_date": "2026-08-13",
+      "n_observations": 7956
     },
     {
       "id": "BTC",
@@ -698,8 +698,8 @@
       "source": "fred",
       "series": "DGS10",
       "first_date": "1995-01-03",
-      "last_date": "2026-08-11",
-      "n_observations": 7908
+      "last_date": "2026-08-12",
+      "n_observations": 7909
     },
     {
       "id": "US2Y",
@@ -712,8 +712,8 @@
       "source": "fred",
       "series": "DGS2",
       "first_date": "1995-01-03",
-      "last_date": "2026-08-11",
-      "n_observations": 7908
+      "last_date": "2026-08-12",
+      "n_observations": 7909
     },
     {
       "id": "US10Y2Y",
@@ -726,8 +726,8 @@
       "source": "fred",
       "series": "T10Y2Y",
       "first_date": "1995-01-03",
-      "last_date": "2026-08-12",
-      "n_observations": 7909
+      "last_date": "2026-08-13",
+      "n_observations": 7910
     },
     {
       "id": "PL_POWER",
@@ -950,8 +950,8 @@
       "source": "yahoo",
       "series": "TTF=F",
       "first_date": "2017-10-23",
-      "last_date": "2026-08-12",
-      "n_observations": 2214
+      "last_date": "2026-08-13",
+      "n_observations": 2215
     },
     {
       "id": "EU_NG_MO",
@@ -1062,8 +1062,8 @@
       "source": "yahoo",
       "series": "OJ=F",
       "first_date": "2001-09-17",
-      "last_date": "2026-08-12",
-      "n_observations": 6249
+      "last_date": "2026-08-13",
+      "n_observations": 6250
     },
     {
       "id": "LIVE_CATTLE",
@@ -1076,8 +1076,8 @@
       "source": "yahoo",
       "series": "LE=F",
       "first_date": "2001-03-01",
-      "last_date": "2026-08-12",
-      "n_observations": 6378
+      "last_date": "2026-08-13",
+      "n_observations": 6379
     },
     {
       "id": "LEAN_HOGS",
@@ -1090,8 +1090,8 @@
       "source": "yahoo",
       "series": "HE=F",
       "first_date": "2000-12-15",
-      "last_date": "2026-08-12",
-      "n_observations": 6446
+      "last_date": "2026-08-13",
+      "n_observations": 6447
     }
   ],
   "failed": [
