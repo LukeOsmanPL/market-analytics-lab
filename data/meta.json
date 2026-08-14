@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-14T10:37:55.931544+00:00",
+  "generated_at": "2026-08-14T20:19:23.062535+00:00",
   "products": [
     {
       "id": "NG",
@@ -670,8 +670,8 @@
       "source": "yahoo",
       "series": "^GSPC",
       "first_date": "1995-01-03",
-      "last_date": "2026-08-13",
-      "n_observations": 7956
+      "last_date": "2026-08-14",
+      "n_observations": 7957
     },
     {
       "id": "BTC",
@@ -698,8 +698,8 @@
       "source": "fred",
       "series": "DGS10",
       "first_date": "1995-01-03",
-      "last_date": "2026-08-12",
-      "n_observations": 7909
+      "last_date": "2026-08-13",
+      "n_observations": 7910
     },
     {
       "id": "US2Y",
@@ -712,8 +712,8 @@
       "source": "fred",
       "series": "DGS2",
       "first_date": "1995-01-03",
-      "last_date": "2026-08-12",
-      "n_observations": 7909
+      "last_date": "2026-08-13",
+      "n_observations": 7910
     },
     {
       "id": "US10Y2Y",
@@ -1062,8 +1062,8 @@
       "source": "yahoo",
       "series": "OJ=F",
       "first_date": "2001-09-17",
-      "last_date": "2026-08-13",
-      "n_observations": 6250
+      "last_date": "2026-08-14",
+      "n_observations": 6251
     },
     {
       "id": "LIVE_CATTLE",
@@ -1076,8 +1076,8 @@
       "source": "yahoo",
       "series": "LE=F",
       "first_date": "2001-03-01",
-      "last_date": "2026-08-13",
-      "n_observations": 6379
+      "last_date": "2026-08-14",
+      "n_observations": 6380
     },
     {
       "id": "LEAN_HOGS",
@@ -1090,8 +1090,8 @@
       "source": "yahoo",
       "series": "HE=F",
       "first_date": "2000-12-15",
-      "last_date": "2026-08-13",
-      "n_observations": 6447
+      "last_date": "2026-08-14",
+      "n_observations": 6448
     }
   ],
   "failed": [
