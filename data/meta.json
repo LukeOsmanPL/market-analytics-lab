@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-16T07:57:38.528961+00:00",
+  "generated_at": "2026-08-16T19:42:48.171103+00:00",
   "products": [
     {
       "id": "NG",
@@ -572,8 +572,8 @@
       "source": "yahoo",
       "series": "EURPLN=X",
       "first_date": "2002-04-01",
-      "last_date": "2026-08-14",
-      "n_observations": 6301
+      "last_date": "2026-08-16",
+      "n_observations": 6302
     },
     {
       "id": "FX_USDPLN",
@@ -586,8 +586,8 @@
       "source": "yahoo",
       "series": "PLN=X",
       "first_date": "2003-12-01",
-      "last_date": "2026-08-15",
-      "n_observations": 5891
+      "last_date": "2026-08-16",
+      "n_observations": 5892
     },
     {
       "id": "FX_GBPUSD",
