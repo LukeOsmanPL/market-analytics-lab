@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-17T09:24:51.212987+00:00",
+  "generated_at": "2026-08-17T19:56:14.246756+00:00",
   "products": [
     {
       "id": "NG",
@@ -670,8 +670,8 @@
       "source": "yahoo",
       "series": "^GSPC",
       "first_date": "1995-01-03",
-      "last_date": "2026-08-14",
-      "n_observations": 7957
+      "last_date": "2026-08-17",
+      "n_observations": 7958
     },
     {
       "id": "BTC",
@@ -950,8 +950,8 @@
       "source": "yahoo",
       "series": "TTF=F",
       "first_date": "2017-10-23",
-      "last_date": "2026-08-14",
-      "n_observations": 2216
+      "last_date": "2026-08-17",
+      "n_observations": 2217
     },
     {
       "id": "EU_NG_MO",
@@ -964,8 +964,8 @@
       "source": "fred",
       "series": "PNGASEUUSDM",
       "first_date": "1995-01-01",
-      "last_date": "2026-06-01",
-      "n_observations": 378
+      "last_date": "2026-07-01",
+      "n_observations": 379
     },
     {
       "id": "COAL_AU",
@@ -978,8 +978,8 @@
       "source": "fred",
       "series": "PCOALAUUSDM",
       "first_date": "1995-01-01",
-      "last_date": "2026-06-01",
-      "n_observations": 378
+      "last_date": "2026-07-01",
+      "n_observations": 379
     },
     {
       "id": "LNG_JP",
@@ -992,8 +992,8 @@
       "source": "fred",
       "series": "PNGASJPUSDM",
       "first_date": "1995-01-01",
-      "last_date": "2026-06-01",
-      "n_observations": 378
+      "last_date": "2026-07-01",
+      "n_observations": 379
     },
     {
       "id": "COFFEE",
@@ -1062,8 +1062,8 @@
       "source": "yahoo",
       "series": "OJ=F",
       "first_date": "2001-09-17",
-      "last_date": "2026-08-14",
-      "n_observations": 6251
+      "last_date": "2026-08-17",
+      "n_observations": 6252
     },
     {
       "id": "LIVE_CATTLE",
@@ -1076,8 +1076,8 @@
       "source": "yahoo",
       "series": "LE=F",
       "first_date": "2001-03-01",
-      "last_date": "2026-08-14",
-      "n_observations": 6380
+      "last_date": "2026-08-17",
+      "n_observations": 6381
     },
     {
       "id": "LEAN_HOGS",
@@ -1090,8 +1090,8 @@
       "source": "yahoo",
       "series": "HE=F",
       "first_date": "2000-12-15",
-      "last_date": "2026-08-14",
-      "n_observations": 6448
+      "last_date": "2026-08-17",
+      "n_observations": 6449
     }
   ],
   "failed": [
