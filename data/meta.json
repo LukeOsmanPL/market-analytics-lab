@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-19T09:07:24.789071+00:00",
+  "generated_at": "2026-08-19T19:55:21.632895+00:00",
   "products": [
     {
       "id": "NG",
@@ -12,8 +12,8 @@
       "source": "fred",
       "series": "DHHNGSP",
       "first_date": "1997-01-07",
-      "last_date": "2026-08-11",
-      "n_observations": 7431
+      "last_date": "2026-08-18",
+      "n_observations": 7436
     },
     {
       "id": "WTI",
@@ -26,8 +26,8 @@
       "source": "fred",
       "series": "DCOILWTICO",
       "first_date": "1995-01-03",
-      "last_date": "2026-08-11",
-      "n_observations": 7930
+      "last_date": "2026-08-18",
+      "n_observations": 7935
     },
     {
       "id": "BRENT",
@@ -40,8 +40,8 @@
       "source": "fred",
       "series": "DCOILBRENTEU",
       "first_date": "1995-01-03",
-      "last_date": "2026-08-11",
-      "n_observations": 8010
+      "last_date": "2026-08-18",
+      "n_observations": 8015
     },
     {
       "id": "HEAT",
@@ -54,8 +54,8 @@
       "source": "fred",
       "series": "DHOILNYH",
       "first_date": "1995-01-03",
-      "last_date": "2026-08-11",
-      "n_observations": 7928
+      "last_date": "2026-08-18",
+      "n_observations": 7933
     },
     {
       "id": "RBOB",
@@ -68,8 +68,8 @@
       "source": "fred",
       "series": "DGASUSGULF",
       "first_date": "1995-01-03",
-      "last_date": "2026-08-11",
-      "n_observations": 7923
+      "last_date": "2026-08-18",
+      "n_observations": 7928
     },
     {
       "id": "GAS_RETAIL_US",
@@ -250,8 +250,8 @@
       "source": "wob",
       "series": "PL|Euro-Super 95",
       "first_date": "2005-01-03",
-      "last_date": "2026-08-10",
-      "n_observations": 1079
+      "last_date": "2026-08-17",
+      "n_observations": 1080
     },
     {
       "id": "PL_ON_WOB",
@@ -264,8 +264,8 @@
       "source": "wob",
       "series": "PL|Automotive Gas Oil",
       "first_date": "2005-01-03",
-      "last_date": "2026-08-10",
-      "n_observations": 1079
+      "last_date": "2026-08-17",
+      "n_observations": 1080
     },
     {
       "id": "PL_LPG_WOB",
@@ -278,8 +278,8 @@
       "source": "wob",
       "series": "PL|LPG",
       "first_date": "2005-01-03",
-      "last_date": "2026-08-10",
-      "n_observations": 1079
+      "last_date": "2026-08-17",
+      "n_observations": 1080
     },
     {
       "id": "PL_HEAT_WOB",
@@ -292,8 +292,8 @@
       "source": "wob",
       "series": "PL|Heating Gas Oil",
       "first_date": "2005-01-03",
-      "last_date": "2026-08-10",
-      "n_observations": 1079
+      "last_date": "2026-08-17",
+      "n_observations": 1080
     },
     {
       "id": "EU_PB95_WOB",
@@ -306,8 +306,8 @@
       "source": "wob",
       "series": "EU|Euro-Super 95",
       "first_date": "2005-01-03",
-      "last_date": "2026-08-10",
-      "n_observations": 1079
+      "last_date": "2026-08-17",
+      "n_observations": 1080
     },
     {
       "id": "EU_ON_WOB",
@@ -320,8 +320,8 @@
       "source": "wob",
       "series": "EU|Automotive Gas Oil",
       "first_date": "2005-01-03",
-      "last_date": "2026-08-10",
-      "n_observations": 1079
+      "last_date": "2026-08-17",
+      "n_observations": 1080
     },
     {
       "id": "DE_PB95_WOB",
@@ -334,8 +334,8 @@
       "source": "wob",
       "series": "DE|Euro-Super 95",
       "first_date": "2005-01-03",
-      "last_date": "2026-08-10",
-      "n_observations": 1079
+      "last_date": "2026-08-17",
+      "n_observations": 1080
     },
     {
       "id": "DE_ON_WOB",
@@ -348,8 +348,8 @@
       "source": "wob",
       "series": "DE|Automotive Gas Oil",
       "first_date": "2005-01-03",
-      "last_date": "2026-08-10",
-      "n_observations": 1079
+      "last_date": "2026-08-17",
+      "n_observations": 1080
     },
     {
       "id": "PL_ORLEN_PB95",
@@ -418,8 +418,8 @@
       "source": "wob",
       "series": "FR|Euro-Super 95",
       "first_date": "2005-01-03",
-      "last_date": "2026-08-10",
-      "n_observations": 1079
+      "last_date": "2026-08-17",
+      "n_observations": 1080
     },
     {
       "id": "FR_ON_WOB",
@@ -432,8 +432,8 @@
       "source": "wob",
       "series": "FR|Automotive Gas Oil",
       "first_date": "2005-01-03",
-      "last_date": "2026-08-10",
-      "n_observations": 1079
+      "last_date": "2026-08-17",
+      "n_observations": 1080
     },
     {
       "id": "ES_PB95_WOB",
@@ -446,8 +446,8 @@
       "source": "wob",
       "series": "ES|Euro-Super 95",
       "first_date": "2005-01-03",
-      "last_date": "2026-08-10",
-      "n_observations": 1077
+      "last_date": "2026-08-17",
+      "n_observations": 1078
     },
     {
       "id": "ES_ON_WOB",
@@ -460,8 +460,8 @@
       "source": "wob",
       "series": "ES|Automotive Gas Oil",
       "first_date": "2005-01-03",
-      "last_date": "2026-08-10",
-      "n_observations": 1078
+      "last_date": "2026-08-17",
+      "n_observations": 1079
     },
     {
       "id": "IT_PB95_WOB",
@@ -474,8 +474,8 @@
       "source": "wob",
       "series": "IT|Euro-Super 95",
       "first_date": "2005-01-03",
-      "last_date": "2026-08-10",
-      "n_observations": 1078
+      "last_date": "2026-08-17",
+      "n_observations": 1079
     },
     {
       "id": "IT_ON_WOB",
@@ -488,8 +488,8 @@
       "source": "wob",
       "series": "IT|Automotive Gas Oil",
       "first_date": "2005-01-03",
-      "last_date": "2026-08-10",
-      "n_observations": 1078
+      "last_date": "2026-08-17",
+      "n_observations": 1079
     },
     {
       "id": "CZ_PB95_WOB",
@@ -502,8 +502,8 @@
       "source": "wob",
       "series": "CZ|Euro-Super 95",
       "first_date": "2005-01-03",
-      "last_date": "2026-08-10",
-      "n_observations": 1078
+      "last_date": "2026-08-17",
+      "n_observations": 1079
     },
     {
       "id": "CZ_ON_WOB",
@@ -516,8 +516,8 @@
       "source": "wob",
       "series": "CZ|Automotive Gas Oil",
       "first_date": "2005-01-03",
-      "last_date": "2026-08-10",
-      "n_observations": 1078
+      "last_date": "2026-08-17",
+      "n_observations": 1079
     },
     {
       "id": "HU_PB95_WOB",
@@ -530,8 +530,8 @@
       "source": "wob",
       "series": "HU|Euro-Super 95",
       "first_date": "2005-01-03",
-      "last_date": "2026-08-10",
-      "n_observations": 1079
+      "last_date": "2026-08-17",
+      "n_observations": 1080
     },
     {
       "id": "HU_ON_WOB",
@@ -544,8 +544,8 @@
       "source": "wob",
       "series": "HU|Automotive Gas Oil",
       "first_date": "2005-01-03",
-      "last_date": "2026-08-10",
-      "n_observations": 1079
+      "last_date": "2026-08-17",
+      "n_observations": 1080
     },
     {
       "id": "FX_EURUSD",
@@ -670,8 +670,8 @@
       "source": "yahoo",
       "series": "^GSPC",
       "first_date": "1995-01-03",
-      "last_date": "2026-08-18",
-      "n_observations": 7959
+      "last_date": "2026-08-19",
+      "n_observations": 7960
     },
     {
       "id": "BTC",
@@ -740,8 +740,8 @@
       "source": "ember",
       "series": "Poland",
       "first_date": "2015-01-01",
-      "last_date": "2026-08-17",
-      "n_observations": 4247
+      "last_date": "2026-08-19",
+      "n_observations": 4249
     },
     {
       "id": "DE_POWER",
@@ -754,8 +754,8 @@
       "source": "ember",
       "series": "Germany",
       "first_date": "2015-01-01",
-      "last_date": "2026-08-17",
-      "n_observations": 4247
+      "last_date": "2026-08-19",
+      "n_observations": 4249
     },
     {
       "id": "FR_POWER",
@@ -768,8 +768,8 @@
       "source": "ember",
       "series": "France",
       "first_date": "2015-01-01",
-      "last_date": "2026-08-17",
-      "n_observations": 4246
+      "last_date": "2026-08-19",
+      "n_observations": 4248
     },
     {
       "id": "ES_POWER",
@@ -782,8 +782,8 @@
       "source": "ember",
       "series": "Spain",
       "first_date": "2015-01-01",
-      "last_date": "2026-08-17",
-      "n_observations": 4247
+      "last_date": "2026-08-19",
+      "n_observations": 4249
     },
     {
       "id": "IT_POWER",
@@ -796,8 +796,8 @@
       "source": "ember",
       "series": "Italy",
       "first_date": "2015-01-01",
-      "last_date": "2026-08-17",
-      "n_observations": 4247
+      "last_date": "2026-08-19",
+      "n_observations": 4249
     },
     {
       "id": "CZ_POWER",
@@ -810,8 +810,8 @@
       "source": "ember",
       "series": "Czechia",
       "first_date": "2015-01-01",
-      "last_date": "2026-08-17",
-      "n_observations": 4247
+      "last_date": "2026-08-19",
+      "n_observations": 4249
     },
     {
       "id": "SK_POWER",
@@ -824,8 +824,8 @@
       "source": "ember",
       "series": "Slovakia",
       "first_date": "2015-01-01",
-      "last_date": "2026-08-17",
-      "n_observations": 4240
+      "last_date": "2026-08-19",
+      "n_observations": 4242
     },
     {
       "id": "HU_POWER",
@@ -838,8 +838,8 @@
       "source": "ember",
       "series": "Hungary",
       "first_date": "2015-01-01",
-      "last_date": "2026-08-17",
-      "n_observations": 4240
+      "last_date": "2026-08-19",
+      "n_observations": 4242
     },
     {
       "id": "NL_POWER",
@@ -852,8 +852,8 @@
       "source": "ember",
       "series": "Netherlands",
       "first_date": "2015-01-01",
-      "last_date": "2026-08-17",
-      "n_observations": 4240
+      "last_date": "2026-08-19",
+      "n_observations": 4242
     },
     {
       "id": "GB_POWER",
@@ -866,8 +866,8 @@
       "source": "ember",
       "series": "United Kingdom",
       "first_date": "2016-06-30",
-      "last_date": "2026-08-16",
-      "n_observations": 3700
+      "last_date": "2026-08-17",
+      "n_observations": 3701
     },
     {
       "id": "PL_WHEAT_SKUP",
@@ -1048,8 +1048,8 @@
       "source": "yahoo",
       "series": "CT=F",
       "first_date": "2000-01-03",
-      "last_date": "2026-08-18",
-      "n_observations": 6677
+      "last_date": "2026-08-19",
+      "n_observations": 6678
     },
     {
       "id": "OJ",
@@ -1062,8 +1062,8 @@
       "source": "yahoo",
       "series": "OJ=F",
       "first_date": "2001-09-17",
-      "last_date": "2026-08-18",
-      "n_observations": 6253
+      "last_date": "2026-08-19",
+      "n_observations": 6254
     },
     {
       "id": "LIVE_CATTLE",
@@ -1076,8 +1076,8 @@
       "source": "yahoo",
       "series": "LE=F",
       "first_date": "2001-03-01",
-      "last_date": "2026-08-18",
-      "n_observations": 6382
+      "last_date": "2026-08-19",
+      "n_observations": 6383
     },
     {
       "id": "LEAN_HOGS",
@@ -1090,8 +1090,8 @@
       "source": "yahoo",
       "series": "HE=F",
       "first_date": "2000-12-15",
-      "last_date": "2026-08-18",
-      "n_observations": 6450
+      "last_date": "2026-08-19",
+      "n_observations": 6451
     }
   ],
   "failed": [
