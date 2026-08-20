@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-20T09:06:28.455549+00:00",
+  "generated_at": "2026-08-20T20:02:48.961396+00:00",
   "products": [
     {
       "id": "NG",
@@ -56,20 +56,6 @@
       "first_date": "1995-01-03",
       "last_date": "2026-08-18",
       "n_observations": 7933
-    },
-    {
-      "id": "RBOB",
-      "name": "Benzyna (US Gulf spot)",
-      "unit": "$/gal",
-      "contract_size": 42000,
-      "contract_unit": "gal",
-      "category": "Energia",
-      "color": "#ffb74d",
-      "source": "fred",
-      "series": "DGASUSGULF",
-      "first_date": "1995-01-03",
-      "last_date": "2026-08-18",
-      "n_observations": 7928
     },
     {
       "id": "GAS_RETAIL_US",
@@ -670,8 +656,8 @@
       "source": "yahoo",
       "series": "^GSPC",
       "first_date": "1995-01-03",
-      "last_date": "2026-08-19",
-      "n_observations": 7960
+      "last_date": "2026-08-20",
+      "n_observations": 7961
     },
     {
       "id": "BTC",
@@ -866,8 +852,8 @@
       "source": "ember",
       "series": "United Kingdom",
       "first_date": "2016-06-30",
-      "last_date": "2026-08-17",
-      "n_observations": 3701
+      "last_date": "2026-08-18",
+      "n_observations": 3702
     },
     {
       "id": "PL_WHEAT_SKUP",
@@ -950,8 +936,8 @@
       "source": "yahoo",
       "series": "TTF=F",
       "first_date": "2017-10-23",
-      "last_date": "2026-08-19",
-      "n_observations": 2219
+      "last_date": "2026-08-20",
+      "n_observations": 2220
     },
     {
       "id": "EU_NG_MO",
@@ -1062,8 +1048,8 @@
       "source": "yahoo",
       "series": "OJ=F",
       "first_date": "2001-09-17",
-      "last_date": "2026-08-19",
-      "n_observations": 6254
+      "last_date": "2026-08-20",
+      "n_observations": 6255
     },
     {
       "id": "LIVE_CATTLE",
@@ -1076,8 +1062,8 @@
       "source": "yahoo",
       "series": "LE=F",
       "first_date": "2001-03-01",
-      "last_date": "2026-08-19",
-      "n_observations": 6383
+      "last_date": "2026-08-20",
+      "n_observations": 6384
     },
     {
       "id": "LEAN_HOGS",
@@ -1090,11 +1076,12 @@
       "source": "yahoo",
       "series": "HE=F",
       "first_date": "2000-12-15",
-      "last_date": "2026-08-19",
-      "n_observations": 6451
+      "last_date": "2026-08-20",
+      "n_observations": 6452
     }
   ],
   "failed": [
+    "RBOB",
     "COT_WTI_NET",
     "COT_BRENT_NET",
     "COT_NG_NET",
