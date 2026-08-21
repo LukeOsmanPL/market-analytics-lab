@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-21T09:11:05.075266+00:00",
+  "generated_at": "2026-08-21T19:51:22.409636+00:00",
   "products": [
     {
       "id": "NG",
@@ -670,8 +670,8 @@
       "source": "yahoo",
       "series": "^GSPC",
       "first_date": "1995-01-03",
-      "last_date": "2026-08-20",
-      "n_observations": 7961
+      "last_date": "2026-08-21",
+      "n_observations": 7962
     },
     {
       "id": "BTC",
@@ -1062,8 +1062,8 @@
       "source": "yahoo",
       "series": "OJ=F",
       "first_date": "2001-09-17",
-      "last_date": "2026-08-20",
-      "n_observations": 6255
+      "last_date": "2026-08-21",
+      "n_observations": 6256
     },
     {
       "id": "LIVE_CATTLE",
@@ -1076,8 +1076,8 @@
       "source": "yahoo",
       "series": "LE=F",
       "first_date": "2001-03-01",
-      "last_date": "2026-08-20",
-      "n_observations": 6384
+      "last_date": "2026-08-21",
+      "n_observations": 6385
     },
     {
       "id": "LEAN_HOGS",
@@ -1090,8 +1090,8 @@
       "source": "yahoo",
       "series": "HE=F",
       "first_date": "2000-12-15",
-      "last_date": "2026-08-20",
-      "n_observations": 6452
+      "last_date": "2026-08-21",
+      "n_observations": 6453
     }
   ],
   "failed": [
