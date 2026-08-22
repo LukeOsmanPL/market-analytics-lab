@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-08-21T19:57:47.528724+00:00",
+  "updated_at": "2026-08-22T08:57:33.581121+00:00",
   "alerts": [
     {
       "rule_index": 9,
@@ -656,6 +656,38 @@
       "message": "PL_PB95_WOB zmiana 30d = -7.18% (próg 5.0%, 2026-08-17)",
       "note": "Pb95 detal PL zmienil sie >5% w 30 dni",
       "at": "2026-08-21T19:57:47.527861+00:00"
+    },
+    {
+      "rule_index": 3,
+      "rule_id": "gold_zscore_60d",
+      "type": "product_zscore",
+      "message": "GOLD z-score=+2.31 🔴 SHORT (|z|>=2.0, 2026-08-21)",
+      "note": "Gold 60d z-score ekstremum",
+      "at": "2026-08-22T08:57:33.559685+00:00"
+    },
+    {
+      "rule_index": 4,
+      "rule_id": "corn_zscore_120d",
+      "type": "product_zscore",
+      "message": "CORN z-score=+2.08 🔴 SHORT (|z|>=2.0, 2026-08-21)",
+      "note": "Corn 120d z-score - istotne dla sezonu",
+      "at": "2026-08-22T08:57:33.560104+00:00"
+    },
+    {
+      "rule_index": 8,
+      "rule_id": "cot_wti_extreme",
+      "type": "product_zscore",
+      "message": "COT_WTI_NET z-score=+2.31 🔴 SHORT (|z|>=2.0, 2026-08-04)",
+      "note": "COT WTI Money Mgr netto - kontrariański sygnal",
+      "at": "2026-08-22T08:57:33.580250+00:00"
+    },
+    {
+      "rule_index": 9,
+      "rule_id": "pl_pb95_high",
+      "type": "pct_change",
+      "message": "PL_PB95_WOB zmiana 30d = -7.18% (próg 5.0%, 2026-08-17)",
+      "note": "Pb95 detal PL zmienil sie >5% w 30 dni",
+      "at": "2026-08-22T08:57:33.580324+00:00"
     }
   ]
 }
