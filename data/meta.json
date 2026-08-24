@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-23T19:47:08.102188+00:00",
+  "generated_at": "2026-08-24T09:32:49.719731+00:00",
   "products": [
     {
       "id": "NG",
@@ -96,8 +96,8 @@
       "source": "yahoo",
       "series": "GC=F",
       "first_date": "2000-08-30",
-      "last_date": "2026-08-21",
-      "n_observations": 6518
+      "last_date": "2026-08-24",
+      "n_observations": 6519
     },
     {
       "id": "SILVER",
@@ -110,8 +110,8 @@
       "source": "yahoo",
       "series": "SI=F",
       "first_date": "2000-08-30",
-      "last_date": "2026-08-21",
-      "n_observations": 6520
+      "last_date": "2026-08-24",
+      "n_observations": 6521
     },
     {
       "id": "COPPER",
@@ -124,8 +124,8 @@
       "source": "yahoo",
       "series": "HG=F",
       "first_date": "2000-08-30",
-      "last_date": "2026-08-21",
-      "n_observations": 6523
+      "last_date": "2026-08-24",
+      "n_observations": 6524
     },
     {
       "id": "PLATINUM",
@@ -138,8 +138,8 @@
       "source": "yahoo",
       "series": "PL=F",
       "first_date": "1997-10-29",
-      "last_date": "2026-08-21",
-      "n_observations": 6546
+      "last_date": "2026-08-24",
+      "n_observations": 6547
     },
     {
       "id": "PALLADIUM",
@@ -152,8 +152,8 @@
       "source": "yahoo",
       "series": "PA=F",
       "first_date": "1998-09-28",
-      "last_date": "2026-08-21",
-      "n_observations": 6557
+      "last_date": "2026-08-24",
+      "n_observations": 6558
     },
     {
       "id": "CORN",
@@ -166,8 +166,8 @@
       "source": "yahoo",
       "series": "ZC=F",
       "first_date": "2000-07-17",
-      "last_date": "2026-08-21",
-      "n_observations": 6530
+      "last_date": "2026-08-24",
+      "n_observations": 6531
     },
     {
       "id": "WHEAT",
@@ -180,8 +180,8 @@
       "source": "yahoo",
       "series": "ZW=F",
       "first_date": "2000-07-17",
-      "last_date": "2026-08-21",
-      "n_observations": 6542
+      "last_date": "2026-08-24",
+      "n_observations": 6543
     },
     {
       "id": "WHEAT_KC",
@@ -194,8 +194,8 @@
       "source": "yahoo",
       "series": "KE=F",
       "first_date": "2000-09-21",
-      "last_date": "2026-08-21",
-      "n_observations": 6519
+      "last_date": "2026-08-24",
+      "n_observations": 6520
     },
     {
       "id": "SOYBEAN",
@@ -208,8 +208,8 @@
       "source": "yahoo",
       "series": "ZS=F",
       "first_date": "2000-09-15",
-      "last_date": "2026-08-21",
-      "n_observations": 6522
+      "last_date": "2026-08-24",
+      "n_observations": 6523
     },
     {
       "id": "SOYMEAL",
@@ -222,8 +222,8 @@
       "source": "yahoo",
       "series": "ZM=F",
       "first_date": "2000-05-15",
-      "last_date": "2026-08-21",
-      "n_observations": 6533
+      "last_date": "2026-08-24",
+      "n_observations": 6534
     },
     {
       "id": "SOYOIL",
@@ -236,8 +236,8 @@
       "source": "yahoo",
       "series": "ZL=F",
       "first_date": "2000-03-15",
-      "last_date": "2026-08-21",
-      "n_observations": 6571
+      "last_date": "2026-08-24",
+      "n_observations": 6572
     },
     {
       "id": "PL_PB95_WOB",
@@ -362,8 +362,8 @@
       "source": "orlen_scrape",
       "series": "PB95",
       "first_date": "2026-08-08",
-      "last_date": "2026-08-23",
-      "n_observations": 16
+      "last_date": "2026-08-24",
+      "n_observations": 17
     },
     {
       "id": "PL_ORLEN_PB98",
@@ -376,8 +376,8 @@
       "source": "orlen_scrape",
       "series": "PB98",
       "first_date": "2026-08-08",
-      "last_date": "2026-08-23",
-      "n_observations": 16
+      "last_date": "2026-08-24",
+      "n_observations": 17
     },
     {
       "id": "PL_ORLEN_ON",
@@ -390,8 +390,8 @@
       "source": "orlen_scrape",
       "series": "ON",
       "first_date": "2026-08-08",
-      "last_date": "2026-08-23",
-      "n_observations": 16
+      "last_date": "2026-08-24",
+      "n_observations": 17
     },
     {
       "id": "PL_ORLEN_EKOTERM",
@@ -404,8 +404,8 @@
       "source": "orlen_scrape",
       "series": "ON_EKOTERM",
       "first_date": "2026-08-09",
-      "last_date": "2026-08-23",
-      "n_observations": 15
+      "last_date": "2026-08-24",
+      "n_observations": 16
     },
     {
       "id": "FR_PB95_WOB",
@@ -558,8 +558,8 @@
       "source": "yahoo",
       "series": "EURUSD=X",
       "first_date": "2003-12-01",
-      "last_date": "2026-08-21",
-      "n_observations": 5896
+      "last_date": "2026-08-24",
+      "n_observations": 5897
     },
     {
       "id": "FX_EURPLN",
@@ -572,8 +572,8 @@
       "source": "yahoo",
       "series": "EURPLN=X",
       "first_date": "2002-04-01",
-      "last_date": "2026-08-23",
-      "n_observations": 6308
+      "last_date": "2026-08-24",
+      "n_observations": 6309
     },
     {
       "id": "FX_USDPLN",
@@ -586,8 +586,8 @@
       "source": "yahoo",
       "series": "PLN=X",
       "first_date": "2003-12-01",
-      "last_date": "2026-08-23",
-      "n_observations": 5898
+      "last_date": "2026-08-24",
+      "n_observations": 5899
     },
     {
       "id": "FX_GBPUSD",
@@ -600,8 +600,8 @@
       "source": "yahoo",
       "series": "GBPUSD=X",
       "first_date": "2003-12-01",
-      "last_date": "2026-08-23",
-      "n_observations": 5912
+      "last_date": "2026-08-24",
+      "n_observations": 5913
     },
     {
       "id": "FX_USDJPY",
@@ -642,8 +642,8 @@
       "source": "yahoo",
       "series": "DX-Y.NYB",
       "first_date": "1995-01-02",
-      "last_date": "2026-08-21",
-      "n_observations": 8031
+      "last_date": "2026-08-24",
+      "n_observations": 8032
     },
     {
       "id": "VIX",
@@ -656,8 +656,8 @@
       "source": "yahoo",
       "series": "^VIX",
       "first_date": "1995-01-03",
-      "last_date": "2026-08-21",
-      "n_observations": 7963
+      "last_date": "2026-08-24",
+      "n_observations": 7964
     },
     {
       "id": "SPX",
@@ -684,8 +684,8 @@
       "source": "yahoo",
       "series": "BTC-USD",
       "first_date": "2014-09-17",
-      "last_date": "2026-08-23",
-      "n_observations": 4359
+      "last_date": "2026-08-24",
+      "n_observations": 4360
     },
     {
       "id": "US10Y",
@@ -950,8 +950,8 @@
       "source": "yahoo",
       "series": "TTF=F",
       "first_date": "2017-10-23",
-      "last_date": "2026-08-21",
-      "n_observations": 2221
+      "last_date": "2026-08-24",
+      "n_observations": 2222
     },
     {
       "id": "EU_NG_MO",
@@ -1006,8 +1006,8 @@
       "source": "yahoo",
       "series": "KC=F",
       "first_date": "2000-01-03",
-      "last_date": "2026-08-21",
-      "n_observations": 6678
+      "last_date": "2026-08-24",
+      "n_observations": 6679
     },
     {
       "id": "COCOA",
@@ -1020,8 +1020,8 @@
       "source": "yahoo",
       "series": "CC=F",
       "first_date": "2000-01-03",
-      "last_date": "2026-08-21",
-      "n_observations": 6680
+      "last_date": "2026-08-24",
+      "n_observations": 6681
     },
     {
       "id": "SUGAR",
@@ -1034,8 +1034,8 @@
       "source": "yahoo",
       "series": "SB=F",
       "first_date": "2000-03-01",
-      "last_date": "2026-08-21",
-      "n_observations": 6641
+      "last_date": "2026-08-24",
+      "n_observations": 6642
     },
     {
       "id": "COTTON",
