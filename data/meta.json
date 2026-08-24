@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-24T09:32:49.719731+00:00",
+  "generated_at": "2026-08-24T20:02:45.428735+00:00",
   "products": [
     {
       "id": "NG",
@@ -614,8 +614,8 @@
       "source": "yahoo",
       "series": "JPY=X",
       "first_date": "1996-10-30",
-      "last_date": "2026-08-23",
-      "n_observations": 7733
+      "last_date": "2026-08-24",
+      "n_observations": 7734
     },
     {
       "id": "FX_USDCHF",
@@ -628,8 +628,8 @@
       "source": "yahoo",
       "series": "CHF=X",
       "first_date": "2003-09-17",
-      "last_date": "2026-08-23",
-      "n_observations": 5965
+      "last_date": "2026-08-24",
+      "n_observations": 5966
     },
     {
       "id": "DXY",
@@ -670,8 +670,8 @@
       "source": "yahoo",
       "series": "^GSPC",
       "first_date": "1995-01-03",
-      "last_date": "2026-08-21",
-      "n_observations": 7962
+      "last_date": "2026-08-24",
+      "n_observations": 7963
     },
     {
       "id": "BTC",
@@ -1048,8 +1048,8 @@
       "source": "yahoo",
       "series": "CT=F",
       "first_date": "2000-01-03",
-      "last_date": "2026-08-21",
-      "n_observations": 6680
+      "last_date": "2026-08-24",
+      "n_observations": 6681
     },
     {
       "id": "OJ",
@@ -1062,8 +1062,8 @@
       "source": "yahoo",
       "series": "OJ=F",
       "first_date": "2001-09-17",
-      "last_date": "2026-08-21",
-      "n_observations": 6256
+      "last_date": "2026-08-24",
+      "n_observations": 6257
     },
     {
       "id": "LIVE_CATTLE",
@@ -1076,8 +1076,8 @@
       "source": "yahoo",
       "series": "LE=F",
       "first_date": "2001-03-01",
-      "last_date": "2026-08-21",
-      "n_observations": 6385
+      "last_date": "2026-08-24",
+      "n_observations": 6386
     },
     {
       "id": "LEAN_HOGS",
@@ -1090,8 +1090,8 @@
       "source": "yahoo",
       "series": "HE=F",
       "first_date": "2000-12-15",
-      "last_date": "2026-08-21",
-      "n_observations": 6453
+      "last_date": "2026-08-24",
+      "n_observations": 6454
     }
   ],
   "failed": [
