@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-25T09:11:46.309535+00:00",
+  "generated_at": "2026-08-25T20:00:44.885488+00:00",
   "products": [
     {
       "id": "NG",
@@ -82,8 +82,8 @@
       "source": "fred",
       "series": "GASREGW",
       "first_date": "1995-01-02",
-      "last_date": "2026-08-17",
-      "n_observations": 1651
+      "last_date": "2026-08-24",
+      "n_observations": 1652
     },
     {
       "id": "GOLD",
@@ -670,8 +670,8 @@
       "source": "yahoo",
       "series": "^GSPC",
       "first_date": "1995-01-03",
-      "last_date": "2026-08-24",
-      "n_observations": 7963
+      "last_date": "2026-08-25",
+      "n_observations": 7964
     },
     {
       "id": "BTC",
@@ -697,20 +697,6 @@
       "color": "#5c6bc0",
       "source": "fred",
       "series": "DGS10",
-      "first_date": "1995-01-03",
-      "last_date": "2026-08-21",
-      "n_observations": 7916
-    },
-    {
-      "id": "US2Y",
-      "name": "Rentownosc 2Y US",
-      "unit": "%",
-      "contract_size": 1,
-      "contract_unit": "%",
-      "category": "Makro",
-      "color": "#7e57c2",
-      "source": "fred",
-      "series": "DGS2",
       "first_date": "1995-01-03",
       "last_date": "2026-08-21",
       "n_observations": 7916
@@ -1062,8 +1048,8 @@
       "source": "yahoo",
       "series": "OJ=F",
       "first_date": "2001-09-17",
-      "last_date": "2026-08-24",
-      "n_observations": 6257
+      "last_date": "2026-08-25",
+      "n_observations": 6258
     },
     {
       "id": "LIVE_CATTLE",
@@ -1076,8 +1062,8 @@
       "source": "yahoo",
       "series": "LE=F",
       "first_date": "2001-03-01",
-      "last_date": "2026-08-24",
-      "n_observations": 6386
+      "last_date": "2026-08-25",
+      "n_observations": 6387
     },
     {
       "id": "LEAN_HOGS",
@@ -1090,11 +1076,12 @@
       "source": "yahoo",
       "series": "HE=F",
       "first_date": "2000-12-15",
-      "last_date": "2026-08-24",
-      "n_observations": 6454
+      "last_date": "2026-08-25",
+      "n_observations": 6455
     }
   ],
   "failed": [
+    "US2Y",
     "COT_WTI_NET",
     "COT_BRENT_NET",
     "COT_NG_NET",
