@@ -511,13 +511,6 @@ def _parse_wob_workbook():
 
     print(f"  [WOB] wymiary: {ws.max_row} wierszy x {ws.max_column} kolumn", flush=True)
 
-    # Struktura WOB:
-    #   R2 = nazwa produktu po francusku (np. 'Euro-super 95', 'Gas oil automob')
-    #   R4+ = dane: kol 1 = data, kol 2 = 'EU_' marker, kol 3-8 = 6 produktow EU,
-    #             kol 9 = 'EUR_' marker, kol 10-15 = 6 produktow EUR, itd.
-    #   Kazdy kraj: 1 kolumna markera + 6 kolumn produktow.
-
-    # Kanonizacja nazw produktow (po francusku w R2 -> nazwy angielskie)
     def normalize_product(s):
         if not s: return None
         s = str(s).strip().lower()
@@ -529,7 +522,6 @@ def _parse_wob_workbook():
         if 'fuel oil - sch' in s or 'fuel oil -sch' in s: return 'Residual Fuel Oil (high S)'
         return None
 
-    # Mapa kolumn produktow z R2
     product_by_col = {}
     for c in range(2, ws.max_column + 1):
         v = cell(2, c)
@@ -539,7 +531,6 @@ def _parse_wob_workbook():
 
     print(f"  [WOB] kolumn z produktami: {len(product_by_col)}", flush=True)
 
-    # Znajdz pierwszy wiersz z danymi (data + kod kraju typu 'EU_', 'PL_', 'DE_')
     first_data_row = None
     for r in range(3, 10):
         v1 = cell(r, 1)
@@ -556,8 +547,7 @@ def _parse_wob_workbook():
         first_data_row = 4
     print(f"  [WOB] pierwsze dane w wierszu {first_data_row}", flush=True)
 
-    # Wykryj kolumny markerow krajow z pierwszego wiersza danych (wartosci konczace sie na '_')
-    country_by_col = {}  # col -> country_code (bez '_')
+    country_by_col = {}
     for c in range(1, ws.max_column + 1):
         v = cell(first_data_row, c)
         if isinstance(v, str) and v.endswith('_') and 1 <= len(v) <= 5:
@@ -566,11 +556,9 @@ def _parse_wob_workbook():
     print(f"  [WOB] wykryte kolumny markerow krajow: {len(country_by_col)}", flush=True)
     print(f"  [WOB] kody krajow: {sorted(set(country_by_col.values()))}", flush=True)
 
-    # Dla kazdej kolumny produktu znajdz najblizszy poprzedzajacy marker kraju
     sorted_country_cols = sorted(country_by_col.keys())
-    col_to_cp = {}  # col -> (country_code, product_name)
+    col_to_cp = {}
     for prod_col, product_name in product_by_col.items():
-        # znajdz country marker column najblizszy z lewej (<= prod_col)
         cc_code = None
         for cc in sorted_country_cols:
             if cc <= prod_col:
@@ -584,7 +572,6 @@ def _parse_wob_workbook():
     seen_countries = set(cp[0] for cp in col_to_cp.values())
     print(f"  [WOB] kraje w mapie: {sorted(seen_countries)}", flush=True)
 
-    # Skanuj wiersze danych
     results = {}
     n_scanned = 0
     n_valid = 0
@@ -607,7 +594,6 @@ def _parse_wob_workbook():
                 n_valid += 1
 
     print(f"  [WOB] przeskanowano {n_scanned} wierszy danych, {n_valid} valid values", flush=True)
-    # Pokaz kilka przykladow zeby zwalidowac
     for k in [('PL', 'Euro-Super 95'), ('PL', 'Automotive Gas Oil'), ('PL', 'LPG'), ('EU', 'Euro-Super 95'), ('DE', 'Euro-Super 95')]:
         vals = results.get(k, [])
         if vals:
@@ -627,12 +613,10 @@ def fetch_wob(series_key: str) -> list:
     country, product = series_key.split('|', 1)
     obs_tuples = parsed.get((country, product), [])
     if not obs_tuples:
-        # sprobuj bez case-sensitivity - moze mapping niestandardowy
         for (c, p), vals in parsed.items():
             if c.lower() == country.lower() and p.lower() == product.lower():
                 obs_tuples = vals
                 break
-    # Deduplikacja po dacie, sortowanie
     seen = {}
     for d, v in obs_tuples:
         seen[d] = v
@@ -643,9 +627,7 @@ def fetch_wob(series_key: str) -> list:
 _AGRIFOOD_CACHE = None
 
 def _fetch_agrifood_cereal_pl():
-    """Pobiera tygodniowe ceny cereal z EU Agri-Food Data Portal dla Polski.
-    Realne pola z API: productName, beginDate DD/MM/YYYY, price "€143,89".
-    """
+    """Pobiera tygodniowe ceny cereal z EU Agri-Food Data Portal dla Polski."""
     global _AGRIFOOD_CACHE
     if _AGRIFOOD_CACHE is not None:
         return _AGRIFOOD_CACHE
@@ -670,10 +652,8 @@ def _fetch_agrifood_cereal_pl():
     print(f"  [AGRIFOOD] wpisow: {len(items)}", flush=True)
 
     def parse_price(s):
-        # "€143,89" -> 143.89; "143.89" -> 143.89; "1 234,56" -> 1234.56
         if s is None: return None
         s = str(s).replace('€', '').replace('EUR', '').replace(' ', '').replace('\xa0', '').strip()
-        # jesli jest zarowno kropka jak przecinek: kropka to tysiace, przecinek to dziesietne
         if ',' in s and '.' in s:
             s = s.replace('.', '').replace(',', '.')
         else:
@@ -716,11 +696,6 @@ def _fetch_agrifood_cereal_pl():
     return _AGRIFOOD_CACHE
 
 
-"""EU Agri-Food Portal używa różnych formatów productName na przestrzeni lat:
-   - pełne nazwy: "Common wheat", "Feed maize"
-   - kody: "BLT", "MAI", "ORG", "SEG"
-   - kody złożone: "SEGPAN|PAN"
-Mapowanie ponizej pokrywa najczestsze warianty per produkt."""
 AGRIFOOD_ALIASES = {
     "Common wheat":  ["common wheat", "soft wheat", "wheat", "blt", "blé tendre", "pszenica"],
     "Feed maize":    ["feed maize", "maize", "corn", "mai", "kukurydza"],
@@ -729,21 +704,16 @@ AGRIFOOD_ALIASES = {
 }
 
 def fetch_agrifood_cereal(product_name: str) -> list:
-    """Zwraca liste {date, value} dla podanego produktu.
-    Matching: 1) dokladny, 2) case-insensitive substring, 3) aliasy z AGRIFOOD_ALIASES.
-    Wynikowa lista jest posortowana po dacie i deduplikowana."""
+    """Zwraca liste {date, value} dla podanego produktu."""
     parsed = _fetch_agrifood_cereal_pl()
     if not parsed:
         return []
-    # 1) Direct match
     if product_name in parsed:
         return parsed[product_name]
-    # 2) Zbierz wszystkie klucze pasujace do aliasow (union po dacie)
     aliases = [product_name.lower()] + [a.lower() for a in AGRIFOOD_ALIASES.get(product_name, [])]
     matched_keys = []
     for k in parsed.keys():
         kl = k.lower()
-        # dopasuj gdy klucz zawiera alias LUB alias zawiera klucz (skrocone kody)
         if any(a == kl or a in kl or kl in a for a in aliases):
             matched_keys.append(k)
     if not matched_keys:
@@ -758,16 +728,11 @@ def fetch_agrifood_cereal(product_name: str) -> list:
 _CFTC_CACHE = None
 
 def _fetch_cftc_all():
-    """Pobiera dane CFTC COT dla WSZYSTKICH rynkow ktore matchuja jakikolwiek pattern z produktow COT_*.
-    Query: SoQL LIKE po wszystkich unikalnych slowach kluczowych - broad discovery.
-    Zwraca slownik {market_and_exchange_name: [{date, value=long-short}]}.
-    Wskaznik: Managed Money Net = long_all - short_all (kontrariański).
-    """
+    """Pobiera dane CFTC COT."""
     global _CFTC_CACHE
     if _CFTC_CACHE is not None:
         return _CFTC_CACHE
 
-    # Zbierz zbior UNIKALNYCH slow kluczowych ze wszystkich patternow produktow
     all_keywords = set()
     for p in PRODUCTS:
         if p["source"] != "cftc": continue
@@ -778,7 +743,6 @@ def _fetch_cftc_all():
         _CFTC_CACHE = {}
         return _CFTC_CACHE
 
-    # Broad SoQL query: dowolny rynek zawierajacy JAKIKOLWIEK z keywords, filtr od 2018 dla rozmiaru
     like_clauses = " OR ".join(f"upper(market_and_exchange_names) like '%{kw}%'" for kw in sorted(all_keywords))
     where = f"({like_clauses}) AND report_date_as_yyyy_mm_dd > '2010-01-01T00:00:00'"
     params = urllib.parse.urlencode({
@@ -819,14 +783,12 @@ def _fetch_cftc_all():
         if date_str > latest_per_market.get(market, ""):
             latest_per_market[market] = date_str
 
-    # Sortuj i deduplikuj per market
     for market in list(result.keys()):
         seen = {}
         for o in result[market]:
             seen[o["date"]] = o["value"]
         result[market] = [{"date": d, "value": v} for d, v in sorted(seen.items())]
 
-    # Log: znalezione market names z ostatnia data (do debugu zmian nazewnictwa)
     for m, c in sorted(counts_per_market.items(), key=lambda x: -x[1])[:40]:
         print(f"  [CFTC] {c:>5}w, ost {latest_per_market.get(m,'-')}: {m[:75]}", flush=True)
 
@@ -835,21 +797,14 @@ def _fetch_cftc_all():
 
 
 def fetch_cftc_patterns(patterns, exchange_filter=None) -> list:
-    """Zwraca liste {date, value} dla WSZYSTKICH rynkow ktore matchuja jakis wzorzec z `patterns`.
-    patterns: lista grup slow. Kazda grupa (lista) = wszystkie slowa MUSZA byc w market name (AND).
-    Dowolna grupa moze pasowac (OR miedzy grupami).
-    exchange_filter: opcjonalna lista - market name musi ZAWIERAC jedno z tych slow (dodatkowe zawezenie).
-    Union po dacie: najnowsza data z jakiegokolwiek matchujacego rynku.
-    """
+    """Zwraca liste {date, value} dla rynkow matchujacych patterns."""
     cache = _fetch_cftc_all()
     exch_filter = [e.upper() for e in (exchange_filter or [])]
     matched_markets = []
     for market in cache.keys():
         mu = market.upper()
-        # matchuj dowolna grupe (kazde slowo w grupie musi wystapic)
         group_match = any(all(kw.upper() in mu for kw in group) for group in patterns)
         if not group_match: continue
-        # dodatkowy filtr po exchange (jesli podany)
         if exch_filter and not any(ef in mu for ef in exch_filter): continue
         matched_markets.append(market)
 
@@ -864,7 +819,6 @@ def fetch_cftc_patterns(patterns, exchange_filter=None) -> list:
     return [{"date": d, "value": v} for d, v in sorted(combined.items())]
 
 
-# Backward-compat shim (na wypadek starych wywolan)
 def fetch_cftc(market_name: str, alts=None) -> list:
     return fetch_cftc_patterns([[market_name]] + [[a] for a in (alts or [])])
 
@@ -873,8 +827,7 @@ _EMBER_CACHE = None
 EMBER_URL = "https://files.ember-energy.org/public-downloads/price/outputs/european_wholesale_electricity_price_data_daily.csv"
 
 def _parse_ember():
-    """Parsuje CSV z Ember Energy (day-ahead ceny hurtowe elektryki w Europie).
-    Zwraca slownik: {country_name: [{date, value}, ...]}."""
+    """Parsuje CSV z Ember Energy."""
     global _EMBER_CACHE
     if _EMBER_CACHE is not None:
         return _EMBER_CACHE
@@ -894,7 +847,6 @@ def _parse_ember():
         _EMBER_CACHE = {}
         return _EMBER_CACHE
 
-    # Auto-detekcja kolumn z naglowka
     header = [h.strip().strip('"') for h in lines[0].split(',')]
     print(f"  [EMBER] header: {header}", flush=True)
     col_country = col_date = col_price = None
@@ -926,7 +878,6 @@ def _parse_ember():
             price = float(parts[col_price])
         except ValueError:
             continue
-        # Waliduj date
         try:
             datetime.strptime(date_s, '%Y-%m-%d')
         except ValueError:
@@ -934,7 +885,6 @@ def _parse_ember():
         results.setdefault(country, []).append({'date': date_s, 'value': price})
         n_ok += 1
 
-    # Sortuj per country
     for country in results:
         results[country].sort(key=lambda o: o['date'])
 
@@ -958,7 +908,7 @@ def fetch_ember(country: str) -> list:
 _ORLEN_CACHE = None
 
 def _scrape_orlen_current():
-    """Scrapuje aktualne hurtowe ceny Orlen z cenypaliw.fyi. Zwraca dict {klucz: cena_pln_per_L}."""
+    """Scrapuje aktualne hurtowe ceny Orlen z cenypaliw.fyi."""
     global _ORLEN_CACHE
     if _ORLEN_CACHE is not None:
         return _ORLEN_CACHE
@@ -975,10 +925,7 @@ def _scrape_orlen_current():
         _ORLEN_CACHE = {}
         return _ORLEN_CACHE
 
-    # Najpierw wyodrebnij sekcje z tabela hurtowych cen (zeby nie chwytac retail)
-    # Format tabeli: "PB 95: 5.33 PLN/litr" (netto) - hurt Orlen
     result = {}
-    # Znajdz obszar tabeli hurtowych
     section_m = re.search(
         r'(?:Tabela\s+hurtowych\s+cen\s+paliw|hurtowe\s+ceny\s+paliw)(.{0,5000})',
         html, re.DOTALL | re.IGNORECASE
@@ -986,8 +933,6 @@ def _scrape_orlen_current():
     section = section_m.group(1) if section_m else html
     print(f"  [ORLEN] szukam w sekcji {len(section)} znakow (znaleziona sekcja hurt: {bool(section_m)})", flush=True)
 
-    # Patterny: kazdy produkt szuka nazwy + separatora + ceny + jednostki
-    # Sekcja hurt uzywa formatu "PB 95: 5.33 PLN/litr netto"
     patterns = {
         'PB95': [
             r'PB\s*95[^0-9]{1,30}?(\d[\d,\.]{1,6})\s*PLN',
@@ -998,7 +943,6 @@ def _scrape_orlen_current():
             r'PB\s*98[^0-9]{1,30}?(\d[\d,\.]{1,6})\s*z[łl]',
         ],
         'ON': [
-            # ON ale nie ON Ekoterm - negative lookahead
             r'(?<![a-zA-Z])ON(?!\s*Ekoterm)\s*(?:\(Diesel\))?[^0-9]{1,30}?(\d[\d,\.]{1,6})\s*PLN',
             r'(?<![a-zA-Z])ON(?!\s*Ekoterm)\s*(?:\(Diesel\))?[^0-9]{1,30}?(\d[\d,\.]{1,6})\s*z[łl]',
         ],
@@ -1014,13 +958,11 @@ def _scrape_orlen_current():
             if m:
                 try:
                     v = float(m.group(1).replace(',', '.'))
-                    # Hurt Orlen sensowny zakres: 3-9 zl/l (retail wychodzi wyzej)
                     if 3.0 < v < 9.0:
                         result[key] = v
                         break
                 except: pass
 
-    # Ekoterm (olej opalowy) czesto jest w OSOBNEJ tabeli - fallback szuka w calym HTML.
     if 'ON_EKOTERM' not in result:
         ekoterm_patterns = [
             r'(?:ON\s*)?Ekoterm[^0-9]{1,60}?(\d[\d,\.]{1,6})\s*(?:PLN|z[łl])',
@@ -1031,7 +973,7 @@ def _scrape_orlen_current():
             for m in re.finditer(pat, html, re.IGNORECASE):
                 try:
                     v = float(m.group(1).replace(',', '.'))
-                    if 2.0 < v < 8.0:  # Ekoterm zwykle tanszy - bez akcyzy paliwowej
+                    if 2.0 < v < 8.0:
                         result['ON_EKOTERM'] = v
                         break
                 except: pass
@@ -1043,14 +985,12 @@ def _scrape_orlen_current():
 
 
 def fetch_orlen_append(product_key: str, existing_obs: list) -> list:
-    """Dopisuje/nadpisuje dzisiejsza cene do istniejacej historii Orlen.
-    Nadpisuje jesli data juz jest (na wypadek gdyby wczesniejszy run zapisal zla wartosc).
-    """
+    """Dopisuje/nadpisuje dzisiejsza cene do istniejacej historii Orlen."""
     from datetime import datetime as _dt2, timezone as _tz2
     today = _dt2.now(_tz2.utc).strftime('%Y-%m-%d')
     prices = _scrape_orlen_current()
     today_val = prices.get(product_key)
-    obs = [o for o in (existing_obs or []) if o.get('date') != today]  # usun dzisiejsza jesli byla
+    obs = [o for o in (existing_obs or []) if o.get('date') != today]
     if today_val is not None:
         obs.append({'date': today, 'value': today_val})
         obs.sort(key=lambda o: o['date'])
@@ -1060,12 +1000,7 @@ def fetch_orlen_append(product_key: str, existing_obs: list) -> list:
 _EUROSTAT_ELEC_CACHE = None
 
 def _fetch_eurostat_elec_all():
-    """Pobiera detaliczne ceny elektryki (gospodarstwa domowe) z Eurostat nrg_pc_204
-    dla wszystkich krajow z PRODUCTS[eurostat_elec] w jednym API call.
-    Band DC 2500-4999 kWh/rok, wszystkie podatki wliczone (TAX_INC), EUR/kWh.
-    Dane pol-roczne (S1/S2) - konwertuje do daty (S1=01-01, S2=07-01).
-    Zwraca slownik {geo_code: [{date, value}]}.
-    """
+    """Pobiera detaliczne ceny elektryki z Eurostat nrg_pc_204."""
     global _EUROSTAT_ELEC_CACHE
     if _EUROSTAT_ELEC_CACHE is not None:
         return _EUROSTAT_ELEC_CACHE
@@ -1078,10 +1013,10 @@ def _fetch_eurostat_elec_all():
     params_list = [
         ("format", "JSON"),
         ("lang", "EN"),
-        ("product", "6000"),          # 6000 = Electricity
-        ("nrg_cons", "KWH2500-4999"),  # band DC (przecietne gospodarstwo)
-        ("unit", "KWH"),               # EUR/kWh
-        ("tax", "I_TAX"),              # all taxes included
+        ("product", "6000"),
+        ("nrg_cons", "KWH2500-4999"),
+        ("unit", "KWH"),
+        ("tax", "I_TAX"),
         ("currency", "EUR"),
     ]
     for g in geos:
@@ -1099,8 +1034,7 @@ def _fetch_eurostat_elec_all():
         _EUROSTAT_ELEC_CACHE = {}
         return _EUROSTAT_ELEC_CACHE
 
-    # SDMX-JSON: mapowanie plaskich indeksow na wymiary
-    dim_ids = data.get("id", [])   # np ["freq","product","nrg_cons","unit","tax","currency","geo","time"]
+    dim_ids = data.get("id", [])
     dim_sizes = data.get("size", [])
     dims = data.get("dimension", {})
     values = data.get("value", {})
@@ -1109,19 +1043,16 @@ def _fetch_eurostat_elec_all():
         _EUROSTAT_ELEC_CACHE = {}
         return _EUROSTAT_ELEC_CACHE
 
-    # Rozkoduj indeksy per wymiar
-    dim_index = {}  # dim_id -> [category_id per pozycja]
+    dim_index = {}
     for did in dim_ids:
         cat = dims.get(did, {}).get("category", {})
-        idx_map = cat.get("index", {})  # cat_id -> pozycja
-        # odwroc: pozycja -> cat_id
+        idx_map = cat.get("index", {})
         pos_to_id = [None] * len(idx_map)
         for cid, pos in idx_map.items():
             pos_to_id[pos] = cid
         dim_index[did] = pos_to_id
 
     def unflatten(flat_idx):
-        # zwraca dict {dim_id: cat_id} z plaskiego indeksu SDMX
         out = {}
         for i in range(len(dim_ids) - 1, -1, -1):
             sz = dim_sizes[i]
@@ -1130,7 +1061,6 @@ def _fetch_eurostat_elec_all():
         return out
 
     def period_to_date(t):
-        # np "2024-S1" -> "2024-01-01"; "2024-S2" -> "2024-07-01"
         t = str(t)
         if "-S1" in t: return t[:4] + "-01-01"
         if "-S2" in t: return t[:4] + "-07-01"
@@ -1151,7 +1081,6 @@ def _fetch_eurostat_elec_all():
         if not geo or not date_str: continue
         result.setdefault(geo, []).append({"date": date_str, "value": round(fv, 5)})
 
-    # sortuj/dedup
     for g in list(result.keys()):
         seen = {}
         for o in result[g]:
@@ -1168,10 +1097,7 @@ def fetch_eurostat_elec(geo_code: str) -> list:
 
 
 def fetch_stooq(symbol: str, unit_scale: float = 1.0) -> list:
-    """Pobiera dzienne dane ze Stooq (CSV). Uzywane dla tickerow ktorych Yahoo nie ma
-    (MATIF EMA.F, CA.F; MGEX MW.F; itd).
-    Zwraca liste {date, value} sortowana rosnaco po dacie.
-    """
+    """Pobiera dzienne dane ze Stooq (CSV)."""
     import urllib.request
     sym = symbol.lower()
     url = f"https://stooq.com/q/d/l/?s={urllib.parse.quote(sym)}&i=d"
@@ -1222,6 +1148,7 @@ def fetch_yahoo(ticker: str, unit_scale: float = 1.0) -> list:
             v = float(close) * unit_scale
         except (TypeError, ValueError):
             continue
+        if v != v: continue  # pomija NaN (NaN != NaN to zawsze True)
         # ts moze byc pd.Timestamp; wez ISO date
         date_str = ts.strftime("%Y-%m-%d") if hasattr(ts, "strftime") else str(ts)[:10]
         obs.append({"date": date_str, "value": round(v, 4)})
@@ -1243,15 +1170,13 @@ def _load_existing_prices():
 
 
 def _merge_history(existing_obs, fresh_obs):
-    """Laczy istniejaca historie z nowymi danymi. Fresh nadpisuje istniejace daty (aktualizacja),
-    zachowuje daty ktorych nie ma w fresh (ochrona przed utrata historii jesli API zwrocilo mniej).
-    """
+    """Laczy istniejaca historie z nowymi danymi."""
     if not existing_obs and not fresh_obs: return []
     if not existing_obs: return list(fresh_obs)
     if not fresh_obs: return list(existing_obs)
     combined = {o['date']: o['value'] for o in existing_obs}
     for o in fresh_obs:
-        combined[o['date']] = o['value']  # fresh nadpisuje istniejace daty
+        combined[o['date']] = o['value']
     return [{'date': d, 'value': v} for d, v in sorted(combined.items())]
 
 
@@ -1282,15 +1207,12 @@ def main():
             elif p["source"] == "wob":
                 obs = fetch_wob(p["series"])
             elif p["source"] == "orlen_scrape":
-                # Append-only: rozszerz istniejaca historie o dzisiejsza cene
                 obs = fetch_orlen_append(p["series"], existing.get(pid, []))
             elif p["source"] == "ember":
                 obs = fetch_ember(p["series"])
             elif p["source"] == "eurostat_elec":
                 obs = fetch_eurostat_elec(p["series"])
             elif p["source"] == "cftc":
-                # Nowy model: pattern-based matching. Backward-compat: jesli produkt ma
-                # `series` (stara definicja) a nie `series_patterns`, uzywamy legacy shim.
                 if p.get("series_patterns"):
                     obs = fetch_cftc_patterns(p["series_patterns"], p.get("series_exchange_filter"))
                 else:
@@ -1301,7 +1223,6 @@ def main():
                 print(f"  [SKIP] nieznane zrodlo {p['source']}")
                 continue
 
-            # ZAWSZE merge z historia (ochrona danych)
             existing_obs = existing.get(pid, [])
             merged = _merge_history(existing_obs, obs)
             if not merged:
@@ -1328,7 +1249,6 @@ def main():
         except urllib.error.HTTPError as e:
             print(f"  [BLAD HTTP {e.code}] {e.reason}")
             failed.append(pid)
-            # Zachowaj historyczne dane jesli sa
             existing_obs = existing.get(pid, [])
             if existing_obs:
                 products_out[pid] = existing_obs
