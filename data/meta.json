@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-29T07:08:48.047543+00:00",
+  "generated_at": "2026-08-29T19:09:09.720276+00:00",
   "products": [
     {
       "id": "NG",
@@ -740,8 +740,8 @@
       "source": "ember",
       "series": "Poland",
       "first_date": "2015-01-01",
-      "last_date": "2026-08-27",
-      "n_observations": 4257
+      "last_date": "2026-08-29",
+      "n_observations": 4259
     },
     {
       "id": "DE_POWER",
@@ -754,8 +754,8 @@
       "source": "ember",
       "series": "Germany",
       "first_date": "2015-01-01",
-      "last_date": "2026-08-27",
-      "n_observations": 4257
+      "last_date": "2026-08-31",
+      "n_observations": 4261
     },
     {
       "id": "FR_POWER",
@@ -768,8 +768,8 @@
       "source": "ember",
       "series": "France",
       "first_date": "2015-01-01",
-      "last_date": "2026-08-27",
-      "n_observations": 4256
+      "last_date": "2026-08-29",
+      "n_observations": 4258
     },
     {
       "id": "ES_POWER",
@@ -782,8 +782,8 @@
       "source": "ember",
       "series": "Spain",
       "first_date": "2015-01-01",
-      "last_date": "2026-08-27",
-      "n_observations": 4257
+      "last_date": "2026-08-29",
+      "n_observations": 4259
     },
     {
       "id": "IT_POWER",
@@ -796,8 +796,8 @@
       "source": "ember",
       "series": "Italy",
       "first_date": "2015-01-01",
-      "last_date": "2026-08-27",
-      "n_observations": 4257
+      "last_date": "2026-08-28",
+      "n_observations": 4258
     },
     {
       "id": "CZ_POWER",
@@ -810,8 +810,8 @@
       "source": "ember",
       "series": "Czechia",
       "first_date": "2015-01-01",
-      "last_date": "2026-08-27",
-      "n_observations": 4257
+      "last_date": "2026-08-29",
+      "n_observations": 4259
     },
     {
       "id": "SK_POWER",
@@ -824,8 +824,8 @@
       "source": "ember",
       "series": "Slovakia",
       "first_date": "2015-01-01",
-      "last_date": "2026-08-27",
-      "n_observations": 4250
+      "last_date": "2026-08-29",
+      "n_observations": 4252
     },
     {
       "id": "HU_POWER",
@@ -838,8 +838,8 @@
       "source": "ember",
       "series": "Hungary",
       "first_date": "2015-01-01",
-      "last_date": "2026-08-27",
-      "n_observations": 4250
+      "last_date": "2026-08-29",
+      "n_observations": 4252
     },
     {
       "id": "NL_POWER",
@@ -852,8 +852,8 @@
       "source": "ember",
       "series": "Netherlands",
       "first_date": "2015-01-01",
-      "last_date": "2026-08-27",
-      "n_observations": 4250
+      "last_date": "2026-08-29",
+      "n_observations": 4252
     },
     {
       "id": "GB_POWER",
@@ -866,8 +866,8 @@
       "source": "ember",
       "series": "United Kingdom",
       "first_date": "2016-06-30",
-      "last_date": "2026-08-26",
-      "n_observations": 3710
+      "last_date": "2026-08-27",
+      "n_observations": 3711
     },
     {
       "id": "PL_WHEAT_SKUP",
