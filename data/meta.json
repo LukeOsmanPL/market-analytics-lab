@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-03T07:16:43.624729+00:00",
+  "generated_at": "2026-09-03T19:13:27.635117+00:00",
   "products": [
     {
       "id": "NG",
@@ -656,8 +656,8 @@
       "source": "yahoo",
       "series": "^VIX",
       "first_date": "1995-01-03",
-      "last_date": "2026-09-02",
-      "n_observations": 7971
+      "last_date": "2026-09-03",
+      "n_observations": 7972
     },
     {
       "id": "SPX",
@@ -670,8 +670,8 @@
       "source": "yahoo",
       "series": "^GSPC",
       "first_date": "1995-01-03",
-      "last_date": "2026-09-02",
-      "n_observations": 7970
+      "last_date": "2026-09-03",
+      "n_observations": 7971
     },
     {
       "id": "BTC",
@@ -866,8 +866,8 @@
       "source": "ember",
       "series": "United Kingdom",
       "first_date": "2016-06-30",
-      "last_date": "2026-08-31",
-      "n_observations": 3715
+      "last_date": "2026-09-01",
+      "n_observations": 3716
     },
     {
       "id": "PL_WHEAT_SKUP",
@@ -950,8 +950,8 @@
       "source": "yahoo",
       "series": "TTF=F",
       "first_date": "2017-10-23",
-      "last_date": "2026-09-02",
-      "n_observations": 2229
+      "last_date": "2026-09-03",
+      "n_observations": 2230
     },
     {
       "id": "EU_NG_MO",
@@ -1006,8 +1006,8 @@
       "source": "yahoo",
       "series": "KC=F",
       "first_date": "2000-01-03",
-      "last_date": "2026-09-02",
-      "n_observations": 6686
+      "last_date": "2026-09-03",
+      "n_observations": 6687
     },
     {
       "id": "COCOA",
@@ -1020,8 +1020,8 @@
       "source": "yahoo",
       "series": "CC=F",
       "first_date": "2000-01-03",
-      "last_date": "2026-09-02",
-      "n_observations": 6688
+      "last_date": "2026-09-03",
+      "n_observations": 6689
     },
     {
       "id": "SUGAR",
@@ -1034,8 +1034,8 @@
       "source": "yahoo",
       "series": "SB=F",
       "first_date": "2000-03-01",
-      "last_date": "2026-09-02",
-      "n_observations": 6649
+      "last_date": "2026-09-03",
+      "n_observations": 6650
     },
     {
       "id": "COTTON",
@@ -1048,8 +1048,8 @@
       "source": "yahoo",
       "series": "CT=F",
       "first_date": "2000-01-03",
-      "last_date": "2026-09-02",
-      "n_observations": 6688
+      "last_date": "2026-09-03",
+      "n_observations": 6689
     },
     {
       "id": "OJ",
@@ -1062,8 +1062,8 @@
       "source": "yahoo",
       "series": "OJ=F",
       "first_date": "2001-09-17",
-      "last_date": "2026-09-02",
-      "n_observations": 6264
+      "last_date": "2026-09-03",
+      "n_observations": 6265
     },
     {
       "id": "LIVE_CATTLE",
@@ -1076,8 +1076,8 @@
       "source": "yahoo",
       "series": "LE=F",
       "first_date": "2001-03-01",
-      "last_date": "2026-09-02",
-      "n_observations": 6393
+      "last_date": "2026-09-03",
+      "n_observations": 6394
     },
     {
       "id": "LEAN_HOGS",
@@ -1090,8 +1090,8 @@
       "source": "yahoo",
       "series": "HE=F",
       "first_date": "2000-12-15",
-      "last_date": "2026-09-02",
-      "n_observations": 6461
+      "last_date": "2026-09-03",
+      "n_observations": 6462
     }
   ],
   "failed": [
