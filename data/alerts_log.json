@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-09-03T07:37:39.075348+00:00",
+  "updated_at": "2026-09-03T19:33:51.029715+00:00",
   "alerts": [
     {
       "rule_index": 9,
@@ -1448,6 +1448,38 @@
       "message": "PL_PB95_WOB zmiana 30d = -11.31% (próg 5.0%, 2026-08-31)",
       "note": "Pb95 detal PL zmienil sie >5% w 30 dni",
       "at": "2026-09-03T07:37:39.074644+00:00"
+    },
+    {
+      "rule_index": 4,
+      "rule_id": "corn_zscore_120d",
+      "type": "product_zscore",
+      "message": "CORN z-score=+3.46 🔴 SHORT (|z|>=2.0, 2026-09-03)",
+      "note": "Corn 120d z-score - istotne dla sezonu",
+      "at": "2026-09-03T19:33:51.007742+00:00"
+    },
+    {
+      "rule_index": 5,
+      "rule_id": "wheat_zscore_120d",
+      "type": "product_zscore",
+      "message": "WHEAT z-score=+2.70 🔴 SHORT (|z|>=2.0, 2026-09-03)",
+      "note": "Wheat 120d z-score",
+      "at": "2026-09-03T19:33:51.008191+00:00"
+    },
+    {
+      "rule_index": 8,
+      "rule_id": "cot_wti_extreme",
+      "type": "product_zscore",
+      "message": "COT_WTI_NET z-score=+2.31 🔴 SHORT (|z|>=2.0, 2026-08-04)",
+      "note": "COT WTI Money Mgr netto - kontrariański sygnal",
+      "at": "2026-09-03T19:33:51.028568+00:00"
+    },
+    {
+      "rule_index": 9,
+      "rule_id": "pl_pb95_high",
+      "type": "pct_change",
+      "message": "PL_PB95_WOB zmiana 30d = -11.31% (próg 5.0%, 2026-08-31)",
+      "note": "Pb95 detal PL zmienil sie >5% w 30 dni",
+      "at": "2026-09-03T19:33:51.028639+00:00"
     }
   ]
 }
