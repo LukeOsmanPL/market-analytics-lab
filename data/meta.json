@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-04T19:12:50.567521+00:00",
+  "generated_at": "2026-09-05T07:14:01.121980+00:00",
   "products": [
     {
       "id": "NG",
@@ -362,8 +362,8 @@
       "source": "orlen_scrape",
       "series": "PB95",
       "first_date": "2026-08-08",
-      "last_date": "2026-09-04",
-      "n_observations": 28
+      "last_date": "2026-09-05",
+      "n_observations": 29
     },
     {
       "id": "PL_ORLEN_PB98",
@@ -376,8 +376,8 @@
       "source": "orlen_scrape",
       "series": "PB98",
       "first_date": "2026-08-08",
-      "last_date": "2026-09-04",
-      "n_observations": 28
+      "last_date": "2026-09-05",
+      "n_observations": 29
     },
     {
       "id": "PL_ORLEN_ON",
@@ -390,8 +390,8 @@
       "source": "orlen_scrape",
       "series": "ON",
       "first_date": "2026-08-08",
-      "last_date": "2026-09-04",
-      "n_observations": 28
+      "last_date": "2026-09-05",
+      "n_observations": 29
     },
     {
       "id": "PL_ORLEN_EKOTERM",
@@ -404,8 +404,8 @@
       "source": "orlen_scrape",
       "series": "ON_EKOTERM",
       "first_date": "2026-08-09",
-      "last_date": "2026-09-04",
-      "n_observations": 27
+      "last_date": "2026-09-05",
+      "n_observations": 28
     },
     {
       "id": "FR_PB95_WOB",
@@ -586,8 +586,8 @@
       "source": "yahoo",
       "series": "PLN=X",
       "first_date": "2003-12-01",
-      "last_date": "2026-09-04",
-      "n_observations": 5909
+      "last_date": "2026-09-05",
+      "n_observations": 5910
     },
     {
       "id": "FX_GBPUSD",
@@ -684,8 +684,8 @@
       "source": "yahoo",
       "series": "BTC-USD",
       "first_date": "2014-09-17",
-      "last_date": "2026-09-04",
-      "n_observations": 4371
+      "last_date": "2026-09-05",
+      "n_observations": 4372
     },
     {
       "id": "US10Y",
@@ -698,8 +698,8 @@
       "source": "fred",
       "series": "DGS10",
       "first_date": "1995-01-03",
-      "last_date": "2026-09-02",
-      "n_observations": 7924
+      "last_date": "2026-09-03",
+      "n_observations": 7925
     },
     {
       "id": "US2Y",
@@ -712,8 +712,8 @@
       "source": "fred",
       "series": "DGS2",
       "first_date": "1995-01-03",
-      "last_date": "2026-09-02",
-      "n_observations": 7924
+      "last_date": "2026-09-03",
+      "n_observations": 7925
     },
     {
       "id": "US10Y2Y",
@@ -726,8 +726,8 @@
       "source": "fred",
       "series": "T10Y2Y",
       "first_date": "1995-01-03",
-      "last_date": "2026-09-03",
-      "n_observations": 7925
+      "last_date": "2026-09-04",
+      "n_observations": 7926
     },
     {
       "id": "PL_POWER",
