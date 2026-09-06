@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-05T19:13:30.166149+00:00",
+  "generated_at": "2026-09-06T07:14:23.443022+00:00",
   "products": [
     {
       "id": "NG",
@@ -362,8 +362,8 @@
       "source": "orlen_scrape",
       "series": "PB95",
       "first_date": "2026-08-08",
-      "last_date": "2026-09-05",
-      "n_observations": 29
+      "last_date": "2026-09-06",
+      "n_observations": 30
     },
     {
       "id": "PL_ORLEN_PB98",
@@ -376,8 +376,8 @@
       "source": "orlen_scrape",
       "series": "PB98",
       "first_date": "2026-08-08",
-      "last_date": "2026-09-05",
-      "n_observations": 29
+      "last_date": "2026-09-06",
+      "n_observations": 30
     },
     {
       "id": "PL_ORLEN_ON",
@@ -390,8 +390,8 @@
       "source": "orlen_scrape",
       "series": "ON",
       "first_date": "2026-08-08",
-      "last_date": "2026-09-05",
-      "n_observations": 29
+      "last_date": "2026-09-06",
+      "n_observations": 30
     },
     {
       "id": "PL_ORLEN_EKOTERM",
@@ -404,8 +404,8 @@
       "source": "orlen_scrape",
       "series": "ON_EKOTERM",
       "first_date": "2026-08-09",
-      "last_date": "2026-09-05",
-      "n_observations": 28
+      "last_date": "2026-09-06",
+      "n_observations": 29
     },
     {
       "id": "FR_PB95_WOB",
@@ -572,8 +572,8 @@
       "source": "yahoo",
       "series": "EURPLN=X",
       "first_date": "2002-04-01",
-      "last_date": "2026-09-04",
-      "n_observations": 6319
+      "last_date": "2026-09-06",
+      "n_observations": 6320
     },
     {
       "id": "FX_USDPLN",
@@ -586,8 +586,8 @@
       "source": "yahoo",
       "series": "PLN=X",
       "first_date": "2003-12-01",
-      "last_date": "2026-09-05",
-      "n_observations": 5910
+      "last_date": "2026-09-06",
+      "n_observations": 5911
     },
     {
       "id": "FX_GBPUSD",
@@ -684,8 +684,8 @@
       "source": "yahoo",
       "series": "BTC-USD",
       "first_date": "2014-09-17",
-      "last_date": "2026-09-05",
-      "n_observations": 4372
+      "last_date": "2026-09-06",
+      "n_observations": 4373
     },
     {
       "id": "US10Y",
