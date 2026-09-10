@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-10T12:09:34.105812+00:00",
+  "generated_at": "2026-09-10T21:30:58.967874+00:00",
   "products": [
     {
       "id": "NG",
@@ -12,8 +12,8 @@
       "source": "fred",
       "series": "DHHNGSP",
       "first_date": "1997-01-07",
-      "last_date": "2026-09-01",
-      "n_observations": 7446
+      "last_date": "2026-09-09",
+      "n_observations": 7451
     },
     {
       "id": "WTI",
@@ -26,8 +26,8 @@
       "source": "fred",
       "series": "DCOILWTICO",
       "first_date": "1995-01-03",
-      "last_date": "2026-09-01",
-      "n_observations": 7945
+      "last_date": "2026-09-09",
+      "n_observations": 7950
     },
     {
       "id": "BRENT",
@@ -40,8 +40,8 @@
       "source": "fred",
       "series": "DCOILBRENTEU",
       "first_date": "1995-01-03",
-      "last_date": "2026-09-01",
-      "n_observations": 8024
+      "last_date": "2026-09-09",
+      "n_observations": 8030
     },
     {
       "id": "HEAT",
@@ -54,8 +54,8 @@
       "source": "fred",
       "series": "DHOILNYH",
       "first_date": "1995-01-03",
-      "last_date": "2026-09-01",
-      "n_observations": 7943
+      "last_date": "2026-09-09",
+      "n_observations": 7948
     },
     {
       "id": "RBOB",
@@ -68,8 +68,8 @@
       "source": "fred",
       "series": "DGASUSGULF",
       "first_date": "1995-01-03",
-      "last_date": "2026-09-01",
-      "n_observations": 7938
+      "last_date": "2026-09-09",
+      "n_observations": 7943
     },
     {
       "id": "GAS_RETAIL_US",
@@ -586,8 +586,8 @@
       "source": "yahoo",
       "series": "PLN=X",
       "first_date": "2003-12-01",
-      "last_date": "2026-09-09",
-      "n_observations": 5914
+      "last_date": "2026-09-10",
+      "n_observations": 5915
     },
     {
       "id": "FX_GBPUSD",
@@ -628,8 +628,8 @@
       "source": "yahoo",
       "series": "CHF=X",
       "first_date": "2003-09-17",
-      "last_date": "2026-09-09",
-      "n_observations": 5978
+      "last_date": "2026-09-10",
+      "n_observations": 5979
     },
     {
       "id": "DXY",
@@ -670,8 +670,8 @@
       "source": "yahoo",
       "series": "^GSPC",
       "first_date": "1995-01-03",
-      "last_date": "2026-09-09",
-      "n_observations": 7974
+      "last_date": "2026-09-10",
+      "n_observations": 7975
     },
     {
       "id": "BTC",
@@ -698,8 +698,8 @@
       "source": "fred",
       "series": "DGS10",
       "first_date": "1995-01-03",
-      "last_date": "2026-09-08",
-      "n_observations": 7927
+      "last_date": "2026-09-09",
+      "n_observations": 7928
     },
     {
       "id": "US2Y",
@@ -712,8 +712,8 @@
       "source": "fred",
       "series": "DGS2",
       "first_date": "1995-01-03",
-      "last_date": "2026-09-08",
-      "n_observations": 7927
+      "last_date": "2026-09-09",
+      "n_observations": 7928
     },
     {
       "id": "US10Y2Y",
@@ -726,8 +726,8 @@
       "source": "fred",
       "series": "T10Y2Y",
       "first_date": "1995-01-03",
-      "last_date": "2026-09-09",
-      "n_observations": 7928
+      "last_date": "2026-09-10",
+      "n_observations": 7929
     },
     {
       "id": "PL_POWER",
@@ -1062,8 +1062,8 @@
       "source": "yahoo",
       "series": "OJ=F",
       "first_date": "2001-09-17",
-      "last_date": "2026-09-09",
-      "n_observations": 6268
+      "last_date": "2026-09-10",
+      "n_observations": 6269
     },
     {
       "id": "LIVE_CATTLE",
@@ -1076,8 +1076,8 @@
       "source": "yahoo",
       "series": "LE=F",
       "first_date": "2001-03-01",
-      "last_date": "2026-09-09",
-      "n_observations": 6397
+      "last_date": "2026-09-10",
+      "n_observations": 6398
     },
     {
       "id": "LEAN_HOGS",
@@ -1090,8 +1090,8 @@
       "source": "yahoo",
       "series": "HE=F",
       "first_date": "2000-12-15",
-      "last_date": "2026-09-09",
-      "n_observations": 6465
+      "last_date": "2026-09-10",
+      "n_observations": 6466
     }
   ],
   "failed": [
