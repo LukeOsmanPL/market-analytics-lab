@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-11T12:07:58.679473+00:00",
+  "generated_at": "2026-09-11T21:38:05.248501+00:00",
   "products": [
     {
       "id": "NG",
@@ -586,8 +586,8 @@
       "source": "yahoo",
       "series": "PLN=X",
       "first_date": "2003-12-01",
-      "last_date": "2026-09-11",
-      "n_observations": 5916
+      "last_date": "2026-09-12",
+      "n_observations": 5917
     },
     {
       "id": "FX_GBPUSD",
@@ -670,8 +670,8 @@
       "source": "yahoo",
       "series": "^GSPC",
       "first_date": "1995-01-03",
-      "last_date": "2026-09-10",
-      "n_observations": 7975
+      "last_date": "2026-09-11",
+      "n_observations": 7976
     },
     {
       "id": "BTC",
@@ -698,8 +698,8 @@
       "source": "fred",
       "series": "DGS10",
       "first_date": "1995-01-03",
-      "last_date": "2026-09-09",
-      "n_observations": 7928
+      "last_date": "2026-09-10",
+      "n_observations": 7929
     },
     {
       "id": "US2Y",
@@ -712,8 +712,8 @@
       "source": "fred",
       "series": "DGS2",
       "first_date": "1995-01-03",
-      "last_date": "2026-09-09",
-      "n_observations": 7928
+      "last_date": "2026-09-10",
+      "n_observations": 7929
     },
     {
       "id": "US10Y2Y",
@@ -726,8 +726,8 @@
       "source": "fred",
       "series": "T10Y2Y",
       "first_date": "1995-01-03",
-      "last_date": "2026-09-10",
-      "n_observations": 7929
+      "last_date": "2026-09-11",
+      "n_observations": 7930
     },
     {
       "id": "PL_POWER",
@@ -894,8 +894,8 @@
       "source": "agrifood_cereal",
       "series": "Feed maize",
       "first_date": "2015-11-16",
-      "last_date": "2021-07-05",
-      "n_observations": 294
+      "last_date": "2026-08-31",
+      "n_observations": 552
     },
     {
       "id": "PL_RYE_SKUP",
@@ -922,8 +922,8 @@
       "source": "agrifood_cereal",
       "series": "Feed barley",
       "first_date": "2015-11-16",
-      "last_date": "2021-07-05",
-      "n_observations": 294
+      "last_date": "2026-08-31",
+      "n_observations": 552
     },
     {
       "id": "MATIF_WHEAT",
@@ -1062,8 +1062,8 @@
       "source": "yahoo",
       "series": "OJ=F",
       "first_date": "2001-09-17",
-      "last_date": "2026-09-10",
-      "n_observations": 6269
+      "last_date": "2026-09-11",
+      "n_observations": 6270
     },
     {
       "id": "LIVE_CATTLE",
@@ -1076,8 +1076,8 @@
       "source": "yahoo",
       "series": "LE=F",
       "first_date": "2001-03-01",
-      "last_date": "2026-09-10",
-      "n_observations": 6398
+      "last_date": "2026-09-11",
+      "n_observations": 6399
     },
     {
       "id": "LEAN_HOGS",
@@ -1090,8 +1090,8 @@
       "source": "yahoo",
       "series": "HE=F",
       "first_date": "2000-12-15",
-      "last_date": "2026-09-10",
-      "n_observations": 6466
+      "last_date": "2026-09-11",
+      "n_observations": 6467
     }
   ],
   "failed": [
