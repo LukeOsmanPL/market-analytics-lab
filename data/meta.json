@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-12T11:33:49.223150+00:00",
+  "generated_at": "2026-09-12T21:20:40.749433+00:00",
   "products": [
     {
       "id": "NG",
@@ -628,8 +628,8 @@
       "source": "yahoo",
       "series": "CHF=X",
       "first_date": "2003-09-17",
-      "last_date": "2026-09-12",
-      "n_observations": 5981
+      "last_date": "2026-09-13",
+      "n_observations": 5982
     },
     {
       "id": "DXY",
