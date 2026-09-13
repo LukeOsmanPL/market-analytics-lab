@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-13T12:39:43.675569+00:00",
+  "generated_at": "2026-09-13T21:20:17.565689+00:00",
   "products": [
     {
       "id": "NG",
@@ -558,8 +558,8 @@
       "source": "yahoo",
       "series": "EURUSD=X",
       "first_date": "2003-12-01",
-      "last_date": "2026-09-11",
-      "n_observations": 5911
+      "last_date": "2026-09-13",
+      "n_observations": 5912
     },
     {
       "id": "FX_EURPLN",
@@ -572,8 +572,8 @@
       "source": "yahoo",
       "series": "EURPLN=X",
       "first_date": "2002-04-01",
-      "last_date": "2026-09-11",
-      "n_observations": 6325
+      "last_date": "2026-09-13",
+      "n_observations": 6326
     },
     {
       "id": "FX_USDPLN",
@@ -586,8 +586,8 @@
       "source": "yahoo",
       "series": "PLN=X",
       "first_date": "2003-12-01",
-      "last_date": "2026-09-12",
-      "n_observations": 5917
+      "last_date": "2026-09-13",
+      "n_observations": 5918
     },
     {
       "id": "FX_GBPUSD",
@@ -600,8 +600,8 @@
       "source": "yahoo",
       "series": "GBPUSD=X",
       "first_date": "2003-12-01",
-      "last_date": "2026-09-11",
-      "n_observations": 5928
+      "last_date": "2026-09-13",
+      "n_observations": 5929
     },
     {
       "id": "FX_USDJPY",
@@ -614,8 +614,8 @@
       "source": "yahoo",
       "series": "JPY=X",
       "first_date": "1996-10-30",
-      "last_date": "2026-09-11",
-      "n_observations": 7748
+      "last_date": "2026-09-13",
+      "n_observations": 7749
     },
     {
       "id": "FX_USDCHF",
