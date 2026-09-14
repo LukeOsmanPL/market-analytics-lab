@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-09-14T14:18:03.234761+00:00",
+  "updated_at": "2026-09-14T22:36:45.576513+00:00",
   "alerts": [
     {
       "rule_index": 9,
@@ -2120,6 +2120,38 @@
       "message": "COT_WTI_NET z-score=+2.31 🔴 SHORT (|z|>=2.0, 2026-08-04)",
       "note": "COT WTI Money Mgr netto - kontrariański sygnal",
       "at": "2026-09-14T14:18:03.233837+00:00"
+    },
+    {
+      "rule_index": 0,
+      "rule_id": "wti_zscore_60d",
+      "type": "product_zscore",
+      "message": "WTI z-score=+2.16 🔴 SHORT (|z|>=2.0, 2026-09-09)",
+      "note": "WTI 60d z-score ekstremum - potencjalny reversal",
+      "at": "2026-09-14T22:36:45.553223+00:00"
+    },
+    {
+      "rule_index": 1,
+      "rule_id": "brent_zscore_60d",
+      "type": "product_zscore",
+      "message": "BRENT z-score=+2.12 🔴 SHORT (|z|>=2.0, 2026-09-09)",
+      "note": "Brent 60d z-score ekstremum",
+      "at": "2026-09-14T22:36:45.553659+00:00"
+    },
+    {
+      "rule_index": 4,
+      "rule_id": "corn_zscore_120d",
+      "type": "product_zscore",
+      "message": "CORN z-score=+2.82 🔴 SHORT (|z|>=2.0, 2026-09-14)",
+      "note": "Corn 120d z-score - istotne dla sezonu",
+      "at": "2026-09-14T22:36:45.554803+00:00"
+    },
+    {
+      "rule_index": 8,
+      "rule_id": "cot_wti_extreme",
+      "type": "product_zscore",
+      "message": "COT_WTI_NET z-score=+2.31 🔴 SHORT (|z|>=2.0, 2026-08-04)",
+      "note": "COT WTI Money Mgr netto - kontrariański sygnal",
+      "at": "2026-09-14T22:36:45.575332+00:00"
     }
   ]
 }
