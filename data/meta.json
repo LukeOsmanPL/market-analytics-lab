@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-14T13:49:35.811849+00:00",
+  "generated_at": "2026-09-14T22:23:23.568475+00:00",
   "products": [
     {
       "id": "NG",
@@ -698,8 +698,8 @@
       "source": "fred",
       "series": "DGS10",
       "first_date": "1995-01-03",
-      "last_date": "2026-09-10",
-      "n_observations": 7929
+      "last_date": "2026-09-11",
+      "n_observations": 7930
     },
     {
       "id": "US2Y",
@@ -712,8 +712,8 @@
       "source": "fred",
       "series": "DGS2",
       "first_date": "1995-01-03",
-      "last_date": "2026-09-10",
-      "n_observations": 7929
+      "last_date": "2026-09-11",
+      "n_observations": 7930
     },
     {
       "id": "US10Y2Y",
@@ -726,8 +726,8 @@
       "source": "fred",
       "series": "T10Y2Y",
       "first_date": "1995-01-03",
-      "last_date": "2026-09-11",
-      "n_observations": 7930
+      "last_date": "2026-09-14",
+      "n_observations": 7931
     },
     {
       "id": "PL_POWER",
