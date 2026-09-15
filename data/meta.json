@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-15T12:34:31.364676+00:00",
+  "generated_at": "2026-09-15T22:03:17.616011+00:00",
   "products": [
     {
       "id": "NG",
@@ -28,20 +28,6 @@
       "first_date": "1995-01-03",
       "last_date": "2026-09-09",
       "n_observations": 7950
-    },
-    {
-      "id": "BRENT",
-      "name": "Brent Crude (ropa)",
-      "unit": "$/bbl",
-      "contract_size": 1000,
-      "contract_unit": "bbl",
-      "category": "Energia",
-      "color": "#ba68c8",
-      "source": "fred",
-      "series": "DCOILBRENTEU",
-      "first_date": "1995-01-03",
-      "last_date": "2026-09-09",
-      "n_observations": 8030
     },
     {
       "id": "HEAT",
@@ -82,8 +68,8 @@
       "source": "fred",
       "series": "GASREGW",
       "first_date": "1995-01-02",
-      "last_date": "2026-09-07",
-      "n_observations": 1654
+      "last_date": "2026-09-14",
+      "n_observations": 1655
     },
     {
       "id": "GOLD",
@@ -670,8 +656,8 @@
       "source": "yahoo",
       "series": "^GSPC",
       "first_date": "1995-01-03",
-      "last_date": "2026-09-14",
-      "n_observations": 7977
+      "last_date": "2026-09-15",
+      "n_observations": 7978
     },
     {
       "id": "BTC",
@@ -698,8 +684,8 @@
       "source": "fred",
       "series": "DGS10",
       "first_date": "1995-01-03",
-      "last_date": "2026-09-11",
-      "n_observations": 7930
+      "last_date": "2026-09-14",
+      "n_observations": 7931
     },
     {
       "id": "US2Y",
@@ -712,8 +698,8 @@
       "source": "fred",
       "series": "DGS2",
       "first_date": "1995-01-03",
-      "last_date": "2026-09-11",
-      "n_observations": 7930
+      "last_date": "2026-09-14",
+      "n_observations": 7931
     },
     {
       "id": "US10Y2Y",
@@ -726,8 +712,8 @@
       "source": "fred",
       "series": "T10Y2Y",
       "first_date": "1995-01-03",
-      "last_date": "2026-09-14",
-      "n_observations": 7931
+      "last_date": "2026-09-15",
+      "n_observations": 7932
     },
     {
       "id": "PL_POWER",
@@ -1076,8 +1062,8 @@
       "source": "yahoo",
       "series": "LE=F",
       "first_date": "2001-03-01",
-      "last_date": "2026-09-14",
-      "n_observations": 6400
+      "last_date": "2026-09-15",
+      "n_observations": 6401
     },
     {
       "id": "LEAN_HOGS",
@@ -1090,11 +1076,12 @@
       "source": "yahoo",
       "series": "HE=F",
       "first_date": "2000-12-15",
-      "last_date": "2026-09-14",
-      "n_observations": 6468
+      "last_date": "2026-09-15",
+      "n_observations": 6469
     }
   ],
   "failed": [
+    "BRENT",
     "COT_WTI_NET",
     "COT_BRENT_NET",
     "COT_NG_NET",
