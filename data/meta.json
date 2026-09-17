@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-17T12:32:23.383413+00:00",
+  "generated_at": "2026-09-17T22:03:10.263557+00:00",
   "products": [
     {
       "id": "NG",
@@ -14,20 +14,6 @@
       "first_date": "1997-01-07",
       "last_date": "2026-09-15",
       "n_observations": 7455
-    },
-    {
-      "id": "WTI",
-      "name": "WTI Crude (ropa US)",
-      "unit": "$/bbl",
-      "contract_size": 1000,
-      "contract_unit": "bbl",
-      "category": "Energia",
-      "color": "#ff8a65",
-      "source": "fred",
-      "series": "DCOILWTICO",
-      "first_date": "1995-01-03",
-      "last_date": "2026-09-15",
-      "n_observations": 7954
     },
     {
       "id": "BRENT",
@@ -670,8 +656,8 @@
       "source": "yahoo",
       "series": "^GSPC",
       "first_date": "1995-01-03",
-      "last_date": "2026-09-16",
-      "n_observations": 7979
+      "last_date": "2026-09-17",
+      "n_observations": 7980
     },
     {
       "id": "BTC",
@@ -698,8 +684,8 @@
       "source": "fred",
       "series": "DGS10",
       "first_date": "1995-01-03",
-      "last_date": "2026-09-15",
-      "n_observations": 7932
+      "last_date": "2026-09-16",
+      "n_observations": 7933
     },
     {
       "id": "US2Y",
@@ -712,8 +698,8 @@
       "source": "fred",
       "series": "DGS2",
       "first_date": "1995-01-03",
-      "last_date": "2026-09-15",
-      "n_observations": 7932
+      "last_date": "2026-09-16",
+      "n_observations": 7933
     },
     {
       "id": "US10Y2Y",
@@ -726,8 +712,8 @@
       "source": "fred",
       "series": "T10Y2Y",
       "first_date": "1995-01-03",
-      "last_date": "2026-09-16",
-      "n_observations": 7933
+      "last_date": "2026-09-17",
+      "n_observations": 7934
     },
     {
       "id": "PL_POWER",
@@ -950,8 +936,8 @@
       "source": "yahoo",
       "series": "TTF=F",
       "first_date": "2017-10-23",
-      "last_date": "2026-09-16",
-      "n_observations": 2239
+      "last_date": "2026-09-17",
+      "n_observations": 2240
     },
     {
       "id": "EU_NG_MO",
@@ -1076,8 +1062,8 @@
       "source": "yahoo",
       "series": "LE=F",
       "first_date": "2001-03-01",
-      "last_date": "2026-09-16",
-      "n_observations": 6402
+      "last_date": "2026-09-17",
+      "n_observations": 6403
     },
     {
       "id": "LEAN_HOGS",
@@ -1090,11 +1076,12 @@
       "source": "yahoo",
       "series": "HE=F",
       "first_date": "2000-12-15",
-      "last_date": "2026-09-16",
-      "n_observations": 6470
+      "last_date": "2026-09-17",
+      "n_observations": 6471
     }
   ],
   "failed": [
+    "WTI",
     "COT_WTI_NET",
     "COT_BRENT_NET",
     "COT_NG_NET",
