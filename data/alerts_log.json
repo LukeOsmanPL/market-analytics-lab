@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-09-18T21:45:32.218956+00:00",
+  "updated_at": "2026-09-19T11:59:09.902169+00:00",
   "alerts": [
     {
       "rule_index": 9,
@@ -2488,6 +2488,54 @@
       "message": "PL_PB95_WOB zmiana 30d = +7.41% (próg 5.0%, 2026-09-14)",
       "note": "Pb95 detal PL zmienil sie >5% w 30 dni",
       "at": "2026-09-18T21:45:32.217681+00:00"
+    },
+    {
+      "rule_index": 0,
+      "rule_id": "wti_zscore_60d",
+      "type": "product_zscore",
+      "message": "WTI z-score=+2.65 🔴 SHORT (|z|>=2.0, 2026-09-15)",
+      "note": "WTI 60d z-score ekstremum - potencjalny reversal",
+      "at": "2026-09-19T11:59:09.878663+00:00"
+    },
+    {
+      "rule_index": 1,
+      "rule_id": "brent_zscore_60d",
+      "type": "product_zscore",
+      "message": "BRENT z-score=+2.98 🔴 SHORT (|z|>=2.0, 2026-09-15)",
+      "note": "Brent 60d z-score ekstremum",
+      "at": "2026-09-19T11:59:09.879122+00:00"
+    },
+    {
+      "rule_index": 4,
+      "rule_id": "corn_zscore_120d",
+      "type": "product_zscore",
+      "message": "CORN z-score=+2.28 🔴 SHORT (|z|>=2.0, 2026-09-18)",
+      "note": "Corn 120d z-score - istotne dla sezonu",
+      "at": "2026-09-19T11:59:09.880266+00:00"
+    },
+    {
+      "rule_index": 7,
+      "rule_id": "spread_wti_brent",
+      "type": "spread_zscore",
+      "message": "Spread [+1×WTI −1×BRENT] z-score=-3.22 🟢 LONG (2026-09-15)",
+      "note": "WTI-Brent spread - transatlantyckie",
+      "at": "2026-09-19T11:59:09.900677+00:00"
+    },
+    {
+      "rule_index": 8,
+      "rule_id": "cot_wti_extreme",
+      "type": "product_zscore",
+      "message": "COT_WTI_NET z-score=+2.31 🔴 SHORT (|z|>=2.0, 2026-08-04)",
+      "note": "COT WTI Money Mgr netto - kontrariański sygnal",
+      "at": "2026-09-19T11:59:09.900871+00:00"
+    },
+    {
+      "rule_index": 9,
+      "rule_id": "pl_pb95_high",
+      "type": "pct_change",
+      "message": "PL_PB95_WOB zmiana 30d = +7.41% (próg 5.0%, 2026-09-14)",
+      "note": "Pb95 detal PL zmienil sie >5% w 30 dni",
+      "at": "2026-09-19T11:59:09.900926+00:00"
     }
   ]
 }
