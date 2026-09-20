@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-20T12:10:57.317932+00:00",
+  "generated_at": "2026-09-20T21:21:22.322242+00:00",
   "products": [
     {
       "id": "NG",
@@ -390,8 +390,8 @@
       "source": "orlen_scrape",
       "series": "ON",
       "first_date": "2026-08-08",
-      "last_date": "2026-09-15",
-      "n_observations": 39
+      "last_date": "2026-09-20",
+      "n_observations": 40
     },
     {
       "id": "PL_ORLEN_EKOTERM",
@@ -558,8 +558,8 @@
       "source": "yahoo",
       "series": "EURUSD=X",
       "first_date": "2003-12-01",
-      "last_date": "2026-09-18",
-      "n_observations": 5917
+      "last_date": "2026-09-20",
+      "n_observations": 5918
     },
     {
       "id": "FX_EURPLN",
@@ -628,8 +628,8 @@
       "source": "yahoo",
       "series": "CHF=X",
       "first_date": "2003-09-17",
-      "last_date": "2026-09-18",
-      "n_observations": 5987
+      "last_date": "2026-09-20",
+      "n_observations": 5988
     },
     {
       "id": "DXY",
