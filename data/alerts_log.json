@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-09-24T12:48:35.074454+00:00",
+  "updated_at": "2026-09-24T22:35:53.342352+00:00",
   "alerts": [
     {
       "rule_index": 9,
@@ -2984,6 +2984,30 @@
       "message": "PL_PB95_WOB zmiana 30d = +22.89% (próg 5.0%, 2026-09-21)",
       "note": "Pb95 detal PL zmienil sie >5% w 30 dni",
       "at": "2026-09-24T12:48:35.073098+00:00"
+    },
+    {
+      "rule_index": 7,
+      "rule_id": "spread_wti_brent",
+      "type": "spread_zscore",
+      "message": "Spread [+1×WTI −1×BRENT] z-score=-2.05 🟢 LONG (2026-09-22)",
+      "note": "WTI-Brent spread - transatlantyckie",
+      "at": "2026-09-24T22:35:53.340814+00:00"
+    },
+    {
+      "rule_index": 8,
+      "rule_id": "cot_wti_extreme",
+      "type": "product_zscore",
+      "message": "COT_WTI_NET z-score=+2.31 🔴 SHORT (|z|>=2.0, 2026-08-04)",
+      "note": "COT WTI Money Mgr netto - kontrariański sygnal",
+      "at": "2026-09-24T22:35:53.341000+00:00"
+    },
+    {
+      "rule_index": 9,
+      "rule_id": "pl_pb95_high",
+      "type": "pct_change",
+      "message": "PL_PB95_WOB zmiana 30d = +22.89% (próg 5.0%, 2026-09-21)",
+      "note": "Pb95 detal PL zmienil sie >5% w 30 dni",
+      "at": "2026-09-24T22:35:53.341047+00:00"
     }
   ]
 }
