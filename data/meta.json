@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-24T22:11:07.783570+00:00",
+  "generated_at": "2026-09-25T12:41:09.508725+00:00",
   "products": [
     {
       "id": "NG",
@@ -96,8 +96,8 @@
       "source": "yahoo",
       "series": "GC=F",
       "first_date": "2000-08-30",
-      "last_date": "2026-09-24",
-      "n_observations": 6543
+      "last_date": "2026-09-25",
+      "n_observations": 6544
     },
     {
       "id": "SILVER",
@@ -110,8 +110,8 @@
       "source": "yahoo",
       "series": "SI=F",
       "first_date": "2000-08-30",
-      "last_date": "2026-09-24",
-      "n_observations": 6544
+      "last_date": "2026-09-25",
+      "n_observations": 6545
     },
     {
       "id": "COPPER",
@@ -124,8 +124,8 @@
       "source": "yahoo",
       "series": "HG=F",
       "first_date": "2000-08-30",
-      "last_date": "2026-09-24",
-      "n_observations": 6547
+      "last_date": "2026-09-25",
+      "n_observations": 6548
     },
     {
       "id": "PLATINUM",
@@ -138,8 +138,8 @@
       "source": "yahoo",
       "series": "PL=F",
       "first_date": "1997-10-29",
-      "last_date": "2026-09-24",
-      "n_observations": 6570
+      "last_date": "2026-09-25",
+      "n_observations": 6571
     },
     {
       "id": "PALLADIUM",
@@ -152,8 +152,8 @@
       "source": "yahoo",
       "series": "PA=F",
       "first_date": "1998-09-28",
-      "last_date": "2026-09-24",
-      "n_observations": 6581
+      "last_date": "2026-09-25",
+      "n_observations": 6582
     },
     {
       "id": "CORN",
@@ -166,8 +166,8 @@
       "source": "yahoo",
       "series": "ZC=F",
       "first_date": "2000-07-17",
-      "last_date": "2026-09-24",
-      "n_observations": 6553
+      "last_date": "2026-09-25",
+      "n_observations": 6554
     },
     {
       "id": "WHEAT",
@@ -180,8 +180,8 @@
       "source": "yahoo",
       "series": "ZW=F",
       "first_date": "2000-07-17",
-      "last_date": "2026-09-24",
-      "n_observations": 6565
+      "last_date": "2026-09-25",
+      "n_observations": 6566
     },
     {
       "id": "WHEAT_KC",
@@ -194,8 +194,8 @@
       "source": "yahoo",
       "series": "KE=F",
       "first_date": "2000-09-21",
-      "last_date": "2026-09-24",
-      "n_observations": 6542
+      "last_date": "2026-09-25",
+      "n_observations": 6543
     },
     {
       "id": "SOYBEAN",
@@ -208,8 +208,8 @@
       "source": "yahoo",
       "series": "ZS=F",
       "first_date": "2000-09-15",
-      "last_date": "2026-09-24",
-      "n_observations": 6545
+      "last_date": "2026-09-25",
+      "n_observations": 6546
     },
     {
       "id": "SOYMEAL",
@@ -222,8 +222,8 @@
       "source": "yahoo",
       "series": "ZM=F",
       "first_date": "2000-05-15",
-      "last_date": "2026-09-24",
-      "n_observations": 6556
+      "last_date": "2026-09-25",
+      "n_observations": 6557
     },
     {
       "id": "SOYOIL",
@@ -236,8 +236,8 @@
       "source": "yahoo",
       "series": "ZL=F",
       "first_date": "2000-03-15",
-      "last_date": "2026-09-24",
-      "n_observations": 6594
+      "last_date": "2026-09-25",
+      "n_observations": 6596
     },
     {
       "id": "PL_PB95_WOB",
@@ -362,8 +362,8 @@
       "source": "orlen_scrape",
       "series": "PB95",
       "first_date": "2026-08-08",
-      "last_date": "2026-09-24",
-      "n_observations": 48
+      "last_date": "2026-09-25",
+      "n_observations": 49
     },
     {
       "id": "PL_ORLEN_PB98",
@@ -376,8 +376,8 @@
       "source": "orlen_scrape",
       "series": "PB98",
       "first_date": "2026-08-08",
-      "last_date": "2026-09-24",
-      "n_observations": 44
+      "last_date": "2026-09-25",
+      "n_observations": 45
     },
     {
       "id": "PL_ORLEN_ON",
@@ -404,8 +404,8 @@
       "source": "orlen_scrape",
       "series": "ON_EKOTERM",
       "first_date": "2026-08-09",
-      "last_date": "2026-09-24",
-      "n_observations": 47
+      "last_date": "2026-09-25",
+      "n_observations": 48
     },
     {
       "id": "FR_PB95_WOB",
@@ -558,8 +558,8 @@
       "source": "yahoo",
       "series": "EURUSD=X",
       "first_date": "2003-12-01",
-      "last_date": "2026-09-24",
-      "n_observations": 5922
+      "last_date": "2026-09-25",
+      "n_observations": 5923
     },
     {
       "id": "FX_EURPLN",
@@ -572,8 +572,8 @@
       "source": "yahoo",
       "series": "EURPLN=X",
       "first_date": "2002-04-01",
-      "last_date": "2026-09-24",
-      "n_observations": 6336
+      "last_date": "2026-09-25",
+      "n_observations": 6337
     },
     {
       "id": "FX_USDPLN",
@@ -586,8 +586,8 @@
       "source": "yahoo",
       "series": "PLN=X",
       "first_date": "2003-12-01",
-      "last_date": "2026-09-24",
-      "n_observations": 5929
+      "last_date": "2026-09-25",
+      "n_observations": 5930
     },
     {
       "id": "FX_GBPUSD",
@@ -600,8 +600,8 @@
       "source": "yahoo",
       "series": "GBPUSD=X",
       "first_date": "2003-12-01",
-      "last_date": "2026-09-24",
-      "n_observations": 5940
+      "last_date": "2026-09-25",
+      "n_observations": 5941
     },
     {
       "id": "FX_USDJPY",
@@ -614,8 +614,8 @@
       "source": "yahoo",
       "series": "JPY=X",
       "first_date": "1996-10-30",
-      "last_date": "2026-09-24",
-      "n_observations": 7760
+      "last_date": "2026-09-25",
+      "n_observations": 7761
     },
     {
       "id": "FX_USDCHF",
@@ -628,8 +628,8 @@
       "source": "yahoo",
       "series": "CHF=X",
       "first_date": "2003-09-17",
-      "last_date": "2026-09-24",
-      "n_observations": 5992
+      "last_date": "2026-09-25",
+      "n_observations": 5993
     },
     {
       "id": "DXY",
@@ -642,8 +642,8 @@
       "source": "yahoo",
       "series": "DX-Y.NYB",
       "first_date": "1995-01-02",
-      "last_date": "2026-09-24",
-      "n_observations": 8055
+      "last_date": "2026-09-25",
+      "n_observations": 8056
     },
     {
       "id": "VIX",
@@ -656,8 +656,8 @@
       "source": "yahoo",
       "series": "^VIX",
       "first_date": "1995-01-03",
-      "last_date": "2026-09-24",
-      "n_observations": 7987
+      "last_date": "2026-09-25",
+      "n_observations": 7988
     },
     {
       "id": "SPX",
@@ -684,8 +684,8 @@
       "source": "yahoo",
       "series": "BTC-USD",
       "first_date": "2014-09-17",
-      "last_date": "2026-09-24",
-      "n_observations": 4391
+      "last_date": "2026-09-25",
+      "n_observations": 4392
     },
     {
       "id": "US10Y",
@@ -866,8 +866,8 @@
       "source": "ember",
       "series": "United Kingdom",
       "first_date": "2016-06-30",
-      "last_date": "2026-09-22",
-      "n_observations": 3737
+      "last_date": "2026-09-23",
+      "n_observations": 3738
     },
     {
       "id": "PL_WHEAT_SKUP",
@@ -950,8 +950,8 @@
       "source": "yahoo",
       "series": "TTF=F",
       "first_date": "2017-10-23",
-      "last_date": "2026-09-24",
-      "n_observations": 2245
+      "last_date": "2026-09-25",
+      "n_observations": 2246
     },
     {
       "id": "EU_NG_MO",
@@ -1006,8 +1006,8 @@
       "source": "yahoo",
       "series": "KC=F",
       "first_date": "2000-01-03",
-      "last_date": "2026-09-24",
-      "n_observations": 6701
+      "last_date": "2026-09-25",
+      "n_observations": 6702
     },
     {
       "id": "COCOA",
@@ -1020,8 +1020,8 @@
       "source": "yahoo",
       "series": "CC=F",
       "first_date": "2000-01-03",
-      "last_date": "2026-09-24",
-      "n_observations": 6703
+      "last_date": "2026-09-25",
+      "n_observations": 6704
     },
     {
       "id": "SUGAR",
@@ -1034,8 +1034,8 @@
       "source": "yahoo",
       "series": "SB=F",
       "first_date": "2000-03-01",
-      "last_date": "2026-09-24",
-      "n_observations": 6664
+      "last_date": "2026-09-25",
+      "n_observations": 6665
     },
     {
       "id": "COTTON",
@@ -1048,8 +1048,8 @@
       "source": "yahoo",
       "series": "CT=F",
       "first_date": "2000-01-03",
-      "last_date": "2026-09-24",
-      "n_observations": 6703
+      "last_date": "2026-09-25",
+      "n_observations": 6704
     },
     {
       "id": "OJ",
@@ -1062,8 +1062,8 @@
       "source": "yahoo",
       "series": "OJ=F",
       "first_date": "2001-09-17",
-      "last_date": "2026-09-24",
-      "n_observations": 6279
+      "last_date": "2026-09-25",
+      "n_observations": 6280
     },
     {
       "id": "LIVE_CATTLE",
