@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-25T22:08:41.140930+00:00",
+  "generated_at": "2026-09-26T12:09:16.010963+00:00",
   "products": [
     {
       "id": "NG",
@@ -362,8 +362,8 @@
       "source": "orlen_scrape",
       "series": "PB95",
       "first_date": "2026-08-08",
-      "last_date": "2026-09-25",
-      "n_observations": 49
+      "last_date": "2026-09-26",
+      "n_observations": 50
     },
     {
       "id": "PL_ORLEN_PB98",
@@ -376,8 +376,8 @@
       "source": "orlen_scrape",
       "series": "PB98",
       "first_date": "2026-08-08",
-      "last_date": "2026-09-25",
-      "n_observations": 45
+      "last_date": "2026-09-26",
+      "n_observations": 46
     },
     {
       "id": "PL_ORLEN_ON",
@@ -404,8 +404,8 @@
       "source": "orlen_scrape",
       "series": "ON_EKOTERM",
       "first_date": "2026-08-09",
-      "last_date": "2026-09-25",
-      "n_observations": 48
+      "last_date": "2026-09-26",
+      "n_observations": 49
     },
     {
       "id": "FR_PB95_WOB",
@@ -558,8 +558,8 @@
       "source": "yahoo",
       "series": "EURUSD=X",
       "first_date": "2003-12-01",
-      "last_date": "2026-09-25",
-      "n_observations": 5923
+      "last_date": "2026-09-26",
+      "n_observations": 5924
     },
     {
       "id": "FX_EURPLN",
@@ -600,8 +600,8 @@
       "source": "yahoo",
       "series": "GBPUSD=X",
       "first_date": "2003-12-01",
-      "last_date": "2026-09-25",
-      "n_observations": 5941
+      "last_date": "2026-09-26",
+      "n_observations": 5942
     },
     {
       "id": "FX_USDJPY",
@@ -614,8 +614,8 @@
       "source": "yahoo",
       "series": "JPY=X",
       "first_date": "1996-10-30",
-      "last_date": "2026-09-25",
-      "n_observations": 7761
+      "last_date": "2026-09-26",
+      "n_observations": 7762
     },
     {
       "id": "FX_USDCHF",
@@ -684,8 +684,8 @@
       "source": "yahoo",
       "series": "BTC-USD",
       "first_date": "2014-09-17",
-      "last_date": "2026-09-25",
-      "n_observations": 4392
+      "last_date": "2026-09-26",
+      "n_observations": 4393
     },
     {
       "id": "US10Y",
@@ -740,8 +740,8 @@
       "source": "ember",
       "series": "Poland",
       "first_date": "2015-01-01",
-      "last_date": "2026-09-24",
-      "n_observations": 4283
+      "last_date": "2026-09-25",
+      "n_observations": 4284
     },
     {
       "id": "DE_POWER",
@@ -754,8 +754,8 @@
       "source": "ember",
       "series": "Germany",
       "first_date": "2015-01-01",
-      "last_date": "2026-09-24",
-      "n_observations": 4285
+      "last_date": "2026-09-25",
+      "n_observations": 4286
     },
     {
       "id": "FR_POWER",
@@ -768,8 +768,8 @@
       "source": "ember",
       "series": "France",
       "first_date": "2015-01-01",
-      "last_date": "2026-09-24",
-      "n_observations": 4282
+      "last_date": "2026-09-25",
+      "n_observations": 4283
     },
     {
       "id": "ES_POWER",
@@ -782,8 +782,8 @@
       "source": "ember",
       "series": "Spain",
       "first_date": "2015-01-01",
-      "last_date": "2026-09-24",
-      "n_observations": 4283
+      "last_date": "2026-09-25",
+      "n_observations": 4284
     },
     {
       "id": "IT_POWER",
@@ -796,8 +796,8 @@
       "source": "ember",
       "series": "Italy",
       "first_date": "2015-01-01",
-      "last_date": "2026-09-24",
-      "n_observations": 4283
+      "last_date": "2026-09-25",
+      "n_observations": 4284
     },
     {
       "id": "CZ_POWER",
@@ -810,8 +810,8 @@
       "source": "ember",
       "series": "Czechia",
       "first_date": "2015-01-01",
-      "last_date": "2026-09-24",
-      "n_observations": 4283
+      "last_date": "2026-09-25",
+      "n_observations": 4284
     },
     {
       "id": "SK_POWER",
@@ -824,8 +824,8 @@
       "source": "ember",
       "series": "Slovakia",
       "first_date": "2015-01-01",
-      "last_date": "2026-09-24",
-      "n_observations": 4276
+      "last_date": "2026-09-25",
+      "n_observations": 4277
     },
     {
       "id": "HU_POWER",
@@ -838,8 +838,8 @@
       "source": "ember",
       "series": "Hungary",
       "first_date": "2015-01-01",
-      "last_date": "2026-09-24",
-      "n_observations": 4276
+      "last_date": "2026-09-25",
+      "n_observations": 4277
     },
     {
       "id": "NL_POWER",
@@ -852,8 +852,8 @@
       "source": "ember",
       "series": "Netherlands",
       "first_date": "2015-01-01",
-      "last_date": "2026-09-24",
-      "n_observations": 4276
+      "last_date": "2026-09-25",
+      "n_observations": 4277
     },
     {
       "id": "GB_POWER",
@@ -866,8 +866,8 @@
       "source": "ember",
       "series": "United Kingdom",
       "first_date": "2016-06-30",
-      "last_date": "2026-09-23",
-      "n_observations": 3738
+      "last_date": "2026-09-24",
+      "n_observations": 3739
     },
     {
       "id": "PL_WHEAT_SKUP",
