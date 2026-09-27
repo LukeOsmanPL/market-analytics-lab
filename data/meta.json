@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-27T12:54:17.860551+00:00",
+  "generated_at": "2026-09-27T21:57:52.654654+00:00",
   "products": [
     {
       "id": "NG",
@@ -558,8 +558,8 @@
       "source": "yahoo",
       "series": "EURUSD=X",
       "first_date": "2003-12-01",
-      "last_date": "2026-09-26",
-      "n_observations": 5924
+      "last_date": "2026-09-27",
+      "n_observations": 5925
     },
     {
       "id": "FX_EURPLN",
@@ -628,8 +628,8 @@
       "source": "yahoo",
       "series": "CHF=X",
       "first_date": "2003-09-17",
-      "last_date": "2026-09-25",
-      "n_observations": 5993
+      "last_date": "2026-09-27",
+      "n_observations": 5994
     },
     {
       "id": "DXY",
