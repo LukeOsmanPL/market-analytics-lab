@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-02T22:53:17.547917+00:00",
+  "generated_at": "2026-10-03T12:23:33.828314+00:00",
   "products": [
     {
       "id": "NG",
@@ -362,8 +362,8 @@
       "source": "orlen_scrape",
       "series": "PB95",
       "first_date": "2026-08-08",
-      "last_date": "2026-10-02",
-      "n_observations": 56
+      "last_date": "2026-10-03",
+      "n_observations": 57
     },
     {
       "id": "PL_ORLEN_PB98",
@@ -376,8 +376,8 @@
       "source": "orlen_scrape",
       "series": "PB98",
       "first_date": "2026-08-08",
-      "last_date": "2026-10-02",
-      "n_observations": 52
+      "last_date": "2026-10-03",
+      "n_observations": 53
     },
     {
       "id": "PL_ORLEN_ON",
@@ -390,8 +390,8 @@
       "source": "orlen_scrape",
       "series": "ON",
       "first_date": "2026-08-08",
-      "last_date": "2026-09-22",
-      "n_observations": 42
+      "last_date": "2026-10-03",
+      "n_observations": 43
     },
     {
       "id": "PL_ORLEN_EKOTERM",
@@ -404,8 +404,8 @@
       "source": "orlen_scrape",
       "series": "ON_EKOTERM",
       "first_date": "2026-08-09",
-      "last_date": "2026-10-02",
-      "n_observations": 55
+      "last_date": "2026-10-03",
+      "n_observations": 56
     },
     {
       "id": "FR_PB95_WOB",
@@ -614,8 +614,8 @@
       "source": "yahoo",
       "series": "JPY=X",
       "first_date": "1996-10-30",
-      "last_date": "2026-10-02",
-      "n_observations": 7768
+      "last_date": "2026-10-03",
+      "n_observations": 7769
     },
     {
       "id": "FX_USDCHF",
@@ -684,8 +684,8 @@
       "source": "yahoo",
       "series": "BTC-USD",
       "first_date": "2014-09-17",
-      "last_date": "2026-10-02",
-      "n_observations": 4399
+      "last_date": "2026-10-03",
+      "n_observations": 4400
     },
     {
       "id": "US10Y",
