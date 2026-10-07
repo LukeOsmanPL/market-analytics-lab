@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-07T14:22:03.787535+00:00",
+  "generated_at": "2026-10-07T23:32:05.530656+00:00",
   "products": [
     {
       "id": "NG",
@@ -12,8 +12,8 @@
       "source": "fred",
       "series": "DHHNGSP",
       "first_date": "1997-01-07",
-      "last_date": "2026-09-29",
-      "n_observations": 7465
+      "last_date": "2026-10-06",
+      "n_observations": 7470
     },
     {
       "id": "WTI",
@@ -26,8 +26,8 @@
       "source": "fred",
       "series": "DCOILWTICO",
       "first_date": "1995-01-03",
-      "last_date": "2026-09-29",
-      "n_observations": 7964
+      "last_date": "2026-10-06",
+      "n_observations": 7969
     },
     {
       "id": "BRENT",
@@ -40,8 +40,8 @@
       "source": "fred",
       "series": "DCOILBRENTEU",
       "first_date": "1995-01-03",
-      "last_date": "2026-09-29",
-      "n_observations": 8044
+      "last_date": "2026-10-06",
+      "n_observations": 8049
     },
     {
       "id": "HEAT",
@@ -54,8 +54,8 @@
       "source": "fred",
       "series": "DHOILNYH",
       "first_date": "1995-01-03",
-      "last_date": "2026-09-29",
-      "n_observations": 7962
+      "last_date": "2026-10-06",
+      "n_observations": 7967
     },
     {
       "id": "RBOB",
@@ -68,8 +68,8 @@
       "source": "fred",
       "series": "DGASUSGULF",
       "first_date": "1995-01-03",
-      "last_date": "2026-09-29",
-      "n_observations": 7957
+      "last_date": "2026-10-06",
+      "n_observations": 7962
     },
     {
       "id": "GAS_RETAIL_US",
@@ -558,8 +558,8 @@
       "source": "yahoo",
       "series": "EURUSD=X",
       "first_date": "2003-12-01",
-      "last_date": "2026-10-07",
-      "n_observations": 5934
+      "last_date": "2026-10-08",
+      "n_observations": 5935
     },
     {
       "id": "FX_EURPLN",
@@ -572,8 +572,8 @@
       "source": "yahoo",
       "series": "EURPLN=X",
       "first_date": "2002-04-01",
-      "last_date": "2026-10-07",
-      "n_observations": 6347
+      "last_date": "2026-10-08",
+      "n_observations": 6348
     },
     {
       "id": "FX_USDPLN",
@@ -586,8 +586,8 @@
       "source": "yahoo",
       "series": "PLN=X",
       "first_date": "2003-12-01",
-      "last_date": "2026-10-07",
-      "n_observations": 5941
+      "last_date": "2026-10-08",
+      "n_observations": 5942
     },
     {
       "id": "FX_GBPUSD",
@@ -600,8 +600,8 @@
       "source": "yahoo",
       "series": "GBPUSD=X",
       "first_date": "2003-12-01",
-      "last_date": "2026-10-07",
-      "n_observations": 5952
+      "last_date": "2026-10-08",
+      "n_observations": 5953
     },
     {
       "id": "FX_USDJPY",
@@ -614,8 +614,8 @@
       "source": "yahoo",
       "series": "JPY=X",
       "first_date": "1996-10-30",
-      "last_date": "2026-10-07",
-      "n_observations": 7773
+      "last_date": "2026-10-08",
+      "n_observations": 7774
     },
     {
       "id": "FX_USDCHF",
@@ -628,8 +628,8 @@
       "source": "yahoo",
       "series": "CHF=X",
       "first_date": "2003-09-17",
-      "last_date": "2026-10-07",
-      "n_observations": 6003
+      "last_date": "2026-10-08",
+      "n_observations": 6004
     },
     {
       "id": "DXY",
@@ -698,8 +698,8 @@
       "source": "fred",
       "series": "DGS10",
       "first_date": "1995-01-03",
-      "last_date": "2026-10-05",
-      "n_observations": 7946
+      "last_date": "2026-10-06",
+      "n_observations": 7947
     },
     {
       "id": "US2Y",
@@ -712,8 +712,8 @@
       "source": "fred",
       "series": "DGS2",
       "first_date": "1995-01-03",
-      "last_date": "2026-10-05",
-      "n_observations": 7946
+      "last_date": "2026-10-06",
+      "n_observations": 7947
     },
     {
       "id": "US10Y2Y",
@@ -726,8 +726,8 @@
       "source": "fred",
       "series": "T10Y2Y",
       "first_date": "1995-01-03",
-      "last_date": "2026-10-06",
-      "n_observations": 7947
+      "last_date": "2026-10-07",
+      "n_observations": 7948
     },
     {
       "id": "PL_POWER",
