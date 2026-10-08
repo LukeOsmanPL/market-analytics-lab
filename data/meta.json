@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-08T14:29:54.981613+00:00",
+  "generated_at": "2026-10-08T23:42:54.427662+00:00",
   "products": [
     {
       "id": "NG",
@@ -558,8 +558,8 @@
       "source": "yahoo",
       "series": "EURUSD=X",
       "first_date": "2003-12-01",
-      "last_date": "2026-10-08",
-      "n_observations": 5935
+      "last_date": "2026-10-09",
+      "n_observations": 5936
     },
     {
       "id": "FX_EURPLN",
@@ -572,8 +572,8 @@
       "source": "yahoo",
       "series": "EURPLN=X",
       "first_date": "2002-04-01",
-      "last_date": "2026-10-08",
-      "n_observations": 6348
+      "last_date": "2026-10-09",
+      "n_observations": 6349
     },
     {
       "id": "FX_USDPLN",
@@ -586,8 +586,8 @@
       "source": "yahoo",
       "series": "PLN=X",
       "first_date": "2003-12-01",
-      "last_date": "2026-10-08",
-      "n_observations": 5942
+      "last_date": "2026-10-09",
+      "n_observations": 5943
     },
     {
       "id": "FX_GBPUSD",
@@ -600,8 +600,8 @@
       "source": "yahoo",
       "series": "GBPUSD=X",
       "first_date": "2003-12-01",
-      "last_date": "2026-10-08",
-      "n_observations": 5953
+      "last_date": "2026-10-09",
+      "n_observations": 5954
     },
     {
       "id": "FX_USDJPY",
@@ -614,8 +614,8 @@
       "source": "yahoo",
       "series": "JPY=X",
       "first_date": "1996-10-30",
-      "last_date": "2026-10-08",
-      "n_observations": 7774
+      "last_date": "2026-10-09",
+      "n_observations": 7775
     },
     {
       "id": "FX_USDCHF",
@@ -628,8 +628,8 @@
       "source": "yahoo",
       "series": "CHF=X",
       "first_date": "2003-09-17",
-      "last_date": "2026-10-08",
-      "n_observations": 6004
+      "last_date": "2026-10-09",
+      "n_observations": 6005
     },
     {
       "id": "DXY",
@@ -698,8 +698,8 @@
       "source": "fred",
       "series": "DGS10",
       "first_date": "1995-01-03",
-      "last_date": "2026-10-06",
-      "n_observations": 7947
+      "last_date": "2026-10-07",
+      "n_observations": 7948
     },
     {
       "id": "US2Y",
@@ -712,8 +712,8 @@
       "source": "fred",
       "series": "DGS2",
       "first_date": "1995-01-03",
-      "last_date": "2026-10-06",
-      "n_observations": 7947
+      "last_date": "2026-10-07",
+      "n_observations": 7948
     },
     {
       "id": "US10Y2Y",
@@ -726,8 +726,8 @@
       "source": "fred",
       "series": "T10Y2Y",
       "first_date": "1995-01-03",
-      "last_date": "2026-10-07",
-      "n_observations": 7948
+      "last_date": "2026-10-08",
+      "n_observations": 7949
     },
     {
       "id": "PL_POWER",
