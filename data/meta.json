@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-10T13:28:38.575302+00:00",
+  "generated_at": "2026-10-10T22:22:44.234757+00:00",
   "products": [
     {
       "id": "NG",
@@ -600,8 +600,8 @@
       "source": "yahoo",
       "series": "GBPUSD=X",
       "first_date": "2003-12-01",
-      "last_date": "2026-10-09",
-      "n_observations": 5954
+      "last_date": "2026-10-10",
+      "n_observations": 5955
     },
     {
       "id": "FX_USDJPY",
