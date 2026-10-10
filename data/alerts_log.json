@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-10-09T23:23:14.238984+00:00",
+  "updated_at": "2026-10-10T13:54:10.234315+00:00",
   "alerts": [
     {
       "rule_index": 9,
@@ -3680,6 +3680,22 @@
       "message": "COT_WTI_NET z-score=+2.31 🔴 SHORT (|z|>=2.0, 2026-08-04)",
       "note": "COT WTI Money Mgr netto - kontrariański sygnal",
       "at": "2026-10-09T23:23:14.237419+00:00"
+    },
+    {
+      "rule_index": 7,
+      "rule_id": "spread_wti_brent",
+      "type": "spread_zscore",
+      "message": "Spread [+1×WTI −1×BRENT] z-score=-3.19 🟢 LONG (2026-10-06)",
+      "note": "WTI-Brent spread - transatlantyckie",
+      "at": "2026-10-10T13:54:10.233237+00:00"
+    },
+    {
+      "rule_index": 8,
+      "rule_id": "cot_wti_extreme",
+      "type": "product_zscore",
+      "message": "COT_WTI_NET z-score=+2.31 🔴 SHORT (|z|>=2.0, 2026-08-04)",
+      "note": "COT WTI Money Mgr netto - kontrariański sygnal",
+      "at": "2026-10-10T13:54:10.233358+00:00"
     }
   ]
 }
