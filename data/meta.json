@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-11T13:53:54.654055+00:00",
+  "generated_at": "2026-10-11T22:45:58.597149+00:00",
   "products": [
     {
       "id": "NG",
@@ -96,8 +96,8 @@
       "source": "yahoo",
       "series": "GC=F",
       "first_date": "2000-08-30",
-      "last_date": "2026-10-09",
-      "n_observations": 6555
+      "last_date": "2026-10-11",
+      "n_observations": 6556
     },
     {
       "id": "SILVER",
@@ -110,8 +110,8 @@
       "source": "yahoo",
       "series": "SI=F",
       "first_date": "2000-08-30",
-      "last_date": "2026-10-09",
-      "n_observations": 6556
+      "last_date": "2026-10-11",
+      "n_observations": 6557
     },
     {
       "id": "COPPER",
@@ -124,8 +124,8 @@
       "source": "yahoo",
       "series": "HG=F",
       "first_date": "2000-08-30",
-      "last_date": "2026-10-09",
-      "n_observations": 6559
+      "last_date": "2026-10-11",
+      "n_observations": 6560
     },
     {
       "id": "PLATINUM",
@@ -138,8 +138,8 @@
       "source": "yahoo",
       "series": "PL=F",
       "first_date": "1997-10-29",
-      "last_date": "2026-10-09",
-      "n_observations": 6582
+      "last_date": "2026-10-11",
+      "n_observations": 6583
     },
     {
       "id": "PALLADIUM",
@@ -152,8 +152,8 @@
       "source": "yahoo",
       "series": "PA=F",
       "first_date": "1998-09-28",
-      "last_date": "2026-10-09",
-      "n_observations": 6593
+      "last_date": "2026-10-11",
+      "n_observations": 6594
     },
     {
       "id": "CORN",
@@ -558,8 +558,8 @@
       "source": "yahoo",
       "series": "EURUSD=X",
       "first_date": "2003-12-01",
-      "last_date": "2026-10-09",
-      "n_observations": 5936
+      "last_date": "2026-10-11",
+      "n_observations": 5937
     },
     {
       "id": "FX_EURPLN",
@@ -572,8 +572,8 @@
       "source": "yahoo",
       "series": "EURPLN=X",
       "first_date": "2002-04-01",
-      "last_date": "2026-10-09",
-      "n_observations": 6349
+      "last_date": "2026-10-11",
+      "n_observations": 6350
     },
     {
       "id": "FX_USDPLN",
@@ -586,8 +586,8 @@
       "source": "yahoo",
       "series": "PLN=X",
       "first_date": "2003-12-01",
-      "last_date": "2026-10-10",
-      "n_observations": 5944
+      "last_date": "2026-10-11",
+      "n_observations": 5945
     },
     {
       "id": "FX_GBPUSD",
@@ -614,8 +614,8 @@
       "source": "yahoo",
       "series": "JPY=X",
       "first_date": "1996-10-30",
-      "last_date": "2026-10-09",
-      "n_observations": 7775
+      "last_date": "2026-10-11",
+      "n_observations": 7776
     },
     {
       "id": "FX_USDCHF",
@@ -642,8 +642,8 @@
       "source": "yahoo",
       "series": "DX-Y.NYB",
       "first_date": "1995-01-02",
-      "last_date": "2026-10-09",
-      "n_observations": 8067
+      "last_date": "2026-10-11",
+      "n_observations": 8068
     },
     {
       "id": "VIX",
