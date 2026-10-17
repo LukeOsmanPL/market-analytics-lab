@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-17T11:31:06.697707+00:00",
+  "generated_at": "2026-10-17T21:22:04.206139+00:00",
   "products": [
     {
       "id": "NG",
@@ -558,8 +558,8 @@
       "source": "yahoo",
       "series": "EURUSD=X",
       "first_date": "2003-12-01",
-      "last_date": "2026-10-16",
-      "n_observations": 5942
+      "last_date": "2026-10-17",
+      "n_observations": 5943
     },
     {
       "id": "FX_EURPLN",
