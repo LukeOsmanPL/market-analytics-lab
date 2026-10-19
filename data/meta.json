@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-19T14:30:43.906887+00:00",
+  "generated_at": "2026-10-19T22:52:13.232161+00:00",
   "products": [
     {
       "id": "NG",
@@ -614,8 +614,8 @@
       "source": "yahoo",
       "series": "JPY=X",
       "first_date": "1996-10-30",
-      "last_date": "2026-10-18",
-      "n_observations": 7782
+      "last_date": "2026-10-19",
+      "n_observations": 7783
     },
     {
       "id": "FX_USDCHF",
@@ -698,8 +698,8 @@
       "source": "fred",
       "series": "DGS10",
       "first_date": "1995-01-03",
-      "last_date": "2026-10-15",
-      "n_observations": 7953
+      "last_date": "2026-10-16",
+      "n_observations": 7954
     },
     {
       "id": "US2Y",
@@ -712,8 +712,8 @@
       "source": "fred",
       "series": "DGS2",
       "first_date": "1995-01-03",
-      "last_date": "2026-10-15",
-      "n_observations": 7953
+      "last_date": "2026-10-16",
+      "n_observations": 7954
     },
     {
       "id": "US10Y2Y",
@@ -726,8 +726,8 @@
       "source": "fred",
       "series": "T10Y2Y",
       "first_date": "1995-01-03",
-      "last_date": "2026-10-16",
-      "n_observations": 7954
+      "last_date": "2026-10-19",
+      "n_observations": 7955
     },
     {
       "id": "PL_POWER",
