@@ -1,90 +1,6 @@
 {
-  "generated_at": "2026-10-21T12:50:19.568484+00:00",
+  "generated_at": "2026-10-21T22:13:52.062918+00:00",
   "products": [
-    {
-      "id": "NG",
-      "name": "Henry Hub (gaz US)",
-      "unit": "$/MMBtu",
-      "contract_size": 10000,
-      "contract_unit": "MMBtu",
-      "category": "Energia",
-      "color": "#4fc3f7",
-      "source": "fred",
-      "series": "DHHNGSP",
-      "first_date": "1997-01-07",
-      "last_date": "2026-10-14",
-      "n_observations": 7476
-    },
-    {
-      "id": "WTI",
-      "name": "WTI Crude (ropa US)",
-      "unit": "$/bbl",
-      "contract_size": 1000,
-      "contract_unit": "bbl",
-      "category": "Energia",
-      "color": "#ff8a65",
-      "source": "fred",
-      "series": "DCOILWTICO",
-      "first_date": "1995-01-03",
-      "last_date": "2026-10-14",
-      "n_observations": 7975
-    },
-    {
-      "id": "BRENT",
-      "name": "Brent Crude (ropa)",
-      "unit": "$/bbl",
-      "contract_size": 1000,
-      "contract_unit": "bbl",
-      "category": "Energia",
-      "color": "#ba68c8",
-      "source": "fred",
-      "series": "DCOILBRENTEU",
-      "first_date": "1995-01-03",
-      "last_date": "2026-10-14",
-      "n_observations": 8055
-    },
-    {
-      "id": "HEAT",
-      "name": "Heating Oil / ULSD (NY)",
-      "unit": "$/gal",
-      "contract_size": 42000,
-      "contract_unit": "gal",
-      "category": "Energia",
-      "color": "#ff5722",
-      "source": "fred",
-      "series": "DHOILNYH",
-      "first_date": "1995-01-03",
-      "last_date": "2026-10-14",
-      "n_observations": 7973
-    },
-    {
-      "id": "RBOB",
-      "name": "Benzyna (US Gulf spot)",
-      "unit": "$/gal",
-      "contract_size": 42000,
-      "contract_unit": "gal",
-      "category": "Energia",
-      "color": "#ffb74d",
-      "source": "fred",
-      "series": "DGASUSGULF",
-      "first_date": "1995-01-03",
-      "last_date": "2026-10-14",
-      "n_observations": 7968
-    },
-    {
-      "id": "GAS_RETAIL_US",
-      "name": "Benzyna detal USA (avg)",
-      "unit": "$/gal",
-      "contract_size": 1,
-      "contract_unit": "gal",
-      "category": "Energia",
-      "color": "#ffa000",
-      "source": "fred",
-      "series": "GASREGW",
-      "first_date": "1995-01-02",
-      "last_date": "2026-10-19",
-      "n_observations": 1660
-    },
     {
       "id": "GOLD",
       "name": "Zloto (COMEX)",
@@ -250,8 +166,8 @@
       "source": "wob",
       "series": "PL|Euro-Super 95",
       "first_date": "2005-01-03",
-      "last_date": "2026-10-12",
-      "n_observations": 1088
+      "last_date": "2026-10-19",
+      "n_observations": 1089
     },
     {
       "id": "PL_ON_WOB",
@@ -264,8 +180,8 @@
       "source": "wob",
       "series": "PL|Automotive Gas Oil",
       "first_date": "2005-01-03",
-      "last_date": "2026-10-12",
-      "n_observations": 1088
+      "last_date": "2026-10-19",
+      "n_observations": 1089
     },
     {
       "id": "PL_LPG_WOB",
@@ -278,8 +194,8 @@
       "source": "wob",
       "series": "PL|LPG",
       "first_date": "2005-01-03",
-      "last_date": "2026-10-12",
-      "n_observations": 1088
+      "last_date": "2026-10-19",
+      "n_observations": 1089
     },
     {
       "id": "PL_HEAT_WOB",
@@ -292,8 +208,8 @@
       "source": "wob",
       "series": "PL|Heating Gas Oil",
       "first_date": "2005-01-03",
-      "last_date": "2026-10-12",
-      "n_observations": 1088
+      "last_date": "2026-10-19",
+      "n_observations": 1089
     },
     {
       "id": "EU_PB95_WOB",
@@ -306,8 +222,8 @@
       "source": "wob",
       "series": "EU|Euro-Super 95",
       "first_date": "2005-01-03",
-      "last_date": "2026-10-12",
-      "n_observations": 1088
+      "last_date": "2026-10-19",
+      "n_observations": 1089
     },
     {
       "id": "EU_ON_WOB",
@@ -320,8 +236,8 @@
       "source": "wob",
       "series": "EU|Automotive Gas Oil",
       "first_date": "2005-01-03",
-      "last_date": "2026-10-12",
-      "n_observations": 1088
+      "last_date": "2026-10-19",
+      "n_observations": 1089
     },
     {
       "id": "DE_PB95_WOB",
@@ -334,8 +250,8 @@
       "source": "wob",
       "series": "DE|Euro-Super 95",
       "first_date": "2005-01-03",
-      "last_date": "2026-10-12",
-      "n_observations": 1088
+      "last_date": "2026-10-19",
+      "n_observations": 1089
     },
     {
       "id": "DE_ON_WOB",
@@ -348,8 +264,8 @@
       "source": "wob",
       "series": "DE|Automotive Gas Oil",
       "first_date": "2005-01-03",
-      "last_date": "2026-10-12",
-      "n_observations": 1088
+      "last_date": "2026-10-19",
+      "n_observations": 1089
     },
     {
       "id": "PL_ORLEN_PB95",
@@ -418,8 +334,8 @@
       "source": "wob",
       "series": "FR|Euro-Super 95",
       "first_date": "2005-01-03",
-      "last_date": "2026-10-12",
-      "n_observations": 1088
+      "last_date": "2026-10-19",
+      "n_observations": 1089
     },
     {
       "id": "FR_ON_WOB",
@@ -432,8 +348,8 @@
       "source": "wob",
       "series": "FR|Automotive Gas Oil",
       "first_date": "2005-01-03",
-      "last_date": "2026-10-12",
-      "n_observations": 1088
+      "last_date": "2026-10-19",
+      "n_observations": 1089
     },
     {
       "id": "ES_PB95_WOB",
@@ -446,8 +362,8 @@
       "source": "wob",
       "series": "ES|Euro-Super 95",
       "first_date": "2005-01-03",
-      "last_date": "2026-10-12",
-      "n_observations": 1086
+      "last_date": "2026-10-19",
+      "n_observations": 1087
     },
     {
       "id": "ES_ON_WOB",
@@ -460,8 +376,8 @@
       "source": "wob",
       "series": "ES|Automotive Gas Oil",
       "first_date": "2005-01-03",
-      "last_date": "2026-10-12",
-      "n_observations": 1087
+      "last_date": "2026-10-19",
+      "n_observations": 1088
     },
     {
       "id": "IT_PB95_WOB",
@@ -474,8 +390,8 @@
       "source": "wob",
       "series": "IT|Euro-Super 95",
       "first_date": "2005-01-03",
-      "last_date": "2026-10-12",
-      "n_observations": 1087
+      "last_date": "2026-10-19",
+      "n_observations": 1088
     },
     {
       "id": "IT_ON_WOB",
@@ -488,8 +404,8 @@
       "source": "wob",
       "series": "IT|Automotive Gas Oil",
       "first_date": "2005-01-03",
-      "last_date": "2026-10-12",
-      "n_observations": 1087
+      "last_date": "2026-10-19",
+      "n_observations": 1088
     },
     {
       "id": "CZ_PB95_WOB",
@@ -502,8 +418,8 @@
       "source": "wob",
       "series": "CZ|Euro-Super 95",
       "first_date": "2005-01-03",
-      "last_date": "2026-10-12",
-      "n_observations": 1087
+      "last_date": "2026-10-19",
+      "n_observations": 1088
     },
     {
       "id": "CZ_ON_WOB",
@@ -516,8 +432,8 @@
       "source": "wob",
       "series": "CZ|Automotive Gas Oil",
       "first_date": "2005-01-03",
-      "last_date": "2026-10-12",
-      "n_observations": 1087
+      "last_date": "2026-10-19",
+      "n_observations": 1088
     },
     {
       "id": "HU_PB95_WOB",
@@ -530,8 +446,8 @@
       "source": "wob",
       "series": "HU|Euro-Super 95",
       "first_date": "2005-01-03",
-      "last_date": "2026-10-12",
-      "n_observations": 1088
+      "last_date": "2026-10-19",
+      "n_observations": 1089
     },
     {
       "id": "HU_ON_WOB",
@@ -544,8 +460,8 @@
       "source": "wob",
       "series": "HU|Automotive Gas Oil",
       "first_date": "2005-01-03",
-      "last_date": "2026-10-12",
-      "n_observations": 1088
+      "last_date": "2026-10-19",
+      "n_observations": 1089
     },
     {
       "id": "FX_EURUSD",
@@ -586,8 +502,8 @@
       "source": "yahoo",
       "series": "PLN=X",
       "first_date": "2003-12-01",
-      "last_date": "2026-10-20",
-      "n_observations": 5954
+      "last_date": "2026-10-21",
+      "n_observations": 5955
     },
     {
       "id": "FX_GBPUSD",
@@ -670,8 +586,8 @@
       "source": "yahoo",
       "series": "^GSPC",
       "first_date": "1995-01-03",
-      "last_date": "2026-10-20",
-      "n_observations": 8003
+      "last_date": "2026-10-21",
+      "n_observations": 8004
     },
     {
       "id": "BTC",
@@ -686,48 +602,6 @@
       "first_date": "2014-09-17",
       "last_date": "2026-10-21",
       "n_observations": 4418
-    },
-    {
-      "id": "US10Y",
-      "name": "Rentownosc 10Y US",
-      "unit": "%",
-      "contract_size": 1,
-      "contract_unit": "%",
-      "category": "Makro",
-      "color": "#5c6bc0",
-      "source": "fred",
-      "series": "DGS10",
-      "first_date": "1995-01-03",
-      "last_date": "2026-10-19",
-      "n_observations": 7955
-    },
-    {
-      "id": "US2Y",
-      "name": "Rentownosc 2Y US",
-      "unit": "%",
-      "contract_size": 1,
-      "contract_unit": "%",
-      "category": "Makro",
-      "color": "#7e57c2",
-      "source": "fred",
-      "series": "DGS2",
-      "first_date": "1995-01-03",
-      "last_date": "2026-10-19",
-      "n_observations": 7955
-    },
-    {
-      "id": "US10Y2Y",
-      "name": "Spread 10Y-2Y US (recesja)",
-      "unit": "%",
-      "contract_size": 1,
-      "contract_unit": "%",
-      "category": "Makro",
-      "color": "#d32f2f",
-      "source": "fred",
-      "series": "T10Y2Y",
-      "first_date": "1995-01-03",
-      "last_date": "2026-10-20",
-      "n_observations": 7956
     },
     {
       "id": "PL_POWER",
@@ -954,48 +828,6 @@
       "n_observations": 2264
     },
     {
-      "id": "EU_NG_MO",
-      "name": "Gaz EU (WB, miesieczny)",
-      "unit": "$/MMBtu",
-      "contract_size": 1,
-      "contract_unit": "MMBtu",
-      "category": "Europa",
-      "color": "#81c784",
-      "source": "fred",
-      "series": "PNGASEUUSDM",
-      "first_date": "1995-01-01",
-      "last_date": "2026-07-01",
-      "n_observations": 379
-    },
-    {
-      "id": "COAL_AU",
-      "name": "Wegiel Australia (WB, miesieczny)",
-      "unit": "$/mt",
-      "contract_size": 1,
-      "contract_unit": "mt",
-      "category": "Energia",
-      "color": "#455a64",
-      "source": "fred",
-      "series": "PCOALAUUSDM",
-      "first_date": "1995-01-01",
-      "last_date": "2026-07-01",
-      "n_observations": 379
-    },
-    {
-      "id": "LNG_JP",
-      "name": "LNG Japonia (WB, miesieczny)",
-      "unit": "$/MMBtu",
-      "contract_size": 1,
-      "contract_unit": "MMBtu",
-      "category": "Energia",
-      "color": "#e57373",
-      "source": "fred",
-      "series": "PNGASJPUSDM",
-      "first_date": "1995-01-01",
-      "last_date": "2026-07-01",
-      "n_observations": 379
-    },
-    {
       "id": "COFFEE",
       "name": "Kawa Arabica (ICE)",
       "unit": "$/lb",
@@ -1076,8 +908,8 @@
       "source": "yahoo",
       "series": "LE=F",
       "first_date": "2001-03-01",
-      "last_date": "2026-10-20",
-      "n_observations": 6426
+      "last_date": "2026-10-21",
+      "n_observations": 6427
     },
     {
       "id": "LEAN_HOGS",
@@ -1090,11 +922,20 @@
       "source": "yahoo",
       "series": "HE=F",
       "first_date": "2000-12-15",
-      "last_date": "2026-10-20",
-      "n_observations": 6494
+      "last_date": "2026-10-21",
+      "n_observations": 6495
     }
   ],
   "failed": [
+    "NG",
+    "WTI",
+    "BRENT",
+    "HEAT",
+    "RBOB",
+    "GAS_RETAIL_US",
+    "US10Y",
+    "US2Y",
+    "US10Y2Y",
     "COT_WTI_NET",
     "COT_BRENT_NET",
     "COT_NG_NET",
@@ -1106,6 +947,9 @@
     "COT_SOYBEAN_NET",
     "MATIF_CORN",
     "MATIF_RAPESEED",
-    "EUA"
+    "EUA",
+    "EU_NG_MO",
+    "COAL_AU",
+    "LNG_JP"
   ]
 }
