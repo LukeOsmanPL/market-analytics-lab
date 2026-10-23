@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-23T12:31:52.723177+00:00",
+  "generated_at": "2026-10-23T21:57:46.691901+00:00",
   "products": [
     {
       "id": "NG",
@@ -670,8 +670,8 @@
       "source": "yahoo",
       "series": "^GSPC",
       "first_date": "1995-01-03",
-      "last_date": "2026-10-22",
-      "n_observations": 8005
+      "last_date": "2026-10-23",
+      "n_observations": 8006
     },
     {
       "id": "BTC",
@@ -698,8 +698,8 @@
       "source": "fred",
       "series": "DGS10",
       "first_date": "1995-01-03",
-      "last_date": "2026-10-21",
-      "n_observations": 7957
+      "last_date": "2026-10-22",
+      "n_observations": 7958
     },
     {
       "id": "US2Y",
@@ -712,8 +712,8 @@
       "source": "fred",
       "series": "DGS2",
       "first_date": "1995-01-03",
-      "last_date": "2026-10-21",
-      "n_observations": 7957
+      "last_date": "2026-10-22",
+      "n_observations": 7958
     },
     {
       "id": "US10Y2Y",
@@ -726,8 +726,8 @@
       "source": "fred",
       "series": "T10Y2Y",
       "first_date": "1995-01-03",
-      "last_date": "2026-10-22",
-      "n_observations": 7958
+      "last_date": "2026-10-23",
+      "n_observations": 7959
     },
     {
       "id": "PL_POWER",
@@ -1076,8 +1076,8 @@
       "source": "yahoo",
       "series": "LE=F",
       "first_date": "2001-03-01",
-      "last_date": "2026-10-22",
-      "n_observations": 6428
+      "last_date": "2026-10-23",
+      "n_observations": 6429
     },
     {
       "id": "LEAN_HOGS",
@@ -1090,8 +1090,8 @@
       "source": "yahoo",
       "series": "HE=F",
       "first_date": "2000-12-15",
-      "last_date": "2026-10-22",
-      "n_observations": 6496
+      "last_date": "2026-10-23",
+      "n_observations": 6497
     }
   ],
   "failed": [
