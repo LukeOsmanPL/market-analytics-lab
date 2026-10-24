@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-23T21:57:46.691901+00:00",
+  "generated_at": "2026-10-24T21:28:19.789113+00:00",
   "products": [
     {
       "id": "NG",
@@ -362,8 +362,8 @@
       "source": "orlen_scrape",
       "series": "PB95",
       "first_date": "2026-08-08",
-      "last_date": "2026-10-23",
-      "n_observations": 77
+      "last_date": "2026-10-24",
+      "n_observations": 78
     },
     {
       "id": "PL_ORLEN_PB98",
@@ -376,8 +376,8 @@
       "source": "orlen_scrape",
       "series": "PB98",
       "first_date": "2026-08-08",
-      "last_date": "2026-10-23",
-      "n_observations": 73
+      "last_date": "2026-10-24",
+      "n_observations": 74
     },
     {
       "id": "PL_ORLEN_ON",
@@ -390,8 +390,8 @@
       "source": "orlen_scrape",
       "series": "ON",
       "first_date": "2026-08-08",
-      "last_date": "2026-10-23",
-      "n_observations": 63
+      "last_date": "2026-10-24",
+      "n_observations": 64
     },
     {
       "id": "PL_ORLEN_EKOTERM",
@@ -404,8 +404,8 @@
       "source": "orlen_scrape",
       "series": "ON_EKOTERM",
       "first_date": "2026-08-09",
-      "last_date": "2026-10-23",
-      "n_observations": 76
+      "last_date": "2026-10-24",
+      "n_observations": 77
     },
     {
       "id": "FR_PB95_WOB",
@@ -628,8 +628,8 @@
       "source": "yahoo",
       "series": "CHF=X",
       "first_date": "2003-09-17",
-      "last_date": "2026-10-23",
-      "n_observations": 6015
+      "last_date": "2026-10-25",
+      "n_observations": 6016
     },
     {
       "id": "DXY",
@@ -684,8 +684,8 @@
       "source": "yahoo",
       "series": "BTC-USD",
       "first_date": "2014-09-17",
-      "last_date": "2026-10-23",
-      "n_observations": 4420
+      "last_date": "2026-10-24",
+      "n_observations": 4421
     },
     {
       "id": "US10Y",
@@ -866,8 +866,8 @@
       "source": "ember",
       "series": "United Kingdom",
       "first_date": "2016-06-30",
-      "last_date": "2026-10-21",
-      "n_observations": 3766
+      "last_date": "2026-10-22",
+      "n_observations": 3767
     },
     {
       "id": "PL_WHEAT_SKUP",
