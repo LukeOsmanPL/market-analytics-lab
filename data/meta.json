@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-26T14:03:43.742332+00:00",
+  "generated_at": "2026-10-26T23:05:24.834296+00:00",
   "products": [
     {
       "id": "NG",
@@ -586,8 +586,8 @@
       "source": "yahoo",
       "series": "PLN=X",
       "first_date": "2003-12-01",
-      "last_date": "2026-10-25",
-      "n_observations": 5958
+      "last_date": "2026-10-26",
+      "n_observations": 5959
     },
     {
       "id": "FX_GBPUSD",
@@ -614,8 +614,8 @@
       "source": "yahoo",
       "series": "JPY=X",
       "first_date": "1996-10-30",
-      "last_date": "2026-10-25",
-      "n_observations": 7788
+      "last_date": "2026-10-26",
+      "n_observations": 7789
     },
     {
       "id": "FX_USDCHF",
@@ -698,8 +698,8 @@
       "source": "fred",
       "series": "DGS10",
       "first_date": "1995-01-03",
-      "last_date": "2026-10-22",
-      "n_observations": 7958
+      "last_date": "2026-10-23",
+      "n_observations": 7959
     },
     {
       "id": "US2Y",
@@ -712,8 +712,8 @@
       "source": "fred",
       "series": "DGS2",
       "first_date": "1995-01-03",
-      "last_date": "2026-10-22",
-      "n_observations": 7958
+      "last_date": "2026-10-23",
+      "n_observations": 7959
     },
     {
       "id": "US10Y2Y",
@@ -726,8 +726,8 @@
       "source": "fred",
       "series": "T10Y2Y",
       "first_date": "1995-01-03",
-      "last_date": "2026-10-23",
-      "n_observations": 7959
+      "last_date": "2026-10-26",
+      "n_observations": 7960
     },
     {
       "id": "PL_POWER",
