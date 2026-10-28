@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-28T13:56:11.233991+00:00",
+  "generated_at": "2026-10-28T23:03:28.546715+00:00",
   "products": [
     {
       "id": "NG",
@@ -12,8 +12,8 @@
       "source": "fred",
       "series": "DHHNGSP",
       "first_date": "1997-01-07",
-      "last_date": "2026-10-20",
-      "n_observations": 7480
+      "last_date": "2026-10-27",
+      "n_observations": 7485
     },
     {
       "id": "WTI",
@@ -26,8 +26,8 @@
       "source": "fred",
       "series": "DCOILWTICO",
       "first_date": "1995-01-03",
-      "last_date": "2026-10-20",
-      "n_observations": 7979
+      "last_date": "2026-10-27",
+      "n_observations": 7984
     },
     {
       "id": "BRENT",
@@ -40,8 +40,8 @@
       "source": "fred",
       "series": "DCOILBRENTEU",
       "first_date": "1995-01-03",
-      "last_date": "2026-10-20",
-      "n_observations": 8059
+      "last_date": "2026-10-27",
+      "n_observations": 8064
     },
     {
       "id": "HEAT",
@@ -54,8 +54,8 @@
       "source": "fred",
       "series": "DHOILNYH",
       "first_date": "1995-01-03",
-      "last_date": "2026-10-20",
-      "n_observations": 7977
+      "last_date": "2026-10-27",
+      "n_observations": 7982
     },
     {
       "id": "RBOB",
@@ -68,8 +68,8 @@
       "source": "fred",
       "series": "DGASUSGULF",
       "first_date": "1995-01-03",
-      "last_date": "2026-10-20",
-      "n_observations": 7972
+      "last_date": "2026-10-27",
+      "n_observations": 7977
     },
     {
       "id": "GAS_RETAIL_US",
@@ -250,8 +250,8 @@
       "source": "wob",
       "series": "PL|Euro-Super 95",
       "first_date": "2005-01-03",
-      "last_date": "2026-10-19",
-      "n_observations": 1089
+      "last_date": "2026-10-26",
+      "n_observations": 1090
     },
     {
       "id": "PL_ON_WOB",
@@ -264,8 +264,8 @@
       "source": "wob",
       "series": "PL|Automotive Gas Oil",
       "first_date": "2005-01-03",
-      "last_date": "2026-10-19",
-      "n_observations": 1089
+      "last_date": "2026-10-26",
+      "n_observations": 1090
     },
     {
       "id": "PL_LPG_WOB",
@@ -278,8 +278,8 @@
       "source": "wob",
       "series": "PL|LPG",
       "first_date": "2005-01-03",
-      "last_date": "2026-10-19",
-      "n_observations": 1089
+      "last_date": "2026-10-26",
+      "n_observations": 1090
     },
     {
       "id": "PL_HEAT_WOB",
@@ -292,8 +292,8 @@
       "source": "wob",
       "series": "PL|Heating Gas Oil",
       "first_date": "2005-01-03",
-      "last_date": "2026-10-19",
-      "n_observations": 1089
+      "last_date": "2026-10-26",
+      "n_observations": 1090
     },
     {
       "id": "EU_PB95_WOB",
@@ -306,8 +306,8 @@
       "source": "wob",
       "series": "EU|Euro-Super 95",
       "first_date": "2005-01-03",
-      "last_date": "2026-10-19",
-      "n_observations": 1089
+      "last_date": "2026-10-26",
+      "n_observations": 1090
     },
     {
       "id": "EU_ON_WOB",
@@ -320,8 +320,8 @@
       "source": "wob",
       "series": "EU|Automotive Gas Oil",
       "first_date": "2005-01-03",
-      "last_date": "2026-10-19",
-      "n_observations": 1089
+      "last_date": "2026-10-26",
+      "n_observations": 1090
     },
     {
       "id": "DE_PB95_WOB",
@@ -334,8 +334,8 @@
       "source": "wob",
       "series": "DE|Euro-Super 95",
       "first_date": "2005-01-03",
-      "last_date": "2026-10-19",
-      "n_observations": 1089
+      "last_date": "2026-10-26",
+      "n_observations": 1090
     },
     {
       "id": "DE_ON_WOB",
@@ -348,8 +348,8 @@
       "source": "wob",
       "series": "DE|Automotive Gas Oil",
       "first_date": "2005-01-03",
-      "last_date": "2026-10-19",
-      "n_observations": 1089
+      "last_date": "2026-10-26",
+      "n_observations": 1090
     },
     {
       "id": "PL_ORLEN_PB95",
@@ -418,8 +418,8 @@
       "source": "wob",
       "series": "FR|Euro-Super 95",
       "first_date": "2005-01-03",
-      "last_date": "2026-10-19",
-      "n_observations": 1089
+      "last_date": "2026-10-26",
+      "n_observations": 1090
     },
     {
       "id": "FR_ON_WOB",
@@ -432,8 +432,8 @@
       "source": "wob",
       "series": "FR|Automotive Gas Oil",
       "first_date": "2005-01-03",
-      "last_date": "2026-10-19",
-      "n_observations": 1089
+      "last_date": "2026-10-26",
+      "n_observations": 1090
     },
     {
       "id": "ES_PB95_WOB",
@@ -446,8 +446,8 @@
       "source": "wob",
       "series": "ES|Euro-Super 95",
       "first_date": "2005-01-03",
-      "last_date": "2026-10-19",
-      "n_observations": 1087
+      "last_date": "2026-10-26",
+      "n_observations": 1088
     },
     {
       "id": "ES_ON_WOB",
@@ -460,8 +460,8 @@
       "source": "wob",
       "series": "ES|Automotive Gas Oil",
       "first_date": "2005-01-03",
-      "last_date": "2026-10-19",
-      "n_observations": 1088
+      "last_date": "2026-10-26",
+      "n_observations": 1089
     },
     {
       "id": "IT_PB95_WOB",
@@ -474,8 +474,8 @@
       "source": "wob",
       "series": "IT|Euro-Super 95",
       "first_date": "2005-01-03",
-      "last_date": "2026-10-19",
-      "n_observations": 1088
+      "last_date": "2026-10-26",
+      "n_observations": 1089
     },
     {
       "id": "IT_ON_WOB",
@@ -488,8 +488,8 @@
       "source": "wob",
       "series": "IT|Automotive Gas Oil",
       "first_date": "2005-01-03",
-      "last_date": "2026-10-19",
-      "n_observations": 1088
+      "last_date": "2026-10-26",
+      "n_observations": 1089
     },
     {
       "id": "CZ_PB95_WOB",
@@ -502,8 +502,8 @@
       "source": "wob",
       "series": "CZ|Euro-Super 95",
       "first_date": "2005-01-03",
-      "last_date": "2026-10-19",
-      "n_observations": 1088
+      "last_date": "2026-10-26",
+      "n_observations": 1089
     },
     {
       "id": "CZ_ON_WOB",
@@ -516,8 +516,8 @@
       "source": "wob",
       "series": "CZ|Automotive Gas Oil",
       "first_date": "2005-01-03",
-      "last_date": "2026-10-19",
-      "n_observations": 1088
+      "last_date": "2026-10-26",
+      "n_observations": 1089
     },
     {
       "id": "HU_PB95_WOB",
@@ -530,8 +530,8 @@
       "source": "wob",
       "series": "HU|Euro-Super 95",
       "first_date": "2005-01-03",
-      "last_date": "2026-10-19",
-      "n_observations": 1089
+      "last_date": "2026-10-26",
+      "n_observations": 1090
     },
     {
       "id": "HU_ON_WOB",
@@ -544,8 +544,8 @@
       "source": "wob",
       "series": "HU|Automotive Gas Oil",
       "first_date": "2005-01-03",
-      "last_date": "2026-10-19",
-      "n_observations": 1089
+      "last_date": "2026-10-26",
+      "n_observations": 1090
     },
     {
       "id": "FX_EURUSD",
@@ -698,8 +698,8 @@
       "source": "fred",
       "series": "DGS10",
       "first_date": "1995-01-03",
-      "last_date": "2026-10-26",
-      "n_observations": 7960
+      "last_date": "2026-10-27",
+      "n_observations": 7961
     },
     {
       "id": "US2Y",
@@ -712,8 +712,8 @@
       "source": "fred",
       "series": "DGS2",
       "first_date": "1995-01-03",
-      "last_date": "2026-10-26",
-      "n_observations": 7960
+      "last_date": "2026-10-27",
+      "n_observations": 7961
     },
     {
       "id": "US10Y2Y",
@@ -726,8 +726,8 @@
       "source": "fred",
       "series": "T10Y2Y",
       "first_date": "1995-01-03",
-      "last_date": "2026-10-27",
-      "n_observations": 7961
+      "last_date": "2026-10-28",
+      "n_observations": 7962
     },
     {
       "id": "PL_POWER",
