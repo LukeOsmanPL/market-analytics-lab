@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-31T22:23:28.175169+00:00",
+  "generated_at": "2026-11-01T14:11:24.335771+00:00",
   "products": [
     {
       "id": "NG",
@@ -362,8 +362,8 @@
       "source": "orlen_scrape",
       "series": "PB95",
       "first_date": "2026-08-08",
-      "last_date": "2026-10-31",
-      "n_observations": 85
+      "last_date": "2026-11-01",
+      "n_observations": 86
     },
     {
       "id": "PL_ORLEN_PB98",
@@ -376,8 +376,8 @@
       "source": "orlen_scrape",
       "series": "PB98",
       "first_date": "2026-08-08",
-      "last_date": "2026-10-31",
-      "n_observations": 81
+      "last_date": "2026-11-01",
+      "n_observations": 82
     },
     {
       "id": "PL_ORLEN_ON",
@@ -390,8 +390,8 @@
       "source": "orlen_scrape",
       "series": "ON",
       "first_date": "2026-08-08",
-      "last_date": "2026-10-31",
-      "n_observations": 71
+      "last_date": "2026-11-01",
+      "n_observations": 72
     },
     {
       "id": "PL_ORLEN_EKOTERM",
@@ -404,8 +404,8 @@
       "source": "orlen_scrape",
       "series": "ON_EKOTERM",
       "first_date": "2026-08-09",
-      "last_date": "2026-10-31",
-      "n_observations": 84
+      "last_date": "2026-11-01",
+      "n_observations": 85
     },
     {
       "id": "FR_PB95_WOB",
@@ -600,8 +600,8 @@
       "source": "yahoo",
       "series": "GBPUSD=X",
       "first_date": "2003-12-01",
-      "last_date": "2026-10-31",
-      "n_observations": 5975
+      "last_date": "2026-11-01",
+      "n_observations": 5976
     },
     {
       "id": "FX_USDJPY",
@@ -628,8 +628,8 @@
       "source": "yahoo",
       "series": "CHF=X",
       "first_date": "2003-09-17",
-      "last_date": "2026-10-31",
-      "n_observations": 6022
+      "last_date": "2026-11-01",
+      "n_observations": 6023
     },
     {
       "id": "DXY",
@@ -684,8 +684,8 @@
       "source": "yahoo",
       "series": "BTC-USD",
       "first_date": "2014-09-17",
-      "last_date": "2026-10-31",
-      "n_observations": 4428
+      "last_date": "2026-11-01",
+      "n_observations": 4429
     },
     {
       "id": "US10Y",
