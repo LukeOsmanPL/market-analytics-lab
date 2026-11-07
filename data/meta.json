@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-07T13:50:52.456287+00:00",
+  "generated_at": "2026-11-07T22:36:59.450455+00:00",
   "products": [
     {
       "id": "NG",
@@ -614,8 +614,8 @@
       "source": "yahoo",
       "series": "JPY=X",
       "first_date": "1996-10-30",
-      "last_date": "2026-11-07",
-      "n_observations": 7800
+      "last_date": "2026-11-08",
+      "n_observations": 7801
     },
     {
       "id": "FX_USDCHF",
