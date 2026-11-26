@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-26T02:07:12.707088+00:00",
+  "generated_at": "2026-11-26T17:38:45.104719+00:00",
   "products": [
     {
       "id": "NG",
@@ -96,8 +96,8 @@
       "source": "yahoo",
       "series": "GC=F",
       "first_date": "2000-08-30",
-      "last_date": "2026-11-25",
-      "n_observations": 6591
+      "last_date": "2026-11-26",
+      "n_observations": 6592
     },
     {
       "id": "SILVER",
@@ -110,8 +110,8 @@
       "source": "yahoo",
       "series": "SI=F",
       "first_date": "2000-08-30",
-      "last_date": "2026-11-25",
-      "n_observations": 6592
+      "last_date": "2026-11-26",
+      "n_observations": 6593
     },
     {
       "id": "COPPER",
@@ -124,8 +124,8 @@
       "source": "yahoo",
       "series": "HG=F",
       "first_date": "2000-08-30",
-      "last_date": "2026-11-25",
-      "n_observations": 6595
+      "last_date": "2026-11-26",
+      "n_observations": 6596
     },
     {
       "id": "PLATINUM",
@@ -138,8 +138,8 @@
       "source": "yahoo",
       "series": "PL=F",
       "first_date": "1997-10-29",
-      "last_date": "2026-11-25",
-      "n_observations": 6618
+      "last_date": "2026-11-26",
+      "n_observations": 6619
     },
     {
       "id": "PALLADIUM",
@@ -152,8 +152,8 @@
       "source": "yahoo",
       "series": "PA=F",
       "first_date": "1998-09-28",
-      "last_date": "2026-11-25",
-      "n_observations": 6629
+      "last_date": "2026-11-26",
+      "n_observations": 6630
     },
     {
       "id": "CORN",
@@ -642,8 +642,8 @@
       "source": "yahoo",
       "series": "DX-Y.NYB",
       "first_date": "1995-01-02",
-      "last_date": "2026-11-25",
-      "n_observations": 8103
+      "last_date": "2026-11-26",
+      "n_observations": 8104
     },
     {
       "id": "VIX",
@@ -656,8 +656,8 @@
       "source": "yahoo",
       "series": "^VIX",
       "first_date": "1995-01-03",
-      "last_date": "2026-11-25",
-      "n_observations": 8031
+      "last_date": "2026-11-26",
+      "n_observations": 8032
     },
     {
       "id": "SPX",
@@ -740,8 +740,8 @@
       "source": "ember",
       "series": "Poland",
       "first_date": "2015-01-01",
-      "last_date": "2026-11-24",
-      "n_observations": 4346
+      "last_date": "2026-11-25",
+      "n_observations": 4347
     },
     {
       "id": "DE_POWER",
@@ -754,8 +754,8 @@
       "source": "ember",
       "series": "Germany",
       "first_date": "2015-01-01",
-      "last_date": "2026-11-24",
-      "n_observations": 4346
+      "last_date": "2026-11-25",
+      "n_observations": 4347
     },
     {
       "id": "FR_POWER",
@@ -768,8 +768,8 @@
       "source": "ember",
       "series": "France",
       "first_date": "2015-01-01",
-      "last_date": "2026-11-24",
-      "n_observations": 4345
+      "last_date": "2026-11-25",
+      "n_observations": 4346
     },
     {
       "id": "ES_POWER",
@@ -782,8 +782,8 @@
       "source": "ember",
       "series": "Spain",
       "first_date": "2015-01-01",
-      "last_date": "2026-11-24",
-      "n_observations": 4346
+      "last_date": "2026-11-25",
+      "n_observations": 4347
     },
     {
       "id": "IT_POWER",
@@ -796,8 +796,8 @@
       "source": "ember",
       "series": "Italy",
       "first_date": "2015-01-01",
-      "last_date": "2026-11-24",
-      "n_observations": 4346
+      "last_date": "2026-11-25",
+      "n_observations": 4347
     },
     {
       "id": "CZ_POWER",
@@ -810,8 +810,8 @@
       "source": "ember",
       "series": "Czechia",
       "first_date": "2015-01-01",
-      "last_date": "2026-11-24",
-      "n_observations": 4346
+      "last_date": "2026-11-25",
+      "n_observations": 4347
     },
     {
       "id": "SK_POWER",
@@ -824,8 +824,8 @@
       "source": "ember",
       "series": "Slovakia",
       "first_date": "2015-01-01",
-      "last_date": "2026-11-24",
-      "n_observations": 4338
+      "last_date": "2026-11-25",
+      "n_observations": 4340
     },
     {
       "id": "HU_POWER",
@@ -838,8 +838,8 @@
       "source": "ember",
       "series": "Hungary",
       "first_date": "2015-01-01",
-      "last_date": "2026-11-24",
-      "n_observations": 4338
+      "last_date": "2026-11-25",
+      "n_observations": 4340
     },
     {
       "id": "NL_POWER",
@@ -852,8 +852,8 @@
       "source": "ember",
       "series": "Netherlands",
       "first_date": "2015-01-01",
-      "last_date": "2026-11-24",
-      "n_observations": 4338
+      "last_date": "2026-11-25",
+      "n_observations": 4340
     },
     {
       "id": "GB_POWER",
@@ -866,8 +866,8 @@
       "source": "ember",
       "series": "United Kingdom",
       "first_date": "2016-06-30",
-      "last_date": "2026-11-23",
-      "n_observations": 3799
+      "last_date": "2026-11-24",
+      "n_observations": 3800
     },
     {
       "id": "PL_WHEAT_SKUP",
@@ -880,8 +880,8 @@
       "source": "agrifood_cereal",
       "series": "Common wheat",
       "first_date": "2015-11-16",
-      "last_date": "2026-11-09",
-      "n_observations": 563
+      "last_date": "2026-11-16",
+      "n_observations": 564
     },
     {
       "id": "PL_CORN_SKUP",
@@ -894,8 +894,8 @@
       "source": "agrifood_cereal",
       "series": "Feed maize",
       "first_date": "2015-11-16",
-      "last_date": "2026-11-09",
-      "n_observations": 562
+      "last_date": "2026-11-16",
+      "n_observations": 563
     },
     {
       "id": "PL_RYE_SKUP",
@@ -908,8 +908,8 @@
       "source": "agrifood_cereal",
       "series": "Rye",
       "first_date": "2015-11-16",
-      "last_date": "2026-11-09",
-      "n_observations": 561
+      "last_date": "2026-11-16",
+      "n_observations": 562
     },
     {
       "id": "PL_BARLEY_SKUP",
@@ -922,8 +922,8 @@
       "source": "agrifood_cereal",
       "series": "Feed barley",
       "first_date": "2015-11-16",
-      "last_date": "2026-11-09",
-      "n_observations": 562
+      "last_date": "2026-11-16",
+      "n_observations": 563
     },
     {
       "id": "MATIF_WHEAT",
@@ -950,8 +950,8 @@
       "source": "yahoo",
       "series": "TTF=F",
       "first_date": "2017-10-23",
-      "last_date": "2026-11-25",
-      "n_observations": 2289
+      "last_date": "2026-11-26",
+      "n_observations": 2290
     },
     {
       "id": "EU_NG_MO",
