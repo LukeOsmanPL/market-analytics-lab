@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-28T02:04:29.983149+00:00",
+  "updated_at": "2026-11-28T16:18:11.633977+00:00",
   "alerts": [
     {
       "rule_index": 9,
@@ -5568,6 +5568,30 @@
       "message": "PL_PB95_WOB zmiana 30d = -16.14% (próg 5.0%, 2026-11-23)",
       "note": "Pb95 detal PL zmienil sie >5% w 30 dni",
       "at": "2026-11-28T02:04:29.980718+00:00"
+    },
+    {
+      "rule_index": 0,
+      "rule_id": "wti_zscore_60d",
+      "type": "product_zscore",
+      "message": "WTI z-score=-2.15 🟢 LONG (|z|>=2.0, 2026-11-24)",
+      "note": "WTI 60d z-score ekstremum - potencjalny reversal",
+      "at": "2026-11-28T16:18:11.609450+00:00"
+    },
+    {
+      "rule_index": 8,
+      "rule_id": "cot_wti_extreme",
+      "type": "product_zscore",
+      "message": "COT_WTI_NET z-score=+2.31 🔴 SHORT (|z|>=2.0, 2026-08-04)",
+      "note": "COT WTI Money Mgr netto - kontrariański sygnal",
+      "at": "2026-11-28T16:18:11.631296+00:00"
+    },
+    {
+      "rule_index": 9,
+      "rule_id": "pl_pb95_high",
+      "type": "pct_change",
+      "message": "PL_PB95_WOB zmiana 30d = -16.14% (próg 5.0%, 2026-11-23)",
+      "note": "Pb95 detal PL zmienil sie >5% w 30 dni",
+      "at": "2026-11-28T16:18:11.631706+00:00"
     }
   ]
 }
